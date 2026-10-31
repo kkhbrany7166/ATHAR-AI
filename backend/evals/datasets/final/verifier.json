@@ -1,0 +1,17 @@
+{
+  "description": "FINAL untouched set: follow-up attempts on two different checks (repeat_text and countdown). Expected outcome = what a careful instructor would conclude from code and reasoning together. Committed before any run.",
+  "cases": [
+    {"id": "fv01", "item": "countdown", "code": "def countdown(n):\n    if n == 0:\n        return []\n    return [n] + countdown(n - 1)\n", "explanation": "It ends once n is 0, returning an empty list because counting down from zero gives no numbers; each call uses n - 1.", "expected": "demonstrated"},
+    {"id": "fv02", "item": "countdown", "code": "def countdown(n):\n    if n == 1:\n        return [1]\n    return [n] + countdown(n - 1)\n", "explanation": "It stops at 1 since that's the last number we print.", "expected": "still_developing"},
+    {"id": "fv03", "item": "countdown", "code": "def countdown(n):\n    if n == 0:\n        return []\n    return [n] + countdown(n - 1)\n", "explanation": "It runs until there's nothing left and then it's done.", "expected": "still_developing"},
+    {"id": "fv04", "item": "countdown", "code": "def countdown(n):\n    return [] if n == 0 else [n] + countdown(n - 1)\n", "explanation": "", "expected": "insufficient_evidence"},
+    {"id": "fv05", "item": "countdown", "code": "def countdown(n):\n    if n == 0:\n        return []\n    return [n] + countdown(n)\n", "explanation": "The base case is n == 0 returning [].", "expected": "still_developing"},
+    {"id": "fv06", "item": "countdown", "code": "def countdown(n):\n    if n = 0:\n        return []\n    return [n] + countdown(n - 1)\n", "explanation": "Stops when n is zero and gives back an empty list.", "expected": "insufficient_evidence"},
+    {"id": "fv07", "item": "repeat_text", "code": "def repeat_text(s, n):\n    if n <= 0:\n        return ''\n    return repeat_text(s, n - 1) + s\n", "explanation": "Zero repetitions is the smallest case and gives the empty string; I check for it before recursing, and n shrinks every call.", "expected": "demonstrated"},
+    {"id": "fv08", "item": "repeat_text", "code": "def repeat_text(s, n):\n    if n == 0:\n        return ''\n    return s + repeat_text(s, n - 1)\n", "explanation": "It doesn't just stop when it runs out; the n == 0 check is what stops it and returns ''.", "expected": "demonstrated"},
+    {"id": "fv09", "item": "repeat_text", "code": "def repeat_text(s, n):\n    if n == 1:\n        return s\n    return s + repeat_text(s, n - 1)\n", "explanation": "I stop at one copy because a single copy is just s.", "expected": "still_developing"},
+    {"id": "fv10", "item": "repeat_text", "code": "def repeat_text(s, n):\n    if n == 0:\n        return ''\n    return s + repeat_text(s, n - 1)\n", "explanation": "Recursion.", "expected": "insufficient_evidence"},
+    {"id": "fv11", "item": "repeat_text", "code": "def repeat_text(s, n):\n    if n == 0:\n        return None\n    return s + (repeat_text(s, n - 1) or '')\n", "explanation": "When n is 0 there is nothing to repeat so I return None.", "expected": "still_developing"},
+    {"id": "fv12", "item": "repeat_text", "code": "def repeat_text(s, n):\n    if n == 0:\n        return ''\n    return s + repeat_text(s, n - 1)\n", "explanation": "The function stops by itself after the last copy is added.", "expected": "still_developing"}
+  ]
+}

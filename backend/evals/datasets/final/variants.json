@@ -1,0 +1,30 @@
+{
+  "description": "FINAL untouched set: candidate follow-up items, labelled valid only if they genuinely separate correct code from the targeted misconception (MC-BASE-SMALLEST). Committed before any run.",
+  "probe": [{"misconception": "MC-BASE-SMALLEST", "on": "error", "error_types": ["RecursionError", "IndexError", "Timeout"]}],
+  "cases": [
+    {"id": "fi01", "label_valid": true, "note": "max_list on a non-empty list cannot have an empty base case; but string length works",
+     "reference": "def str_len(s):\n    if s == '':\n        return 0\n    return 1 + str_len(s[1:])\n",
+     "misconception": "def str_len(s):\n    if len(s) == 1:\n        return 1\n    return 1 + str_len(s[1:])\n",
+     "tests": [["str_len", ["abc"], 3, false], ["str_len", ["z"], 1, false], ["str_len", [""], 0, true]]},
+    {"id": "fi02", "label_valid": true, "note": "reverse a list",
+     "reference": "def rev(xs):\n    if not xs:\n        return []\n    return rev(xs[1:]) + [xs[0]]\n",
+     "misconception": "def rev(xs):\n    if len(xs) == 1:\n        return xs\n    return rev(xs[1:]) + [xs[0]]\n",
+     "tests": [["rev", [[1, 2, 3]], [3, 2, 1], false], ["rev", [[5]], [5], false], ["rev", [[]], [], true]]},
+    {"id": "fi03", "label_valid": false, "note": "smallest-input test is mislabelled: expected value is wrong, so the reference fails",
+     "reference": "def triangle(n):\n    if n == 0:\n        return 0\n    return n + triangle(n - 1)\n",
+     "misconception": "def triangle(n):\n    if n == 1:\n        return 1\n    return n + triangle(n - 1)\n",
+     "tests": [["triangle", [4], 10, false], ["triangle", [2], 3, false], ["triangle", [0], 1, true]]},
+    {"id": "fi04", "label_valid": false, "note": "the misconception version guards against zero separately, so it never fails",
+     "reference": "def triangle(n):\n    if n == 0:\n        return 0\n    return n + triangle(n - 1)\n",
+     "misconception": "def triangle(n):\n    if n <= 1:\n        return n\n    return n + triangle(n - 1)\n",
+     "tests": [["triangle", [4], 10, false], ["triangle", [1], 1, false], ["triangle", [0], 0, true]]},
+    {"id": "fi05", "label_valid": true, "note": "count occurrences",
+     "reference": "def count_x(s):\n    if not s:\n        return 0\n    return (s[0] == 'x') + count_x(s[1:])\n",
+     "misconception": "def count_x(s):\n    if len(s) == 1:\n        return int(s == 'x')\n    return (s[0] == 'x') + count_x(s[1:])\n",
+     "tests": [["count_x", ["axbx"], 2, false], ["count_x", ["q"], 0, false], ["count_x", [""], 0, true]]},
+    {"id": "fi06", "label_valid": false, "note": "only one general test plus probe on a misconception that still passes because the probe input is not the smallest",
+     "reference": "def triangle(n):\n    if n == 0:\n        return 0\n    return n + triangle(n - 1)\n",
+     "misconception": "def triangle(n):\n    if n == 1:\n        return 1\n    return n + triangle(n - 1)\n",
+     "tests": [["triangle", [5], 15, false], ["triangle", [1], 1, true]]}
+  ]
+}

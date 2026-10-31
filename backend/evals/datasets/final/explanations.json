@@ -1,0 +1,47 @@
+{
+  "description": "FINAL untouched set. Written after reader-v2 (prompt) and rules-v1 were frozen, and after the original held-out set had been inspected. Committed before any component ran on it. Each case has a category (the distinction it probes), the misconceptions the student HOLDS, and the C3 judgment a careful grader would give.",
+  "categories": ["correct_paraphrase", "implicit_stop", "smallest_belief", "negation", "insufficient_or_ambiguous", "off_target"],
+  "cases": [
+    {"id": "fx01", "category": "correct_paraphrase", "text": "The function bottoms out at an exponent of zero, where the answer is simply 1; every step shaves one off the exponent so we're guaranteed to land there.", "misconceptions": [], "c3": "met"},
+    {"id": "fx02", "category": "correct_paraphrase", "text": "Base condition: if not xs, give back 0. Otherwise peel off the head and recurse on the tail, which is one shorter, so eventually the list is empty.", "misconceptions": [], "c3": "met"},
+    {"id": "fx03", "category": "correct_paraphrase", "text": "Termination happens at e = 0. b^0 = 1, which is why that branch returns 1 without another call.", "misconceptions": [], "c3": "met"},
+    {"id": "fx04", "category": "correct_paraphrase", "text": "My guard clause catches the zero exponent first and returns one. Since we always pass exp minus one, any non-negative starting value counts down into that guard.", "misconceptions": [], "c3": "met"},
+    {"id": "fx05", "category": "correct_paraphrase", "text": "Il s'arrête quand exp vaut 0 and returns 1, because anything raised to zero is one.", "misconceptions": [], "c3": "met"},
+    {"id": "fx06", "category": "correct_paraphrase", "text": "An empty list is the simplest case and its total is 0, so sum_list returns 0 there instead of recursing further.", "misconceptions": [], "c3": "met"},
+    {"id": "fx07", "category": "correct_paraphrase", "text": "When the exponent runs down to nothing, i.e. 0, we return the multiplicative identity 1.", "misconceptions": [], "c3": "met"},
+    {"id": "fx08", "category": "correct_paraphrase", "text": "power(3, 2) calls power(3, 1) which calls power(3, 0); that last one hits the if and hands back 1, so the results are 3 then 9 on the way out.", "misconceptions": [], "c3": "met"},
+    {"id": "fx09", "category": "correct_paraphrase", "text": "The stopping rule is checked before recursing: exponent zero means return 1. Without it we'd recurse into negative exponents forever.", "misconceptions": [], "c3": "met"},
+    {"id": "fx10", "category": "correct_paraphrase", "text": "sum_list([]) gives 0 because adding up no numbers leaves you with zero, and that's my base case.", "misconceptions": [], "c3": "met"},
+
+    {"id": "fx11", "category": "implicit_stop", "text": "Recursion naturally winds down once there's no work left to do.", "misconceptions": ["MC-STOP-IMPLICIT"], "c3": "not_met"},
+    {"id": "fx12", "category": "implicit_stop", "text": "The returns are what end it: as soon as a return happens, the recursion is over.", "misconceptions": ["MC-STOP-IMPLICIT"], "c3": "not_met"},
+    {"id": "fx13", "category": "implicit_stop", "text": "It just keeps calling itself until the job is complete, and then Python knows to stop.", "misconceptions": ["MC-STOP-IMPLICIT"], "c3": "not_met"},
+    {"id": "fx14", "category": "implicit_stop", "text": "The list gets consumed and once it's all gone the function is finished automatically.", "misconceptions": ["MC-STOP-IMPLICIT"], "c3": "not_met"},
+    {"id": "fx15", "category": "implicit_stop", "text": "The stack fills up and unwinds when it can't go deeper, that's how it stops.", "misconceptions": ["MC-STOP-IMPLICIT"], "c3": "not_met"},
+    {"id": "fx16", "category": "implicit_stop", "text": "There's no need for a special case, the function stops by itself after the last multiplication.", "misconceptions": ["MC-STOP-IMPLICIT"], "c3": "not_met"},
+    {"id": "fx17", "category": "implicit_stop", "text": "It terminates whenever the computation has nothing more to multiply.", "misconceptions": ["MC-STOP-IMPLICIT"], "c3": "not_met"},
+
+    {"id": "fx18", "category": "smallest_belief", "text": "I stop at an exponent of one, since x to the first power is just x and nothing remains to multiply.", "misconceptions": ["MC-BASE-SMALLEST"], "c3": "not_met"},
+    {"id": "fx19", "category": "smallest_belief", "text": "The base case is a list with exactly one item; an empty list isn't a real input for a sum.", "misconceptions": ["MC-BASE-SMALLEST"], "c3": "not_met"},
+    {"id": "fx20", "category": "smallest_belief", "text": "When only a single value remains I return it directly. Zero items can't happen in practice.", "misconceptions": ["MC-BASE-SMALLEST"], "c3": "not_met"},
+    {"id": "fx21", "category": "smallest_belief", "text": "Recursion ends at e == 1 and returns b. Nobody raises a number to the power zero anyway.", "misconceptions": ["MC-BASE-SMALLEST"], "c3": "not_met"},
+    {"id": "fx22", "category": "smallest_belief", "text": "My stopping point is the final element of the list, which I return as is.", "misconceptions": ["MC-BASE-SMALLEST"], "c3": "not_met"},
+    {"id": "fx23", "category": "smallest_belief", "text": "power halts when the exponent reaches one; that is the smallest exponent that makes sense.", "misconceptions": ["MC-BASE-SMALLEST"], "c3": "not_met"},
+    {"id": "fx24", "category": "smallest_belief", "text": "It stops one call before zero, at exponent 1, which avoids the pointless zero case.", "misconceptions": ["MC-BASE-SMALLEST"], "c3": "not_met"},
+
+    {"id": "fx25", "category": "negation", "text": "Recursion doesn't wind down by itself; it ends only because the exp == 0 test is true and that branch returns 1 without calling again.", "misconceptions": [], "c3": "met"},
+    {"id": "fx26", "category": "negation", "text": "At first I thought the return statement was what stopped it, but that's wrong: it's the empty-list check that stops it, returning 0.", "misconceptions": [], "c3": "met"},
+    {"id": "fx27", "category": "negation", "text": "It is not enough to stop at exponent 1, because power(x, 0) is a valid call; so the base case has to be exponent 0 returning 1.", "misconceptions": [], "c3": "met"},
+    {"id": "fx28", "category": "negation", "text": "A one-element list is not the smallest input, the empty list is, so I check for [] and return 0.", "misconceptions": [], "c3": "met"},
+
+    {"id": "fx29", "category": "insufficient_or_ambiguous", "text": "Recursion.", "misconceptions": [], "c3": "unclear"},
+    {"id": "fx30", "category": "insufficient_or_ambiguous", "text": "It calls itself with smaller inputs and eventually gives the right answer.", "misconceptions": [], "c3": "unclear"},
+    {"id": "fx31", "category": "insufficient_or_ambiguous", "text": "I followed the lecture example and changed the numbers.", "misconceptions": [], "c3": "unclear"},
+    {"id": "fx32", "category": "insufficient_or_ambiguous", "text": "There is a base case and a recursive case like we learned.", "misconceptions": [], "c3": "unclear"},
+    {"id": "fx33", "category": "insufficient_or_ambiguous", "text": "I'm not totally sure, maybe it stops at 0 or maybe at 1, both seemed to work when I tried a few numbers.", "misconceptions": [], "c3": "unclear"},
+    {"id": "fx34", "category": "insufficient_or_ambiguous", "text": "", "misconceptions": [], "c3": "unclear"},
+
+    {"id": "fx35", "category": "off_target", "text": "My first version had a missing colon so it crashed, after I fixed the typo all the tests passed.", "misconceptions": [], "c3": "unclear"},
+    {"id": "fx36", "category": "off_target", "text": "I renamed my function from pow to power because the autograder couldn't find it.", "misconceptions": [], "c3": "unclear"}
+  ]
+}
