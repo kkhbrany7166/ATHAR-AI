@@ -13,6 +13,7 @@ from ..auth import owned_assignment, require_professor, require_student
 from ..db import get_db
 from ..interventions import planning
 from ..interventions import service as svc
+from ..interventions.note_check import check_note
 
 router = APIRouter(prefix="/api", tags=["interventions"])
 
@@ -91,6 +92,7 @@ def intervention_out(db: Session, iv: m.Intervention) -> dict:
         "id": iv.id, "status": iv.status, "kind": iv.kind, "title": iv.title, "misconception_code": iv.misconception_code,
         "course_id": iv.course_id, "course_code": a.course.code, "assignment": {"id": a.id, "title": a.title}, "insight_id": iv.insight_id,
         "explanation": iv.explanation, "explanation_source": iv.explanation_source, "professor_note": iv.professor_note,
+        "note_check": check_note(iv.explanation, iv.kind),
         "practice_item": item_out(iv.practice_item), "followup_item": item_out(iv.followup_item),
         "followup_options": [item_out(i) for i in items], "followup_assignment_id": iv.followup_assignment_id,
         "target_student_ids": iv.target_student_ids, "students": students, "execution_error": iv.execution_error,

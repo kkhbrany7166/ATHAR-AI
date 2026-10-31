@@ -57,6 +57,14 @@ def reset_interventions(db) -> dict:
     db.execute(delete(m.AssessmentItem).where(m.AssessmentItem.source.like("ai:%")))
     for i in db.scalars(select(m.Insight)).all():
         i.status = "open"
+    db.flush()
+    # Rebuild insights from the stored evidence so the current deterministic rules apply (no model calls).
+    from .insights import compute_insights
+    for a in db.scalars(select(m.Assignment).where(m.Assignment.targeted.is_(False))).all():
+        run = db.scalar(select(m.GradingRun).where(m.GradingRun.assignment_id == a.id, m.GradingRun.status == "done")
+                        .order_by(m.GradingRun.id.desc()).limit(1))
+        if run:
+            compute_insights(db, a, run)
     db.add(m.AuditEvent(actor_id=None, action="demo.reset_interventions", entity="course", entity_id=None, payload={"followups_removed": len(targeted)}))
     db.commit()
     return {"followup_assignments_removed": len(targeted), "followup_submissions_removed": len(subs)}
@@ -65,9 +73,15 @@ def reset_interventions(db) -> dict:
 def evaluate(db) -> dict:
     """Detection quality on synthetic data: planted labels vs. what the pipeline found. Reads synthetic_labels."""
     labels = {lab.submission_id: lab for lab in db.scalars(select(m.SyntheticLabel)).all()}
+    from .grading.disputes import dispute_reason
+
+    readings = {r.submission_id: r for r in db.scalars(select(m.ExplanationReadingRecord)).all()}
     found: dict[int, set[str]] = {}
+    kept: dict[int, set[str]] = {}  # after setting aside reading claims disputed by their own quote
     for e in db.scalars(select(m.MisconceptionEvidence)).all():
         found.setdefault(e.submission_id, set()).add(e.misconception_code)
+        if not dispute_reason(e, readings.get(e.submission_id)):
+            kept.setdefault(e.submission_id, set()).add(e.misconception_code)
     planted_map = {
         "MC-BASE-SMALLEST": lambda lab: lab.code_pattern.startswith("base_smallest"),
         "MC-BASE-VALUE": lambda lab: lab.code_pattern.startswith("base_value"),
@@ -78,8 +92,11 @@ def evaluate(db) -> dict:
     for code, is_planted in planted_map.items():
         planted = {sid for sid, lab in labels.items() if is_planted(lab)}
         detected = {sid for sid, codes in found.items() if code in codes}
+        after = {sid for sid, codes in kept.items() if code in codes}
         report[code] = {"planted": len(planted), "detected": len(detected), "true_positive": len(planted & detected),
-                        "missed": len(planted - detected), "extra": len(detected - planted)}
+                        "missed": len(planted - detected), "extra": len(detected - planted),
+                        "after_dispute_rule": {"detected": len(after), "true_positive": len(planted & after),
+                                               "extra": len(after - planted), "missed": len(planted - after)}}
     return report
 
 

@@ -12,11 +12,12 @@ import { Button, Callout, ErrorState, Loading, cx } from "../../components/ui";
 
 interface CourseIv { id: number; status: string; kind: string; misconception_code: string; assignment_id: number; targets: number; delivered: number; verified: number }
 
-const ORDER = ["concept_gap", "reasoning_gap", "execution_error", "reasoning_unconfirmed", "no_submission", "demonstrated"];
+const ORDER = ["concept_gap", "conflicting_evidence", "reasoning_gap", "execution_error", "reasoning_unconfirmed", "no_submission", "demonstrated"];
 const KIND_FOR: Record<string, string> = { concept_gap: "concept_practice", reasoning_gap: "explain_reasoning", reasoning_unconfirmed: "explain_reasoning", execution_error: "debugging" };
 const WHY: Record<string, string> = {
   concept_gap: "A smallest-input test failed in the way this misconception predicts. Deterministic evidence.",
   reasoning_gap: "All tests pass, but the AI read the explanation as holding a stopping-condition misconception. A suggestion to check, not a diagnosis.",
+  conflicting_evidence: "The evidence disagrees: the AI flagged a misconception, but the sentence it quoted states the correct idea. ATHAR sends these to you instead of choosing help. Open each one and decide.",
   execution_error: "The code didn't run, so the tests couldn't show anything about recursion yet.",
   reasoning_unconfirmed: "All tests pass, but the explanation was too thin, unclear or unread to confirm understanding.",
   no_submission: "Nothing to look at. ATHAR won't guess.",
@@ -25,7 +26,7 @@ const WHY: Record<string, string> = {
 
 function evidenceKinds(g: PlanGroup): ("test" | "ai")[] {
   if (g.category === "concept_gap" || g.category === "execution_error") return ["test"];
-  if (g.category === "reasoning_gap" || g.category === "demonstrated") return ["test", "ai"];
+  if (g.category === "reasoning_gap" || g.category === "demonstrated" || g.category === "conflicting_evidence") return ["test", "ai"];
   if (g.category === "reasoning_unconfirmed") return ["test"];
   return [];
 }

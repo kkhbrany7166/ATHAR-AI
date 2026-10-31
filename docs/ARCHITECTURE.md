@@ -165,6 +165,8 @@ explanation ─► reader (LLM reader-v2 │ rules-v1 │ none) ─► validated
 
 **Why some cases are escalated rather than classified.** An explanation like "it works" or "Recursion." supports no judgment. The reader is allowed, and asked, to abstain. The diagnosis then reports *reasoning unconfirmed*, and the verifier reports *insufficient evidence*, both marked for professor review. A confident wrong label would send a student the wrong help.
 
+**Why conflicting evidence goes to the professor.** A reading can contradict its own quote: Layan's explanation states the right base case, yet the AI tagged her with the misconception her code shows. Retuning the prompt against that case would contaminate the evaluation, so the fix is downstream and deterministic: a disputed claim never becomes a diagnosis, the student goes to *needs your review* rather than automated help, and the stored AI output is untouched for audit.
+
 **Why no multi-agent framework.** The workflow is a state machine with a few focused model calls. Extra agents would add failure modes without adding evidence, and the evaluation gives no reason to add them.
 
 ## Live AI results and what they changed (Oct 31, gpt-4.1-mini)

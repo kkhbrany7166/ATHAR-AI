@@ -20,6 +20,7 @@ from ..ai.reader import choose_reader
 from ..grading.pipeline import record_test_evidence, store_explanation_evidence
 from ..grading.sandbox import RunReport, TestSpec, run_tests
 from ..seed import content
+from .note_check import check_note
 from .validation import validate_debug_item, validate_item
 from .verifier import RULE_VERSION, TestObservation, VerifierInput, verify, verify_debug, verify_reasoning
 
@@ -89,7 +90,7 @@ def _pick(items: list[m.AssessmentItem], role: str, code: str) -> m.AssessmentIt
 # ------------------------------------------------------------------ drafting
 
 class DraftExplanation(BaseModel):
-    explanation: str = Field(description="120-200 words, addressed to the students, warm and plain. No grades, no blame.")
+    explanation: str = Field(description="At most 90 words, addressed to the students, plain sentences. No greeting, no grades, no blame.")
     cited_passages: list[str] = Field(description="Short passages copied verbatim from the course notes that the explanation relies on")
 
 
@@ -109,11 +110,10 @@ TITLES = {
 
 TEMPLATES = {
     "MC-BASE-VALUE": (
-        "A base case is not just a place to stop: it is the answer to the smallest version of the problem, and every other answer is "
-        "built on top of it. For a product, the empty case must return 1, because multiplying by 1 changes nothing. For a sum, 0. "
-        "If the base case returns 0 for a product, or None for a sum, that wrong value gets folded into every result.\n\n"
-        "Ask yourself: if this function received the smallest possible input, what is the true answer, and does it leave the "
-        "combining step unchanged?"),
+        "A base case is the answer to the smallest version of the problem, and every other answer is built on it. "
+        "The course notes put it this way: it \"must be the identity of the combining operation\". For a product that is 1, "
+        "because multiplying by 1 changes nothing. For a sum it is 0.\n\n"
+        "Ask yourself: for the smallest possible input, what is the true answer, and does it leave the combining step unchanged?"),
     "debugging": (
         "Your recursion idea may well be right, but your program didn't run, so the tests couldn't show it. That's worth fixing first.\n\n"
         "When Python can't run a file it tells you exactly where: the error type (SyntaxError, NameError) and the line. Read the message "
@@ -132,15 +132,12 @@ def _template_explanation(kind: str, code: str, notes: str) -> str:
         return TEMPLATES[kind]
     if code in TEMPLATES:
         return TEMPLATES[code]
-    para = next((p.strip() for p in notes.split("\n\n") if "Base case" in p), "")
-    para = " ".join(line.strip() for line in para.splitlines())
+    # Grounded in the course notes; kept within the note limit (note_check.WORD_LIMIT).
     return (
-        "A base case is the answer to the smallest version of the problem, and it has to be reachable for every valid input. "
-        "In the last assignment, a common pattern was to stop one step too late, for example at exp == 1 or at a one-element list. "
-        "That works for most inputs, but the smallest valid input (exp == 0, or an empty list) then has nowhere to stop.\n\n"
-        "Ask yourself two questions whenever you write a recursive function: what is the smallest input this function can be given, "
-        "and what is the correct answer for exactly that input?\n\n"
-        f"From the course notes: {para}"
+        "A base case is the answer to the smallest version of the problem, and the course notes add that it "
+        "\"must be reachable for every valid input\". Stopping one step late, at exp == 1 or a one-element list, works for most "
+        "inputs, but the smallest one (exp == 0, or an empty list) then has nowhere to stop.\n\n"
+        "Before you code, ask: what is the smallest input this function can get, and what is the right answer for exactly that input?"
     )
 
 
@@ -177,7 +174,9 @@ def draft_from_insight(db: Session, insight: m.Insight, user: m.User) -> m.Inter
     kind = "explain_reasoning" if insight.misconception_code == "MC-STOP-IMPLICIT" else "concept_practice"
     examples = [x.get("test_evidence") or x.get("quote") for x in insight.evidence.get("examples", [])]
     iv = draft_for_group(db, assignment, kind, insight.misconception_code if kind == "concept_practice" else "",
-                         list(insight.evidence["student_ids"]), user, evidence=[e for e in examples if e], insight=insight)
+                         # Students whose reading is disputed go to professor review, not into automated help.
+                         [sid for sid in insight.evidence["student_ids"] if sid not in set(insight.evidence.get("disputed_student_ids", []))],
+                         user, evidence=[e for e in examples if e], insight=insight)
     return iv
 
 
@@ -259,6 +258,9 @@ def approve_and_execute(db: Session, iv: m.Intervention, user: m.User) -> m.Inte
             raise InterventionError("There is no validated follow-up check yet, so this cannot be approved. Choose one from the item bank or generate one.", 422)
         if not iv.target_student_ids:
             raise InterventionError("Choose at least one student.", 422)
+        note = check_note(iv.explanation, iv.kind)
+        if not note["ok"]:
+            raise InterventionError("Edit the note before sending: " + " ".join(note["problems"]), 422)
         transition(iv, "approved")
         iv.approved_by, iv.approved_at = user.id, datetime.now(timezone.utc)
         _audit(db, user.id, "intervention.approve", iv, targets=len(iv.target_student_ids))

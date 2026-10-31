@@ -93,7 +93,7 @@ function DraftView({ iv, onSaved, act }: { iv: Intervention; onSaved: (iv: Inter
     onSuccess: onSaved,
   });
   const chosen = iv.followup_options.find((o) => o.id === followup) ?? iv.followup_item;
-  const canApprove = !dirty && targets.size > 0 && (iv.kind === "explain_reasoning" || !!chosen?.validation.valid);
+  const canApprove = !dirty && targets.size > 0 && iv.note_check?.ok !== false && (iv.kind === "explain_reasoning" || !!chosen?.validation.valid);
 
   return (
     <div className="grid lg:grid-cols-[minmax(0,1fr)_320px] gap-x-12">
@@ -101,7 +101,24 @@ function DraftView({ iv, onSaved, act }: { iv: Intervention; onSaved: (iv: Inter
         <Section title="1 · What students will read first" aside={<SourceLabel source={iv.explanation_source} />}>
           <textarea value={text} onChange={(e) => setText(e.target.value)} rows={12}
             className="w-full bg-surface border border-line-strong rounded-md p-4 font-serif text-[16px] leading-[1.7] text-ink" />
-          <p className="text-[13px] text-faint mt-2">Edit freely. Students see exactly this text.</p>
+          {(() => {
+            const words = text.trim() ? text.trim().split(/\s+/).length : 0, limit = iv.note_check?.limit ?? 90;
+            const problems = dirty ? [] : iv.note_check?.problems ?? [];
+            return (
+              <div className="mt-2 space-y-2">
+                <p className="text-[13px] text-faint">
+                  <span className={cx("num", words > limit ? "text-amber" : "text-muted")}>{words} / {limit} words</span> · Edit freely. Students see exactly this text.
+                  {dirty && " Saving re-checks the note."}
+                </p>
+                {problems.length > 0 && (
+                  <div role="status" className="border-l-2 border-amber pl-3 text-[14px]">
+                    <div className="text-ink">Edit this note before sending. ATHAR flags it but doesn't rewrite it:</div>
+                    <ul className="list-disc ml-5 text-muted">{problems.map((p) => <li key={p}>{p}</li>)}</ul>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </Section>
 
         {iv.practice_item && (
@@ -169,7 +186,7 @@ function DraftView({ iv, onSaved, act }: { iv: Intervention; onSaved: (iv: Inter
             </Button>
             <p className="text-[13px] text-faint leading-5">
               Approving creates the follow-up check and one activity per student, right away. Nothing reaches students before you approve.
-              {iv.kind !== "explain_reasoning" && !chosen?.validation.valid && " The selected check hasn't passed validation."}{dirty && " Save your changes first."}
+              {iv.kind !== "explain_reasoning" && !chosen?.validation.valid && " The selected check hasn't passed validation."}{dirty && " Save your changes first."}{!dirty && iv.note_check && !iv.note_check.ok && " The note needs editing first."}
             </p>
             <button className="text-[13px] text-faint hover:text-brick" onClick={() => act.mutate("reject")}>Reject this draft</button>
           </div>

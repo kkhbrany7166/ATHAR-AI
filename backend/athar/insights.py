@@ -14,6 +14,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from . import models as m
+from .grading.disputes import dispute_reason
 from .grading.evidence import authoritative
 
 MIN_GROUP = 3  # never report a "pattern" for fewer students than this
@@ -62,9 +63,16 @@ def compute_insights(db: Session, assignment: m.Assignment, run: m.GradingRun) -
             expl_status[s.id] = "analyzed"
     not_analyzed = [sid for sid, st in expl_status.items() if st in ("not_analyzed", "failed")]
 
+    readings = {r.submission_id: r for r in db.scalars(select(m.ExplanationReadingRecord).where(
+        m.ExplanationReadingRecord.submission_id.in_(list(sub_by_id) or [0]))).all()}
     by_code: dict[str, dict[int, list[m.MisconceptionEvidence]]] = defaultdict(lambda: defaultdict(list))
+    set_aside: dict[str, list[int]] = defaultdict(list)  # reading claims disputed by their own quote (grading/disputes.py)
     for e in mevs:
-        if e.submission_id in sub_by_id:
+        if e.submission_id not in sub_by_id:
+            continue
+        if dispute_reason(e, readings.get(e.submission_id)):
+            set_aside[e.misconception_code].append(e.submission_id)
+        else:
             by_code[e.misconception_code][e.submission_id].append(e)
 
     misconceptions = {mc.code: mc for mc in db.scalars(
@@ -147,6 +155,12 @@ def compute_insights(db: Session, assignment: m.Assignment, run: m.GradingRun) -
             contradictions.append({"kind": "explanation_correct_code_wrong", "count": len(says_right), "submission_ids": says_right,
                                    "text": f"{len(says_right)} students explained the stopping condition correctly, but their code fails the probing tests."})
 
+        disputed = sorted(set(set_aside.get(code, [])))
+        if disputed:
+            contradictions.append({"kind": "disputed_reading", "count": len(disputed), "submission_ids": disputed,
+                                   "text": f"{len(disputed)} AI flags were set aside because the quoted sentence states the correct idea. "
+                                           "Only test evidence counts for them here, and they go to your review instead of automated help."})
+
         n = len(group)
         parts = []
         if tests_only:
@@ -173,6 +187,7 @@ def compute_insights(db: Session, assignment: m.Assignment, run: m.GradingRun) -
                 "contradictions": contradictions,
                 "submission_ids": sorted(group),
                 "student_ids": sorted(sub_by_id[s].student_id for s in group),
+                "disputed_student_ids": sorted({sub_by_id[s].student_id for s in disputed}),
                 "by_source": {"tests_only": sorted(tests_only), "explanation_only": sorted(expl_only), "both": sorted(both)},
                 "threshold": threshold,
             },

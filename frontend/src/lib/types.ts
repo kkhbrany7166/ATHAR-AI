@@ -58,7 +58,7 @@ export interface SubmissionDetail {
   total: number | null; max_total: number; includes_unconfirmed_ai: boolean; publish_blockers: string[];
   criteria: (Criterion & { state: CriterionState; evidence: Evidence[] })[];
   tests: { id: number; test_case_id: number; name: string; hidden: boolean; criterion_id: number; status: string; actual: string; expected: string; error_type: string; error_message: string }[];
-  misconceptions: { id: number; code: string; source: Source; detail: string; quote: string; confidence: string; test_result_id: number | null }[];
+  misconceptions: { id: number; code: string; source: Source; detail: string; quote: string; confidence: string; test_result_id: number | null; disputed?: string | null }[];
   reading: null | {
     reader: string; source: string; prompt_version: string; abstained: boolean; abstain_reason: string; answer_type: string; code_issue: string;
     summary: string; objectives: { objective_code: string; status: string; quote: string }[]; contradictions: string[]; missing_evidence: string[];
@@ -135,6 +135,7 @@ export interface Intervention {
   id: number; status: "draft" | "approved" | "active" | "completed" | "rejected"; title: string; misconception_code: string;
   course_id: number; course_code: string; assignment: { id: number; title: string }; insight_id: number | null;
   explanation: string; explanation_source: string; professor_note: string;
+  note_check?: { words: number; limit: number; problems: string[]; ok: boolean };
   practice_item: Item | null; followup_item: Item | null; followup_options: Item[]; followup_assignment_id: number | null;
   target_student_ids: number[]; students: InterventionStudent[]; execution_error: string;
   created_at: string; approved_at: string | null; executed_at: string | null; closed_at: string | null;

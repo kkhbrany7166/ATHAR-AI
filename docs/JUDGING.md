@@ -23,7 +23,7 @@ The headline is the AI reader on sets nothing was tuned on.
 
 **Where the AI is weak** (also measured):
 - **The stopping-condition judgment (C3)** is only 20/36 on final and 12/24 on final-2. The AI calls most correct explanations *partial* instead of *met*, so ATHAR under-certifies understanding and routes those students to a short explain-your-reasoning task. It errs towards caution, not harm, but it adds professor review.
-- **Failing code makes it mark correct reasoning down.** It anchors on the code: final-2 case g09, and the student Layan in the browser test.
+- **Failing code makes it mark correct reasoning down.** It anchors on the code: final-2 case g09, and the student Layan in the browser test. *Handled downstream, not by changing the model:* a deterministic conflict check (`grading/disputes.py`) sets aside an AI misconception claim when the quoted sentence states the correct stopping condition (using the frozen rules-v1 phrase lists), or when the same reading says the student rejects that idea. Those students go to *Evidence conflicts: needs your review*, with no automated help, and the original AI output is kept. On the synthetic class this removes 4 of 25 extra "stops on its own" flags and moves 9 students to review; all 9 have no planted reasoning misconception, and recall stays 20/20. It was designed after seeing Layan and is measured only on the synthetic class. The frozen sets report the reader without it.
 - **It gives different answers to the same prompt.** On the same 114 synthetic explanations, reader-v3 flagged "stops on its own" for 39 students on one run and 45 on another.
 
 Deterministic parts on untouched data:
@@ -36,7 +36,8 @@ Deterministic parts on untouched data:
 - **Language:** paraphrase, negation (recorded as *rejected ideas*), code-switching, terse notation, and vague answers (the AI abstained on 4 of the class's 114 explanations, with reasons).
 - **Code and explanation disagreeing:** working code with confused reasoning is caught 7/7. Failing code with correct reasoning is a known weakness, flagged as a contradiction. Syntax errors go to *debugging*, never to a recursion misconception.
 - **Activities:** the AI-generated check for "no progress" was rejected by the validator in the live run, and it can't be approved. Intervention drafts can exist without a check, but approval is blocked until a validated one is chosen.
-- **Workflow:** duplicate drafts, approvals and executions are idempotent. 45 workflow and safety tests pass, out of 55 tests in total.
+- **Workflow:** duplicate drafts, approvals and executions are idempotent. All 60 backend tests pass.
+- **AI-written notes:** a deterministic check (`interventions/note_check.py`) flags notes over 90 words, greetings, exclamation marks, lists, and reuse of the assignment's own functions. It never rewrites or truncates; approval is refused until the professor edits the note. Tested with a mocked over-long AI draft, with no paid call.
 
 ## 3. Evaluation and iteration
 

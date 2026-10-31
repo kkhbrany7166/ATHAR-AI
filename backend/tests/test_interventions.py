@@ -178,3 +178,46 @@ def test_first_answer_locks_once_practice_starts(client, db, world, rule_baselin
     task = client.get(f"/api/student/tasks/{tid}", headers=sara).json()
     assert task["initial_reasoning"] == "edited before practice" and task["initial_locked"] is True
     assert task["my_earlier_result"]["passed"] < task["my_earlier_result"]["total"]
+
+
+def test_note_check_flags_without_rewriting_and_blocks_approval(client, db, world, rule_baseline):
+    from athar.interventions.note_check import check_note
+
+    assert check_note("A base case answers the smallest input. What is yours?", "concept_practice")["ok"]
+    long_note = "Hello students! " + "word " * 95
+    c = check_note(long_note, "concept_practice")
+    assert not c["ok"] and c["words"] > 90 and len(c["problems"]) == 3  # length, greeting, exclamation
+    assert not check_note("Look at power(2, 0) first.", "concept_practice")["ok"]
+    assert check_note("Fix sum_list( first.", "debugging")["ok"]
+
+    prof, insight = _setup(client, db, world)
+    iv = _draft(client, prof, insight)
+    assert iv["note_check"]["ok"]  # the template note is within the limit
+    out = client.patch(f"/api/professor/interventions/{iv['id']}", json={"explanation": long_note}, headers=prof).json()
+    assert out["explanation"] == long_note and not out["note_check"]["ok"]  # stored as written, flagged, not truncated
+    r = client.post(f"/api/professor/interventions/{iv['id']}/approve", headers=prof)
+    assert r.status_code == 422 and "Too long" in r.text
+    assert db.scalar(select(func.count()).select_from(m.InterventionTask)) == 0
+    client.patch(f"/api/professor/interventions/{iv['id']}", json={"explanation": "A base case answers the smallest input. What is yours?"}, headers=prof)
+    assert client.post(f"/api/professor/interventions/{iv['id']}/approve", headers=prof).json()["status"] == "active"
+
+
+def test_an_overlong_ai_note_is_kept_flagged_and_blocked(client, db, world, rule_baseline):
+    from athar.ai.provider import set_provider_override
+    from athar.interventions.service import DraftExplanation
+
+    prof, insight = _setup(client, db, world)
+    long_ai = "Hello everyone! " + " ".join(["Recursion needs a base case for the smallest input."] * 11)
+
+    class DraftOnly:  # stands in for the model: no network, no cost
+        name, model = "mock", "mock-model"
+
+        def parse(self, system, user, schema, max_tokens=2000):
+            assert schema is DraftExplanation
+            return DraftExplanation(explanation=long_ai, cited_passages=["The base case must be reachable"])
+
+    set_provider_override(DraftOnly())
+    iv = _draft(client, prof, insight)
+    assert iv["explanation"] == long_ai and iv["explanation_source"].startswith("ai:mock-model")
+    assert not iv["note_check"]["ok"] and iv["note_check"]["words"] > 90
+    assert client.post(f"/api/professor/interventions/{iv['id']}/approve", headers=prof).status_code == 422

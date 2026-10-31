@@ -15,3 +15,5 @@ frontend/dist/
 .DS_Store
 *.tsbuildinfo
 review-package/
+# Review package (built locally, never committed)
+/athar-review-package.zip

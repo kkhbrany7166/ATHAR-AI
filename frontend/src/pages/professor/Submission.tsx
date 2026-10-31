@@ -19,7 +19,8 @@ function findings(d: Detail) {
   const failing = d.tests.filter((t) => t.status !== "pass");
   const loadFailed = failing.length === d.tests.length && d.tests.length > 0 && ["SyntaxError", "NameError", "Crash"].includes(failing[0]?.error_type);
   const testCodes = [...new Set(d.misconceptions.filter((m) => m.source === "tests").map((m) => m.code))];
-  const heldCodes = [...new Set(d.misconceptions.filter((m) => MACHINE.includes(m.source)).map((m) => m.code))];
+  const heldCodes = [...new Set(d.misconceptions.filter((m) => MACHINE.includes(m.source) && !m.disputed).map((m) => m.code))];
+  const disputed = d.misconceptions.filter((m) => MACHINE.includes(m.source) && m.disputed);
   const stopJudgment = d.criteria.find((c) => c.code === "C3")?.state.judgment;
   const ai = d.reading?.source === "ai";
   const who = ai ? "AI" : "rule";
@@ -33,13 +34,17 @@ function findings(d: Detail) {
   let reasoning: string;
   if (!d.explanation.trim()) reasoning = "There is no written explanation.";
   else if (d.reading?.abstained) reasoning = `The ${who} reader didn't judge the explanation: ${d.reading.abstain_reason || "too little to go on"}.`;
+  else if (disputed.length && !heldCodes.length) reasoning = `The ${who} reader flagged “${misconceptionLabel(disputed[0].code).toLowerCase()}”, but the sentence it quoted states the correct stopping condition. ATHAR treats that flag as disputed.`;
   else if (heldCodes.length) reasoning = `The ${who} reading suggests the explanation holds a different idea: ${heldCodes.map((c) => misconceptionLabel(c).toLowerCase()).join("; ")}.`;
   else if (stopJudgment === "met") reasoning = `The ${who} reading found a correct stopping condition in the explanation.`;
   else if (stopJudgment === "ai_unavailable") reasoning = "The explanation hasn't been read yet.";
   else reasoning = `The ${who} reading couldn't confirm the explanation (${(stopJudgment ?? "no judgment").replace("_", " ")}).`;
 
   let conflict: string | null = null;
-  if (testCodes.length && stopJudgment === "met" && !heldCodes.length) conflict = "The explanation describes a correct stopping condition, but the code doesn't implement it. Worth a conversation, not a penalty for the reasoning.";
+  if (disputed.length && !heldCodes.length) conflict = failing.length
+    ? "Needs your review: the tests show the bug in the code, but the explanation states the right idea. ATHAR won't treat this as a misconception or send automated help until you decide."
+    : "Needs your review: the code works and the quoted explanation reads as correct. The AI flag is likely wrong.";
+  else if (testCodes.length && stopJudgment === "met" && !heldCodes.length) conflict = "The explanation describes a correct stopping condition, but the code doesn't implement it. Worth a conversation, not a penalty for the reasoning.";
   else if (failing.length === 0 && heldCodes.length) conflict = "The code works, but the explanation suggests a different belief about why it stops. This is the case tests alone can't see.";
   else if (loadFailed && stopJudgment === "met") conflict = "The reasoning reads as correct; the failure is a code error unrelated to recursion.";
   // The reader may notice a code/explanation conflict and still tag the student; surface its own words, attributed.
@@ -146,12 +151,15 @@ function Supporting({ d, f }: { d: Detail; f: ReturnType<typeof findings> }) {
       ))}
       {held.map((m) => (
         <div key={m.id} className="border-l-2 border-dashed border-amber/70 pl-4">
-          <div className="flex flex-wrap items-center gap-2"><EvidenceTag kind={sourceKind(m.source)} /><span className="text-ink">Possibly: {misconceptionLabel(m.code).toLowerCase()}</span></div>
+          <div className="flex flex-wrap items-center gap-2"><EvidenceTag kind={sourceKind(m.source)} />
+            <span className="text-ink">{m.disputed ? "Disputed" : "Possibly"}: {misconceptionLabel(m.code).toLowerCase()}</span>
+            {m.disputed && <span className="text-[13px] text-amber border border-amber/50 rounded px-1.5">needs your review</span>}</div>
           <blockquote className="font-serif text-[17px] text-ink mt-1.5">“{m.quote}”</blockquote>
+          {m.disputed && <p className="text-[14px] text-muted mt-1">{m.disputed} The original AI output is kept below.</p>}
         </div>
       ))}
       {r && r.rejected_ideas.length > 0 && (
-        <p className="text-[14px] text-muted"><span className="text-faint">The reader thinks the student argues against: </span>{r.rejected_ideas.map((x) => misconceptionLabel(x.code).toLowerCase()).join("; ")}.</p>
+        <p className="text-[14px] text-muted"><span className="text-faint">Ideas the reader judged the student does not hold: </span>{r.rejected_ideas.map((x) => misconceptionLabel(x.code).toLowerCase()).join("; ")}.</p>
       )}
       {r && (r.contradictions.length > 0 || r.missing_evidence.length > 0) && (
         <div className="grid sm:grid-cols-2 gap-6 text-[14px]">

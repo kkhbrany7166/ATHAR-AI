@@ -43,7 +43,7 @@ export function CourseOverview() {
   if (q.isLoading) return <Loading />;
   if (q.error) return <ErrorState error={q.error} />;
   const c = q.data!;
-  const actionable = (plan.data?.groups ?? []).filter((g) => g.draftable && g.students.some((s) => !s.in_intervention));
+  const actionable = (plan.data?.groups ?? []).filter((g) => (g.draftable || g.category === "conflicting_evidence") && g.students.some((s) => !s.in_intervention));
   const waiting = (ivs.data ?? []).filter((iv) => iv.status === "draft");
   const results = (ivs.data ?? []).filter((iv) => iv.status === "active");
   const ai = plan.data?.reader_status === "used";
@@ -71,7 +71,7 @@ export function CourseOverview() {
             ))}
             {actionable.slice(0, 4).map((g) => {
               const n = g.students.filter((s) => !s.in_intervention).length;
-              const fromAI = g.category === "reasoning_gap";
+              const fromAI = g.category === "reasoning_gap" || g.category === "conflicting_evidence";
               return (
                 <li key={g.category + g.misconception_code}><Link to={`/p/assignments/${main.id}`} className="grid grid-cols-[56px_minmax(0,1fr)_auto] items-center gap-4 py-4 group">
                   <span className="font-serif text-[28px] num leading-none">{n}</span>

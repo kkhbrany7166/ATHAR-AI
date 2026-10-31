@@ -12,8 +12,8 @@
 | 0:15 | Assignment 3 → Who needs attention | "Believes recursion stops on its own": the count and the "working code, confused reasoning" figure | *The tests pass. The AI read 114 explanations, quoting each one word for word.* |
 | 0:30 | Landing card → *Inspect the evidence*, or a queue row → *See the evidence* | "What ATHAR noticed": the test result, the AI reading and any conflict, then explanation beside code | *Every claim links to the student's own words. AI suggests; it never grades alone.* |
 | 0:50 | The groups on the same tab | Groups: concept gap, working code with confused reasoning, code that didn't run, demonstrated, no submission | *Different needs, different help. Syntax errors get debugging, not a lecture. Students who showed understanding get nothing extra.* |
-| 1:10 | *Plan for 16* on the smallest-input group → **Show solutions and tests** | The validated check: correct code passes, misconception code fails | *The new check is proven to separate understanding from the misconception before any student sees it.* |
-| 1:25 | **Approve and send** | The flow strip moves to *Delivered* ("· now"), 16 tasks | *Nothing reaches students until the professor approves.* |
+| 1:10 | *Plan for 14* on the smallest-input group → **Show solutions and tests** | The validated check: correct code passes, misconception code fails | *The new check is proven to separate understanding from the misconception before any student sees it.* |
+| 1:25 | **Approve and send** | The flow strip moves to *Delivered* ("· now"), 14 tasks | *Nothing reaches students until the professor approves.* |
 | 1:35 | Sara → *Picked for you* → *Why this* | Her own earlier result, then *Think first* (locked once practice starts), a failing practice run, a hint | *Help is part of practice and is never held against her.* |
 | 2:10 | Sara → *Show it* (on your own) | Submit the solution below → *You showed it on this task* | *Tests run in a sandbox, AI reads the reasoning, and rules decide. With caveats: one task, unsupervised.* |
 | 2:25 | Layla → the intervention | Sara verified, before and after, next steps | *The professor sees new evidence, not a claim.* |

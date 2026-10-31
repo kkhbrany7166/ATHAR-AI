@@ -38,9 +38,9 @@ Sidebar "Demo · switch view" swaps Layla ⇄ Sara from any page.
 
 ## Remaining bugs and weaknesses
 
-1. **The live AI note can overrun.** In the last live run it came out at 97 words (the limit is 90) and reused the assignment's own `power` example despite the instruction not to. The professor sees and edits it before approval, but nothing enforces the limit after the model returns.
-2. **The AI sometimes misattributes evidence.** Layan (submission 46): the reader quotes a *correct* sentence as evidence of "stops after the smallest input". The top finding now surfaces the reader's own contradiction note, but the misconception tag is still applied.
-3. **"The reader thinks the student argues against: …"** is awkward wording and can name an idea the student actually holds.
+1. ~~**The live AI note can overrun.**~~ Fixed after this review: the output schema had asked for "120-200 words", which contradicted the prompt. Notes are now checked (≤ 90 words, no greeting, lists or reuse of the assignment) and can't be approved until edited. The next live draft came out at 67 words. Original note: In the last live run it came out at 97 words (the limit is 90) and reused the assignment's own `power` example despite the instruction not to. The professor sees and edits it before approval, but nothing enforces the limit after the model returns.
+2. ~~**The AI sometimes misattributes evidence.**~~ Handled after this review by a deterministic conflict check: the claim is labelled disputed, and the student goes to professor review. Original note: Layan (submission 46): the reader quotes a *correct* sentence as evidence of "stops after the smallest input". The top finding now surfaces the reader's own contradiction note, but the misconception tag is still applied.
+3. ~~**"The reader thinks the student argues against: …"**~~ Reworded to "Ideas the reader judged the student does not hold". Original note: is awkward wording and can name an idea the student actually holds.
 4. **Long AI readings** still make the evidence section long. It's folded behind *Full AI reading*, but the summary can be wordy.
 5. **Over-flagging on the synthetic class** (45 flagged vs 20 planted for "stops by itself"). It's shown honestly on the queue and the Evaluation page, but not fixed.
 6. **Mobile tables** (all submissions, evaluation details) scroll sideways inside their own box. The page itself has no horizontal overflow (checked: 0 px).

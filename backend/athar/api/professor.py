@@ -13,6 +13,8 @@ from .. import models as m
 from .. import serializers as ser
 from ..auth import owned_assignment, owned_course, require_professor
 from ..db import get_db
+from ..grading.disputes import REASONS as DISPUTE_REASONS
+from ..grading.disputes import dispute_reason
 from ..grading.evidence import publish_blockers
 from ..grading.pipeline import latest_submissions, start_run
 
@@ -114,11 +116,14 @@ def list_submissions(assignment_id: int, user: m.User = Depends(require_professo
     a = owned_assignment(db, user, assignment_id)
     criteria = list(a.criteria)
     subs = latest_submissions(db, a.id)
-    mevs = db.execute(select(m.MisconceptionEvidence.submission_id, m.MisconceptionEvidence.misconception_code)
-                      .where(m.MisconceptionEvidence.submission_id.in_([s.id for s in subs]))).all()
+    ids = [s.id for s in subs] or [0]
+    mevs = db.scalars(select(m.MisconceptionEvidence).where(m.MisconceptionEvidence.submission_id.in_(ids))).all()
+    readings = {r.submission_id: r for r in db.scalars(select(m.ExplanationReadingRecord)
+                                                        .where(m.ExplanationReadingRecord.submission_id.in_(ids))).all()}
     by_sub: dict[int, list[str]] = {}
-    for sid, code in mevs:
-        by_sub.setdefault(sid, []).append(code)
+    for e in mevs:
+        if not dispute_reason(e, readings.get(e.submission_id)):  # disputed reading claims are not shown as flags
+            by_sub.setdefault(e.submission_id, []).append(e.misconception_code)
     rows = [ser.submission_row(s, criteria, by_sub.get(s.id, [])) for s in subs]
     return sorted(rows, key=lambda r: r["student"]["name"])
 
@@ -134,7 +139,11 @@ def submission_detail(submission_id: int, user: m.User = Depends(require_profess
         "abstain_reason": r.abstain_reason, "answer_type": r.answer_type, "code_issue": r.code_issue, "summary": r.summary,
         "objectives": r.objectives, "contradictions": r.contradictions, "missing_evidence": r.missing_evidence,
         "rejected_ideas": r.rejected_ideas, "validation_notes": r.validation_notes}
-    return {**ser.submission_detail(sub, list(mevs)), "reading": reading}
+    out = ser.submission_detail(sub, list(mevs))
+    for row in out["misconceptions"]:
+        why = dispute_reason(next(e for e in mevs if e.id == row["id"]), r)
+        row["disputed"] = DISPUTE_REASONS[why] if why else None
+    return {**out, "reading": reading}
 
 
 class Decision(BaseModel):

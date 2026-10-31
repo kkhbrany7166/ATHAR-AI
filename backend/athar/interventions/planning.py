@@ -12,6 +12,9 @@ Categories, in priority order:
                                                                 → debugging
   reasoning_gap          every test passes, but the reading says the student holds a stopping-condition misconception
                                                                 → explain_reasoning
+  conflicting_evidence   the only reading claim of a misconception is disputed by its own evidence
+                         (grading/disputes.py), e.g. code fails but the quoted explanation states the right idea
+                                                                → review (the professor looks first; no automated help)
   reasoning_unconfirmed  every test passes, but the reasoning is unclear, abstained, unread or missing
                                                                 → explain_reasoning
   demonstrated           tests pass and the reasoning was judged correct → no remedial action
@@ -26,6 +29,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import models as m
+from ..grading.disputes import REASONS as DISPUTE_REASONS
+from ..grading.disputes import dispute_reason
 from ..grading.evidence import authoritative
 from ..grading.pipeline import latest_submissions
 
@@ -39,6 +44,8 @@ ACTIONS = {
                   "why": "The code did not run for reasons unrelated to recursion, so the concept itself hasn't been tested yet."},
     "explain_reasoning": {"label": "A short explain-your-reasoning task",
                           "why": "The code works. What is missing or confused is the reasoning, so practising code again wouldn't help."},
+    "review": {"label": "Your review before any help",
+               "why": "The evidence disagrees with itself, so ATHAR doesn't pick a kind of help. Look at the code and explanation first."},
     "none": {"label": "No remedial action", "why": "Tests and reasoning agree. Extra remediation would waste their time."},
     "reminder": {"label": "Reach out personally", "why": "There is no submission, so there is nothing to diagnose."},
 }
@@ -47,12 +54,13 @@ CATEGORY_TEXT = {
     "concept_gap": "Tests point to a base-case gap",
     "execution_error": "Code didn't run",
     "reasoning_gap": "Working code, reasoning flagged by AI",
+    "conflicting_evidence": "Evidence conflicts: needs your review",
     "reasoning_unconfirmed": "Working code, reasoning not confirmed",
     "demonstrated": "Tests pass and reasoning reads as sound",
     "no_submission": "No submission",
 }
 CATEGORY_ACTION = {"concept_gap": "concept_practice", "execution_error": "debugging", "reasoning_gap": "explain_reasoning",
-                   "reasoning_unconfirmed": "explain_reasoning", "demonstrated": "none", "no_submission": "reminder"}
+                   "conflicting_evidence": "review", "reasoning_unconfirmed": "explain_reasoning", "demonstrated": "none", "no_submission": "reminder"}
 
 
 @dataclass
@@ -69,6 +77,14 @@ def diagnose_submission(sub: m.Submission, results: list[m.TestResult], mevs: li
     d = Diagnosis(sub.student_id, "demonstrated", submission_id=sub.id)
     test_mevs = [e for e in mevs if e.source == "tests"]
     read_mevs = [e for e in mevs if e.source in READING_SOURCES]
+    disputed = [(e, r) for e in read_mevs if (r := dispute_reason(e, reading))]
+    if disputed and len(disputed) == len(read_mevs):
+        # The reading's claim contradicts its own quote: show both signals and leave the call to the professor.
+        e, why = disputed[0]
+        d.category, d.misconception_code = "conflicting_evidence", e.misconception_code
+        d.evidence = [x.detail for x in test_mevs][:2] + [f"Reader claimed this from: “{e.quote}”", DISPUTE_REASONS[why]]
+        return d
+    read_mevs = [e for e in read_mevs if not dispute_reason(e, reading)]
     failing = [r for r in results if r.status != "pass"]
     load_failed = bool(results) and all(r.status == "error" for r in results) and len({r.error_type for r in results}) == 1 \
         and results[0].error_type in ("SyntaxError", "IndentationError", "NameError", "Crash")
@@ -139,7 +155,7 @@ def plan_for_assignment(db: Session, assignment: m.Assignment) -> dict:
     groups: dict[tuple[str, str], list[Diagnosis]] = defaultdict(list)
     for d in diags:
         groups[(d.category, d.misconception_code if d.category == "concept_gap" else "")].append(d)
-    order = ["concept_gap", "reasoning_gap", "execution_error", "reasoning_unconfirmed", "no_submission", "demonstrated"]
+    order = ["concept_gap", "conflicting_evidence", "reasoning_gap", "execution_error", "reasoning_unconfirmed", "no_submission", "demonstrated"]
     out = []
     for (cat, code), ds in sorted(groups.items(), key=lambda kv: (order.index(kv[0][0]), -len(kv[1]))):
         action = CATEGORY_ACTION[cat]

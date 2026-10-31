@@ -315,7 +315,8 @@ function Classroom({ c }: { c: R }) {
         <table className="w-full text-[14px] min-w-[520px]">
           <thead><tr className="text-left text-faint text-2xs uppercase tracking-[0.1em] border-b border-line">
             <th className="font-medium py-2">Pattern</th><th className="font-medium py-2 text-right">Planted</th><th className="font-medium py-2 text-right">Flagged</th>
-            <th className="font-medium py-2 text-right">Correct flags</th><th className="font-medium py-2 text-right">Extra flags</th></tr></thead>
+            <th className="font-medium py-2 text-right">Correct flags</th><th className="font-medium py-2 text-right">Extra flags</th>
+            <th className="font-medium py-2 text-right">Extra after conflict check</th></tr></thead>
           <tbody className="divide-y divide-line">
             {rows.map(([code, r]) => (
               <tr key={code}>
@@ -324,11 +325,18 @@ function Classroom({ c }: { c: R }) {
                 <td className="py-2.5 text-right num">{r.detected}</td>
                 <td className="py-2.5 text-right num">{r.true_positive}</td>
                 <td className={cx("py-2.5 text-right num", r.extra > r.true_positive / 2 ? "text-amber" : "text-muted")}>{r.extra}</td>
+                <td className="py-2.5 text-right num text-muted">{r.after_dispute_rule ? `${r.after_dispute_rule.extra} (${r.after_dispute_rule.true_positive} correct)` : "—"}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      <p className="text-muted text-[14px] max-w-prose mt-4">
+        <span className="text-ink">Conflict check (added after the final sets were frozen).</span> An AI flag is set aside for your review when the sentence it
+        quotes states the correct stopping condition, or when the same reading says the student rejects that idea. The rule reuses the frozen rules-v1
+        phrase lists and doesn't change the model or its stored output. It was designed after seeing one case (submission 46) and is measured here
+        on the synthetic class only. The frozen evaluation sets above report the reader without it.
+      </p>
     </Section>
   );
 }
