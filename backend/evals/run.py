@@ -376,8 +376,18 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--split", choices=["dev", "heldout", "final", "all"], default="all")
     ap.add_argument("--no-system", action="store_true")
+    ap.add_argument("--final2", default="", help="comma-separated readers to run on final-2, e.g. rules,reader-v2,reader-v3")
     args = ap.parse_args()
     provider = get_provider()
+    if args.final2:
+        r = run_final2(args.final2.split(","))
+        r["meta"] = {"ran_at": time.strftime("%Y-%m-%d %H:%M:%S %z"), "commit": git_rev(), "llm": provider_status()}
+        (ROOT / "results" / "final2.json").write_text(json.dumps(r, indent=2, ensure_ascii=False))
+        if r.get("llm_usage"):
+            with (ROOT / "results" / "spend.jsonl").open("a") as fh:
+                fh.write(json.dumps({"ran_at": r["meta"]["ran_at"], "split": "final2", "model": provider.model, **r["llm_usage"]}) + "\n")
+        print("wrote evals/results/final2.json; usage:", r.get("llm_usage"))
+        return
     from athar.interventions.verifier import RULE_VERSION
     meta = {"commit": git_rev(), "ran_at": time.strftime("%Y-%m-%d %H:%M:%S %z"), "llm": provider_status(),
             "baseline_version": rule_baseline.VERSION, "reader_prompt_version": llm_expl.PROMPT_VERSION, "verifier_version": RULE_VERSION,
@@ -405,6 +415,88 @@ def main() -> None:
     from .report import write_report
     write_report(DOCS / "EVALUATION.md", out_dir, system)
     print(f"wrote {DOCS / 'EVALUATION.md'}")
+
+
+
+# ------------------------------------------------------------------ final-2: code + explanation together, several reader versions
+
+def suite_final2(cases: list[dict], reader: str, provider) -> dict:
+    """reader: 'rules' | 'reader-v2' | 'reader-v3' | ... Reads each explanation WITH the code and test outcomes, as the app does."""
+    from athar.interventions.planning import diagnose_submission
+
+    specs = [TestSpec(t.id, t.function, t.args, t.expected) for t in A3_TESTS]
+    crit = [SimpleNamespace(id=i + 1, code=c["code"], method=c["method"]) for i, c in enumerate(content.CRITERIA)]
+    c3c = next(c for c in crit if c.code == "C3")
+    if reader != "rules":
+        llm_expl.PROMPT_VERSION = reader
+    preds, c3, cats, outputs, q_ret, q_kept, errors = {}, {}, {}, [], 0, 0, 0
+
+    def one(c):
+        rep = run_tests(c["code"], specs)
+        summary = "\n".join(f"- {A3_TESTS[o.id].name}: {o.status} {o.error_type}" for o in rep.outcomes)
+        try:
+            a = rule_baseline.analyze(c["explanation"], EXPL_CRITERIA) if reader == "rules" else _read("llm", provider, c["explanation"], code=c["code"], test_summary=summary)
+            return c, rep, a, None
+        except Exception as e:  # noqa: BLE001
+            return c, rep, None, e
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=1 if reader == "rules" else 6) as pool:
+        rows = list(pool.map(one, cases))
+    for c, rep, a, err in rows:
+        load_failed = rep.load_error is not None
+        results = [SimpleNamespace(status=o.status, error_type=o.error_type, error_message=o.error_message, actual=o.actual) for o in rep.outcomes]
+        mevs = [SimpleNamespace(source="tests", misconception_code=code, detail=A3_TESTS[o.id].name, quote="")
+                for o in rep.outcomes for code in probe_hits(A3_TESTS[o.id], o.status, o.error_type, load_failed)]
+        evidence, reading = [], None
+        if a is not None:
+            src = "baseline" if reader == "rules" else "ai"
+            mevs += [SimpleNamespace(source=src, misconception_code=s.code, detail="", quote=s.quote) for s in a.signals]
+            j = a.criteria.get("C3")
+            if j:
+                evidence.append(SimpleNamespace(id=1, criterion_id=c3c.id, source=src, judgment=j.judgment, created_at=0))
+            reading = SimpleNamespace(abstained=a.abstained, code_issue=a.code_issue)
+            q_ret, q_kept = q_ret + a.quotes_returned, q_kept + a.quotes_kept
+        else:
+            errors += 1
+        preds[c["id"]] = {s.code for s in (a.signals if a else [])} & set(EXPL_CODES)
+        c3[c["id"]] = (a.criteria["C3"].judgment if a and "C3" in a.criteria else "error")
+        cats[c["id"]] = diagnose_submission(SimpleNamespace(id=0, student_id=0, explanation=c["explanation"], evidence=evidence),
+                                            results, mevs, reading, crit).category
+        outputs.append({"id": c["id"], "holds": sorted(preds[c["id"]]), "c3": c3[c["id"]], "category": cats[c["id"]],
+                        "abstained": bool(a and a.abstained), "code_issue": a.code_issue if a else "", "summary": a.summary if a else "",
+                        "error": f"{err.__class__.__name__}: {err}"[:200] if err else ""})
+    unclear = [c for c in cases if c["c3"] == "unclear"]
+    return {
+        "n": len(cases), "reader": reader, "errors": errors,
+        "misconceptions": multilabel(cases, preds, EXPL_CODES),
+        "c3_correct": sum(c3[c["id"]] == c["c3"] for c in cases),
+        "category_correct": sum(cats[c["id"]] == c["expected_category"] for c in cases),
+        "working_code_confused_reasoning": {"n": sum(1 for c in cases if c["expected_category"] == "reasoning_gap"),
+                                            "caught": sum(1 for c in cases if c["expected_category"] == "reasoning_gap" and cats[c["id"]] == "reasoning_gap")},
+        "code_fails_reasoning_right": [{"id": c["id"], "c3": c3[c["id"]], "category": cats[c["id"]]} for c in cases
+                                       if c["expected_category"] in ("concept_gap", "execution_error") and c["c3"] == "met"],
+        "unclear_handled": {"n": len(unclear), "correct": sum(1 for c in unclear if c3[c["id"]] == "unclear")},
+        "quotes": {"returned": q_ret, "verbatim": q_kept},
+        "c3_confusion": [{"expected": e, "got": g, "count": n} for (e, g), n in sorted(Counter((c["c3"], c3[c["id"]]) for c in cases).items())],
+        "category_confusion": [{"expected": e, "got": g, "count": n} for (e, g), n in sorted(Counter((c["expected_category"], cats[c["id"]]) for c in cases).items())],
+        "outputs": outputs,
+    }
+
+
+def run_final2(readers: list[str]) -> dict:
+    from athar.ai.provider import USAGE
+    provider = get_provider()
+    cases = json.loads((ROOT / "datasets" / "final2" / "cases.json").read_text())["cases"]
+    USAGE.reset()
+    res = {"split": "final2", "provenance": "Hand-written after reader-v2 results were seen and before reader-v3 existed; committed before any run. "
+                                            "Untouched for every reader version reported.", "readers": {}}
+    for r in readers:
+        if r != "rules" and provider is None:
+            res["readers"][r] = {"not_run": "no provider"}
+            continue
+        res["readers"][r] = suite_final2(cases, r, provider)
+    res["llm_usage"] = USAGE.snapshot(provider.model) if provider else None
+    return res
 
 
 if __name__ == "__main__":

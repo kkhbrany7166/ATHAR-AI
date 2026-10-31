@@ -1,14 +1,15 @@
 {
   "meta": {
-    "commit": "cc7085f",
-    "ran_at": "2026-10-31 09:11:22 +0300",
+    "commit": "5a60100",
+    "ran_at": "2026-10-31 09:30:08 +0300",
     "llm": {
-      "provider": "none",
-      "model": "",
-      "configured": false,
+      "provider": "openai",
+      "model": "gpt-4.1-mini",
+      "configured": true,
       "analyzer": "auto",
       "timeout_seconds": 45.0,
-      "max_calls": 400
+      "max_calls": 400,
+      "max_cost_usd": 0.45
     },
     "baseline_version": "rules-v1",
     "reader_prompt_version": "reader-v2",
@@ -58,6 +59,15 @@
       "abstains_when_evidence_is_insufficient": 0.385,
       "wrongly_abstains_when_decidable": 0.0,
       "c3_correct": 106,
+      "quotes": {
+        "returned": 0,
+        "verbatim": 0
+      },
+      "negation": {
+        "n": 0,
+        "no_false_misconception": 0,
+        "c3_correct": 0
+      },
       "c3_confusion": [
         {
           "expected": "met",
@@ -1292,7 +1302,1477 @@
       ]
     },
     "llm": {
-      "not_run": "No model credentials configured. Nothing was simulated or replayed in its place."
+      "n": 114,
+      "reader": "llm",
+      "errors": 0,
+      "misconceptions": {
+        "MC-STOP-IMPLICIT": {
+          "precision": 0.706,
+          "recall": 0.6,
+          "f1": 0.649,
+          "tp": 12,
+          "fp": 5,
+          "fn": 8
+        },
+        "MC-BASE-SMALLEST": {
+          "precision": 1.0,
+          "recall": 0.938,
+          "f1": 0.968,
+          "tp": 15,
+          "fp": 0,
+          "fn": 1
+        },
+        "micro": {
+          "precision": 0.844,
+          "recall": 0.75,
+          "f1": 0.794,
+          "tp": 27,
+          "fp": 5,
+          "fn": 9
+        }
+      },
+      "c3_accuracy": 0.754,
+      "abstains_when_evidence_is_insufficient": 0.615,
+      "wrongly_abstains_when_decidable": 0.0,
+      "c3_correct": 86,
+      "quotes": {
+        "returned": 830,
+        "verbatim": 822
+      },
+      "negation": {
+        "n": 0,
+        "no_false_misconception": 0,
+        "c3_correct": 0
+      },
+      "c3_confusion": [
+        {
+          "expected": "met",
+          "got": "met",
+          "count": 59
+        },
+        {
+          "expected": "met",
+          "got": "partial",
+          "count": 6
+        },
+        {
+          "expected": "not_met",
+          "got": "not_met",
+          "count": 19
+        },
+        {
+          "expected": "not_met",
+          "got": "partial",
+          "count": 17
+        },
+        {
+          "expected": "unclear",
+          "got": "not_met",
+          "count": 5
+        },
+        {
+          "expected": "unclear",
+          "got": "unclear",
+          "count": 8
+        }
+      ],
+      "abstention_rate": 0.07,
+      "unclear_rate": 0.07,
+      "by_category": {
+        "all": {
+          "n": 114,
+          "fully_correct": 86
+        }
+      },
+      "outputs": [
+        {
+          "id": "dx000",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "Student understands how power(2,3) unfolds and results combine, but explains recursion stopping as simply hitting a return rather than an explicit condition. Lacks clear identification of base cases and reasoning for sum_list([]) return.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx001",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student correctly explains the stopping conditions for both functions and why they are reached, including the identity values returned. They also provide a clear trace of power(2, 3), showing both the recursive descent and how results combine on return, demonstrating solid conceptual understanding.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx002",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student provides a clear explanation of the stopping conditions and the recursion unfolding for both functions. They accurately describe the base cases, progression toward them, and the combination of results in power(2,3). No misconceptions are evident.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx003",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student's explanation clearly describes the stopping conditions for both functions and correctly traces the recursive calls and returns of power(2,3), showing full understanding of termination and result combination in recursion.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx004",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student demonstrates clear understanding of when and why recursion stops for both functions and explains well how the results of power(2, 3) are combined during recursion.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx005",
+          "holds": [],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "The student explains the power function's stopping condition and traces the recursive calls and returns well, satisfying explanation of recursion unfolding. However, the explanation for stopping conditions especially for sum_list is vague and lacks explicit base case description, so partial credit is advised for stopping conditions.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx006",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": true,
+          "summary": "The student's explanation is extremely minimal and does not address the key points of when and why recursion stops or how results combine. No evidence of conceptual understanding about recursion is shown.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx007",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student clearly explains that recursion stops explicitly when the exponent is zero for power and for an empty list for sum_list. They justify the returned values correctly and provide a detailed trace of power(2, 3) that shows understanding of recursive call order and result combination.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx008",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student correctly identifies and explains stopping conditions and why they are reached, for both functions. They also provide a clear trace of power(2, 3) demonstrating understanding of how results combine during recursion return.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx009",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student correctly explains the stopping condition for both functions and why they are reached. They clearly trace the recursive calls and how the power function's results combine on the return phase, demonstrating good conceptual understanding.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx010",
+          "holds": [],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student's explanation is minimal and does not specify any stopping conditions or trace the recursive calls. It does not demonstrate understanding of why recursion stops or how results combine.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx011",
+          "holds": [],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "The student understands the base cases and progress toward them but offers an inaccurate and incomplete explanation of how recursion unfolds and results combine, especially for power(2, 3).",
+          "validation_notes": []
+        },
+        {
+          "id": "dx012",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student's explanation is vague and lacks explicit stopping conditions or detailed tracing. They appear to believe recursion stops automatically without explicit base cases and do not explain how calls combine, failing to meet the explanation criteria.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx013",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student incorrectly believes recursion stops by itself rather than due to explicit stopping conditions, showing a clear misconception. They do not explain base cases or correctly trace the recursion for power(2,3), nor do they describe the return value for an empty list sum.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx014",
+          "holds": [],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "The student outlines when recursion stops in general terms but lacks clear stopping conditions and explanation for all base cases, especially for sum_list. The tracing of power(2, 3) is detailed and shows good understanding of recursion unfolding and returning results.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx015",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "The student correctly explains the stopping condition and recursion for power but misunderstands the base case for sum_list, incorrectly claiming it stops with one element and denying empty lists as input. The trace of power(2,3) is accurate, but no explanation is given for sum_list's recursion results or empty list handling.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx016",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "Student provides a clear and accurate explanation of the stopping conditions for both recursive functions, and effectively traces the recursive calls of power(2,3) including the combination of results. No misconceptions identified.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx017",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student explicitly states the stopping conditions for both functions and justifies why they are reached. They correctly trace power(2, 3) down to the base case and back up, explaining how results combine. This shows good understanding of recursion stopping and result combination.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx018",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student demonstrates clear understanding of when and why the recursion stops for both functions, explicitly stating base cases and progress toward them. They accurately trace power(2, 3) through the recursive calls and returns, showing good grasp of combining results.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx019",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student correctly explains the stopping condition for both functions and why they are reached, and clearly traces the recursive calls and their combination for power(2, 3). No misconceptions are detected.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx020",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "The student correctly identifies and explains the stopping conditions for both functions, showing understanding of base cases and progression. However, their explanation of the recursive unfolding in power(2,3) is incorrect or incomplete. They seem to believe the entire multiplication happens immediately rather than stepwise through recursive calls and returns.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx021",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "Student thoroughly explains the base cases and why recursion stops for both functions. They also trace power(2,3) correctly, showing how recursive results combine on return.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx022",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "The student partially understands when and why recursion stops, correctly identifying the base cases and their values. However, their explanation of power(2,3) shows a misconception about how recursion unfolds and results combine. They appear to think the multiplication occurs immediately in one call rather than through returning calls.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx023",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student correctly explains both stopping conditions and why they are reached, and clearly traces the recursive calls and returns for power(2, 3), showing good understanding of recursion in both functions.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx024",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student incorrectly identifies the base case for power as exp == 1 instead of 0 and misunderstands sum_list's stopping condition, neglecting the empty list case. Their trace of power(2,3) toward and back from 0 is mostly correct but conflicts with their base case claim, showing some confusion.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx025",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student correctly explains the stopping conditions for both functions, detailing why the recursion stops and returns specific base values. They also provide a clear trace of the power function call and how the results combine on return, demonstrating solid conceptual understanding.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx027",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student misunderstands the stopping conditions for both power and sum_list, incorrectly stating that power stops at exp==1 and sum_list stops at a single element rather than the empty list. They partially trace the recursive call for power(2,3) correctly but lack full detail.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx028",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": true,
+          "summary": "Student's explanation is extremely minimal, lacking any detail about stopping conditions or recursion flow for both functions. No trace or explanation of results is provided, so understanding cannot be assessed.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx029",
+          "holds": [],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "The student partially explains stopping conditions, but does not clearly state base cases or their return values, especially for sum_list. They do well tracing power(2, 3) and how results combine on return from recursion.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx030",
+          "holds": [],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student's explanation fails to address the stopping conditions, recursion termination, or any tracing of power(2, 3). The response is minimal and does not meet the explanation criteria for the assignment.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx032",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student correctly identifies and explains the explicit stopping conditions for both functions, shows why they are reached, and provides a clear recursive call trace of power(2, 3) including how results are combined on returning.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx033",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student clearly explains the stopping conditions for both functions and why they are reached, tracing the power function recursion depth and combination of results correctly.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx034",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student correctly identifies the base cases and stopping conditions for both functions, explains why the base cases return the identity elements (1 for power, 0 for sum), and provides a clear step-by-step trace showing how power(2, 3) unfolds and combines results.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx035",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student correctly explains the stopping conditions for both functions and why they are reached, correctly identifies the base case return values, and provides a clear stepwise explanation of how power(2, 3) unfolds and returns, demonstrating solid understanding of recursive process.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx036",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student correctly explains the explicit base cases for both functions and why recursion stops. They also trace the recursive calls and returns for power(2, 3), showing clear understanding of how results combine upwards.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx037",
+          "holds": [],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student's explanation is very minimal and vague; it does not address when or why recursion stops, does not trace power(2,3) calls, nor explain the return for an empty list sum. No understanding of the specific recursion concepts is demonstrated.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx038",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student correctly explains the stopping conditions and why they return those values to end recursion for both functions. They also clearly trace the recursive calls and returning combination for power(2,3), demonstrating a solid understanding of recursion mechanics for this assignment.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx039",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student correctly explains the stopping conditions and their correctness, shows the recursion progress for power reducing the exponent, and traces the recursive call and return values for power(2,3) clearly. Explanation of sum_list base case is also adequate.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx040",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student does not explicitly identify the stopping conditions for recursion and seems to believe the recursion stops simply by returning, indicating a misconception about base cases (MC-STOP-IMPLICIT). However, they correctly trace the recursive calls for power(2,3) and explain how multiplication combines results on return.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx041",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student clearly explains the stopping conditions for both functions and why they halt. They also effectively trace the recursive calls and returns for power(2, 3), showing an understanding of how results combine.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx042",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student misunderstands when recursion stops, attributing it to the return statement rather than an explicit stopping condition. They do not provide a trace of power(2, 3) or explain result combination, so both explanation criteria are not met.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx043",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student correctly identifies and justifies the stopping conditions for both recursive functions and clearly traces the recursive calls and returns for power(2, 3). They show solid understanding of recursion base cases, progress, and result combination.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx044",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student effectively explains the stopping conditions for both functions, why recursion ends, and what values are returned. The student also clearly traces the recursive calls and result combination for power(2, 3), demonstrating solid conceptual understanding.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx045",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student clearly explains the stopping condition for both functions and why they return their respective base values. They successfully trace the recursive calls for power(2,3) inward and outward, showing understanding of how the results combine.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx046",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student correctly identifies and justifies the stopping conditions for both functions and traces power(2, 3) through the recursive calls and returns, demonstrating sound understanding of recursive stopping and result combination.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx047",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "Student clearly identifies and explains the stopping conditions for both functions and why they are correct. They also trace the power(2, 3) call, showing understanding of how recursive calls combine results on return.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx048",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student clearly explains the stopping conditions and justifies why they are reached. They trace the recursive computation of power(2,3) accurately, describing how results combine on return, demonstrating solid conceptual understanding of recursion for both functions.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx049",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student misidentifies the power function's base case as exp == 1 instead of 0, though they trace the recursive calls and result combination partially correctly. The sum_list base case explanation is correct. The contradictory statements about power's base case indicate a conceptual gap about stopping conditions.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx050",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student clearly explains the stopping conditions for both functions, their correctness, and traces the recursive calls for power(2, 3) with proper explanation of intermediate results.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx051",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student clearly explains the stopping conditions for both functions and why they are reached. They correctly trace the recursive calls and returns for power(2, 3), showing a solid understanding of how recursion unfolds and results combine.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx052",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student clearly explains both stopping conditions with correct justification and fully traces the recursive calls and their combination for power(2, 3), demonstrating solid understanding of recursion.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx053",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": true,
+          "summary": "The student's explanation is too minimal to assess understanding of recursion stopping conditions or call tracing. They only state that recursion means the function calls itself and that their code works without elaboration.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx054",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student correctly identifies and explains the stopping conditions for both functions, including the base cases and their return values. They also clearly trace the recursive computation of power(2, 3) down to the base case and back up, explaining how results combine.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx055",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student misunderstands the stopping condition for both functions, believing power's base case is exp == 1 and sum_list stops at one element rather than the empty list. Their trace of power(2, 3) shows partial understanding of recursive unfolding but conflicts with their stated base case.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx056",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "Student correctly explains and traces power(2,3), showing understanding of recursion depth and combining results. Explanation for recursion stopping relies on the return statement rather than an explicit base case condition, and sum_list base case is insufficiently detailed.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx057",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": true,
+          "summary": "The student's explanation is too minimal and vague to assess understanding of recursion stopping conditions or the combination of results upon return. They do not identify base cases or trace the example calls.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx058",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student misunderstands the stopping condition for power, incorrectly placing the base case at exp == 1 instead of exp == 0. However, their tracing of power(2, 3) correctly explains the step-by-step unfolding and combining of results. The sum_list explanation is brief but mostly correct regarding the empty list.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx059",
+          "holds": [],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "The student loosely describes the stopping conditions and hints at how recursion returns combine results but lacks precise details or explicit base case conditions to fully demonstrate understanding.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx060",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student accurately explains the stopping conditions for both functions and traces how recursion unfolds and results combine for power(2,3). This indicates solid conceptual understanding of recursion stopping conditions and result composition.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx062",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student correctly explains the stopping conditions and their necessity for both functions and traces the recursive calls of power(2, 3) clearly, demonstrating solid understanding of recursion base cases and result combination.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx063",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student clearly understands and explains the recursive stopping conditions for both functions, shows why these conditions are reached, and effectively traces the recursive calls and returns for power(2, 3), demonstrating strong conceptual grasp of recursion.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx064",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student's explanation does not identify explicit base cases or stopping conditions and incorrectly attributes recursion stopping to the presence of a return statement. The explanation lacks the tracing of power(2, 3) and how results combine. This shows a significant gap in understanding recursion stopping criteria and combining results.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx065",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": true,
+          "summary": "The student's explanation is minimal and vague. It does not clarify when or why recursion stops, nor trace how the recursive calls combine results. No evidence of understanding the base case or recursive flow is present.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx066",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": true,
+          "summary": "The student's explanation is extremely brief and vague, failing to mention when and why recursion stops, lacking any trace of calls or result combination, and omitting explanation of sum_list behavior. It's not possible to assess conceptual understanding from this.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx067",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student provides a clear, correct explanation of when and why recursion stops for both functions and traces the recursive calls and returns of power(2, 3) accurately, showing good understanding of recursion base cases and result combination.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx068",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student correctly explains the stopping conditions for both functions, how each recursive call approaches the base case, and clearly traces the example power(2, 3) including combination of return values.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx069",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student attributes recursion termination vaguely to reaching a return statement, not recognizing the explicit stopping condition. They do not trace how recursive results combine or specify return values for base cases, indicating insufficient understanding of recursion stopping and unfolding.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx070",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student clearly explains when and why recursion stops for both functions and traces the power function's recursive calls and returns accurately, showing solid understanding of base cases and result combination.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx071",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student demonstrates clear understanding of when and why recursion stops in both functions and traces the power function's recursive process correctly, showing how results combine returning 8 for power(2,3).",
+          "validation_notes": []
+        },
+        {
+          "id": "dx072",
+          "holds": [],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "The student partially explains when recursion stops, identifying power's base case (exp=0) but not sum_list's base case explicitly. They give a good trace of power(2, 3) call stack and multiplication during return. Explanation of sum_list stopping condition and base case return value is vague or missing.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx073",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student explains both stopping conditions well, including their reachability and return values. They trace the power function call sequence effectively, showing how results combine back up the recursion.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx074",
+          "holds": [],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student gave only a minimal, vague explanation that does not clarify when or why recursion stops, nor how the computation unfolds or results combine. No detail about base cases or recursion progress is provided.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx075",
+          "holds": [],
+          "rejects": [
+            "MC-BASE-SMALLEST",
+            "MC-STOP-IMPLICIT"
+          ],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "The student clearly explains the stopping condition and recursive progress for power, and traces power(2,3) accurately. However, the explanation of the stopping condition for sum_list is vague and does not mention the empty list base case or its return value explicitly.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx076",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student's explanation is vague about when and why recursion stops, suggesting it stops implicitly rather than by an explicit base case. The student does not trace the recursive calls or show combination of results, missing key parts of the assignment's explanation requirements.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx077",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student clearly explains the stopping conditions for both functions and why the base cases return their values. They correctly trace the recursive calls and how results combine for power(2, 3). This shows solid understanding of recursion stopping and result composition.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx078",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student accurately explains the base case for both functions and why they stop. They also correctly trace the recursive call and how multiplying results builds back up for power(2,3). No misconceptions detected.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx079",
+          "holds": [],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "The student explains the stopping condition for power clearly but describes sum_list stopping vaguely. The trace of power(2, 3) is accurate and detailed. Overall, the explanation partially meets the stopping condition criterion and fully meets the result-combining criterion.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx081",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student misunderstands the stopping condition for power: they say it stops at exponent 1 rather than 0, which is the correct base case. However, their trace of power(2, 3) correctly shows the recursion reaching exp 0 and combining results on return, demonstrating understanding of how recursion unfolds. The sum_list stopping condition is correctly explained.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx082",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "Student demonstrates solid understanding of recursion by correctly identifying base cases, explaining why recursion stops, and tracing the recursive calls' return values and combination for power(2, 3).",
+          "validation_notes": []
+        },
+        {
+          "id": "dx083",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "Student misidentifies the base cases for both recursive functions, claiming power stops at exp=1 and sum_list stops at one-element lists and that empty lists wouldn't be processed. They trace power(2, 3) correctly but provide no explanation about sum_list combining. The explanation reveals fundamental misconceptions about stopping conditions.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx084",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "The student correctly explains sum_list's stopping condition and how power combines results but incorrectly states that power stops recursion at exp == 1 rather than exp == 0, showing a partial misunderstanding of the base case for power.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx085",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student clearly explains the explicit stopping conditions and why they are reached for both functions. They also correctly trace power(2, 3) down to the base case and the combination of returned values back up, showing solid understanding of recursion stopping and returning.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx086",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student correctly explains the stopping conditions for both functions, how recursion progresses toward these base cases, and provides a clear trace of the recursive calls and returns for power(2, 3). This shows solid understanding of recursion concepts required by the criteria.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx087",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student clearly explains the stopping conditions for both functions and correctly identifies why they are reached. They effectively trace power(2, 3) through the recursive calls and explain how results combine as they return, demonstrating solid conceptual understanding.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx089",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student clearly identifies and explains the base cases for both recursive functions, shows understanding of progression toward these base cases, and accurately traces the recursive calls and combinations for power(2,3), demonstrating solid conceptual grasp of recursion stopping conditions and result combination.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx090",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student correctly explains the stopping condition for both functions, justifying their correctness and reachability. They also provide a clear trace of power(2, 3) recursion and return value combination. This shows solid conceptual understanding of recursive stopping and result building.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx091",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student accurately explains the stopping conditions for both functions and why they return correct base values. They clearly trace the recursion for power(2, 3) showing understanding of how results combine on return.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx092",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student shows a strong understanding of stopping conditions and correctly traces the recursive computation of power, including balanced base cases and progress to them. Both explanations meet the criteria well.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx093",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "The student explains the stopping condition clearly for sum_list but not for power, mistakenly suggesting recursion stops 'on its own' rather than via an explicit base case. Their trace of power(2,3) and combination of results is accurate and shows understanding.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx094",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student accurately explains the stopping conditions for both functions, details why they ensure termination, and correctly traces the recursive calls for power(2,3), showing understanding of how results combine on return.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx095",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "The explanation partially misunderstands the power function's stopping condition, incorrectly stating it stops when exp is 1 instead of 0. The sum_list stopping condition is correctly explained. The student correctly traces the recursive calls and combination of results for power(2,3). They don't explain how sum_list combines recursive results.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx096",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "Student partially explains the recursion stopping condition for power but views sum_list stopping as implicit rather than explicit. They trace the power function call and return values well, showing understanding of result combination but lack detail on sum_list's stopping condition.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx097",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student demonstrates solid understanding of stopping conditions and recursion progress for both functions, accurately tracing power(2, 3) and explaining sum_list base case.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx098",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student misunderstands the stopping conditions, incorrectly setting the base case of power at exp == 1 and denying empty lists as valid inputs for sum_list, but they do provide a mostly correct trace of power(2,3) combining results on the way back up.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx099",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": true,
+          "summary": "The student's explanation is very minimal and does not address stopping conditions or how recursion unfolds. It lacks any trace of the example or reasoning why base cases stop the recursion.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx100",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "The student correctly explains how power(2,3) unfolds and that sum_list([]) returns 0, but they misconceive that recursion stops simply because a return statement is reached rather than due to an explicit stopping condition. Explanation of stopping conditions is partial.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx101",
+          "holds": [],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "The student explains the stopping condition in general terms but lacks details on why the recursion stops and what base case values are returned, particularly for sum_list. They provide a clear, stepwise trace for power(2, 3) showing how results combine.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx102",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student accurately explains when and why recursion stops in both functions and clearly traces the recursive process for power(2,3), demonstrating solid understanding of the stopping conditions and recursive result accumulation.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx103",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student provides a clear, correct explanation of the recursive stopping conditions for both functions and correctly traces the multiplication sequence for power(2,3). Understanding of base cases, progress toward these cases, and combination of results are evident.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx104",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student correctly explains the stopping conditions for both functions and why they are reached, including the base case values. They give a clear trace of power(2, 3) showing the recursive calls down and the combination of results back up, supporting full understanding of the recursion process.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx105",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": true,
+          "summary": "The student's explanation is too minimal and vague, only stating that the functions call themselves until done, without clarifying stopping conditions or tracing recursion steps.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx106",
+          "holds": [],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "The student explains recursion stopping for power correctly with base case exp=0 returning 1 and traces the full call-return sequence for power(2,3) well. However, the explanation for sum_list's stopping condition is vague and does not clearly state or justify the base case for the empty list.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx107",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "The student shows basic understanding of the stopping conditions for both functions but provides a minimal and partly inaccurate explanation, especially in tracing power(2,3). They seem to misunderstand how recursion unfolds and results combine during the return phase.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx108",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "The student partly explains stopping conditions correctly for both functions but confuses the timing of computation in power, incorrectly describing the recursive process as immediate multiplication rather than unfolding and combining during return. The explanation lacks a clear trace of how results combine in power(2, 3).",
+          "validation_notes": []
+        },
+        {
+          "id": "dx109",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "The student correctly identifies base cases and progress toward them, supporting stopping condition understanding. However, their explanation of the recursion unfolding is mistaken, as they incorrectly state all multiplication happens at the start with unchanged returns, failing to trace recursive result combination for power(2,3).",
+          "validation_notes": []
+        },
+        {
+          "id": "dx110",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student misunderstands the stopping condition for power, claiming it stops at exp == 1 instead of 0, showing a conceptual error. The sum_list explanation is mostly correct, and the recursive trace for power(2, 3) is mostly accurate but weakened by the stopping condition confusion.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx111",
+          "holds": [],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student gives only a minimal and vague explanation that recursion solves smaller problems until an answer is found. There is no mention of stopping conditions or tracing the recursive calls, so the explanation does not meet the criteria for understanding recursion stopping or result combination.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx112",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student demonstrates a clear understanding of the stopping conditions and explains how the recursion unfolds and returns results for power and sum_list. The tracing of power(2, 3) is accurate and shows good conceptual grasp.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx113",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student misunderstands the base case for power: they claim it stops at exp==1, not exp==0, though they trace calls to exp==0 returning 1. Their explanation for sum_list's stopping condition is accurate. Their trace of power(2,3) shows correct return value combination.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx115",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student correctly explains the stopping conditions for both functions and why they are reached. They clearly trace the recursive computation of power(2,3), showing how results combine up the call stack.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx116",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "Student accurately explains base cases and why recursion stops for both functions, traces the power function calls down and back up, showing correct combination of results.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx117",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student incorrectly identifies the base case for power as exp == 1 instead of exp == 0, failing to explain why the recursion stops at the smallest valid input. However, they correctly trace the recursive calls of power(2, 3) and explain sum_list([]) returns 0 as the additive identity.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx118",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "The student clearly explains the base cases and why recursion stops for both functions. They trace the recursive calls of power(2,3) and how results combine on return, demonstrating a solid understanding of recursion's stopping conditions and result aggregation.",
+          "validation_notes": []
+        },
+        {
+          "id": "dx-sara",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student misunderstands that power should handle exp=0 as the base case and believes the recursion stops at exp=1 instead, which is incorrect. They correctly identify sum_list's stopping condition but do not fully explain the base case and combination details for power. Their trace of power(2, 3) describes some recursive calls but omits the necessary base case at exp=0.",
+          "validation_notes": []
+        }
+      ],
+      "trivial_baseline_always_met_no_misconception": {
+        "c3_accuracy": 0.57,
+        "micro_f1": 0.0
+      },
+      "failures": [
+        {
+          "id": "dx000",
+          "text": "Recursion stops when the function hits the return statement, because return ends the function and so the calls",
+          "expected": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "found": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "c3_expected": "not_met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "dx005",
+          "text": "It runs until it reaches the end of the problem, and at that point the recursion is finished so it returns the",
+          "expected": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "found": [],
+          "c3_expected": "not_met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "dx010",
+          "text": "It calls itself until it's done and then returns the answer.",
+          "expected": [],
+          "found": [],
+          "c3_expected": "unclear",
+          "c3_got": "not_met"
+        },
+        {
+          "id": "dx011",
+          "text": "The recursion in power ends at an explicit condition: if exp is 0 we return 1 without calling again. Each step",
+          "expected": [],
+          "found": [],
+          "c3_expected": "met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "dx014",
+          "text": "python stops calling power once exp gets small enough, then all the answers come back together. For sum_list t",
+          "expected": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "found": [],
+          "c3_expected": "not_met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "dx015",
+          "text": "The base case for power is exp == 0, which returns 1 since any number to the zero power is 1. Because each cal",
+          "expected": [
+            "MC-BASE-SMALLEST"
+          ],
+          "found": [
+            "MC-BASE-SMALLEST"
+          ],
+          "c3_expected": "not_met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "dx020",
+          "text": "I check exp == 0 first. That is the smallest problem and its answer is 1 (multiplying by 1 doesn't change anyt",
+          "expected": [],
+          "found": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "c3_expected": "met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "dx022",
+          "text": "power stops when exp reaches 0, because that check happens before the recursive call and base**0 is 1. Every c",
+          "expected": [],
+          "found": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "c3_expected": "met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "dx029",
+          "text": "python stops calling power once exp gets small enough, then all the answers come back together. For sum_list t",
+          "expected": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "found": [],
+          "c3_expected": "not_met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "dx030",
+          "text": "Recursion means the function calls itself. Mine works and passes the examples.",
+          "expected": [],
+          "found": [],
+          "c3_expected": "unclear",
+          "c3_got": "not_met"
+        },
+        {
+          "id": "dx037",
+          "text": "power and sum_list use recursion to solve smaller problems until the answer is found.",
+          "expected": [],
+          "found": [],
+          "c3_expected": "unclear",
+          "c3_got": "not_met"
+        },
+        {
+          "id": "dx056",
+          "text": "the return line is what makes it stop recursing. Without return it would keep going forever. sum_list works th",
+          "expected": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "found": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "c3_expected": "not_met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "dx059",
+          "text": "Python stops calling power once exp gets small enough then all the answers come back together. For sum_list th",
+          "expected": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "found": [],
+          "c3_expected": "not_met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "dx072",
+          "text": "it runs until it reaches the end of the problem and at that point the recursion is finished so it returns the ",
+          "expected": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "found": [],
+          "c3_expected": "not_met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "dx074",
+          "text": "It calls itself until it's done and then returns the answer.",
+          "expected": [],
+          "found": [],
+          "c3_expected": "unclear",
+          "c3_got": "not_met"
+        },
+        {
+          "id": "dx075",
+          "text": "I check exp == 0 first. That is the smallest problem and its answer is 1 (multiplying by 1 doesn't change anyt",
+          "expected": [
+            "MC-BASE-SMALLEST"
+          ],
+          "found": [],
+          "c3_expected": "not_met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "dx079",
+          "text": "It runs until it reaches the end of the problem, and at that point the recursion is finished so it returns the",
+          "expected": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "found": [],
+          "c3_expected": "not_met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "dx084",
+          "text": "My recursion ends at exp == 1 since that is the smallest exponent where there is still a number to return. For",
+          "expected": [
+            "MC-BASE-SMALLEST"
+          ],
+          "found": [
+            "MC-BASE-SMALLEST"
+          ],
+          "c3_expected": "not_met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "dx093",
+          "text": "The function keeps calling itself until there is nothing left to multiply, and then it stops on its own and gi",
+          "expected": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "found": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "c3_expected": "not_met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "dx095",
+          "text": "power stops when exp is 1, because base to the power 1 is just base, so there is nothing left to multiply. sum",
+          "expected": [
+            "MC-BASE-SMALLEST"
+          ],
+          "found": [
+            "MC-BASE-SMALLEST"
+          ],
+          "c3_expected": "not_met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "dx096",
+          "text": "Python stops calling power once exp gets small enough then all the answers come back together. sum_list([]) gi",
+          "expected": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "found": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "c3_expected": "not_met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "dx100",
+          "text": "recursion stops when the function hits the return statement, because return ends the function and so the calls",
+          "expected": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "found": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "c3_expected": "not_met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "dx101",
+          "text": "python stops calling power once exp gets small enough then all the answers come back together. For sum_list th",
+          "expected": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "found": [],
+          "c3_expected": "not_met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "dx106",
+          "text": "It runs until it reaches the end of the problem, and at that point the recursion is finished so it returns the",
+          "expected": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "found": [],
+          "c3_expected": "not_met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "dx107",
+          "text": "power stops when exp reaches 0, because that check happens before the recursive call and base**0 is 1. Every c",
+          "expected": [],
+          "found": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "c3_expected": "met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "dx108",
+          "text": "power stops when exp reaches 0 because that check happens before the recursive call and base**0 is 1. Every ca",
+          "expected": [],
+          "found": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "c3_expected": "met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "dx109",
+          "text": "i check exp == 0 first. That is the smallest problem and its answer is 1 (multiplying by 1 doesn't change anyt",
+          "expected": [],
+          "found": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "c3_expected": "met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "dx111",
+          "text": "power and sum_list use recursion to solve smaller problems until the answer is found.",
+          "expected": [],
+          "found": [],
+          "c3_expected": "unclear",
+          "c3_got": "not_met"
+        }
+      ]
     }
   },
   "verifier": {
@@ -1321,7 +2801,50 @@
       "failures": []
     },
     "llm": {
-      "not_run": "No model credentials configured. Nothing was simulated or replayed in its place."
+      "n": 11,
+      "reader": "llm",
+      "accuracy": 0.818,
+      "correct": 9,
+      "confusion": [
+        {
+          "expected": "demonstrated",
+          "got": "demonstrated",
+          "count": 4
+        },
+        {
+          "expected": "insufficient_evidence",
+          "got": "insufficient_evidence",
+          "count": 2
+        },
+        {
+          "expected": "still_developing",
+          "got": "insufficient_evidence",
+          "count": 2
+        },
+        {
+          "expected": "still_developing",
+          "got": "still_developing",
+          "count": 3
+        }
+      ],
+      "failures": [
+        {
+          "id": "dv02",
+          "expected": "still_developing",
+          "got": "insufficient_evidence",
+          "reasons": [
+            "Every test passes, but the reasoning was judged partial. Professor review recommended."
+          ]
+        },
+        {
+          "id": "dv07",
+          "expected": "still_developing",
+          "got": "insufficient_evidence",
+          "reasons": [
+            "Every test passes, but the reasoning was judged partial. Professor review recommended."
+          ]
+        }
+      ]
     }
   },
   "code": {
@@ -1367,5 +2890,17 @@
       "baseline_any_failing_test": 0.956
     },
     "failures": []
+  },
+  "llm_usage": {
+    "calls": 123,
+    "failures": 0,
+    "input_tokens": 229350,
+    "output_tokens": 68256,
+    "avg_latency_s": 3.87,
+    "estimated_cost_usd": 0.2009,
+    "price_basis_per_1m": [
+      0.4,
+      1.6
+    ]
   }
 }

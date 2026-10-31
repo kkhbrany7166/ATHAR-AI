@@ -1,6 +1,6 @@
 {
-  "frozen_at": "2026-10-31 09:26:54 +0300",
-  "commit": "af08cf6",
+  "frozen_at": "2026-10-31 09:40:24 +0300",
+  "commit": "6498ae8",
   "llm": {
     "provider": "openai",
     "model": "gpt-4.1-mini",
@@ -11,8 +11,8 @@
     "max_cost_usd": 1.0
   },
   "sampling": "provider defaults (temperature not set); structured output via chat.completions.parse",
-  "reader_prompt_version": "reader-v2",
-  "reader_prompt_sha": "22740952c7b0be2b",
+  "reader_prompt_version": "reader-v3",
+  "reader_prompt_sha": "41a5f3114662cd84",
   "validation_sha": "f3f1440ec3a01cc6",
   "rule_baseline": "rules-v1",
   "rule_baseline_sha": "c85126da3cc35d09",
@@ -24,6 +24,7 @@
     "datasets/final/explanations.json": "a5bca53c08c7fb6a",
     "datasets/final/variants.json": "a73c2ca68aff478d",
     "datasets/final/verifier.json": "5bda26f047e5a3d2",
+    "datasets/final2/cases.json": "a2b5d3aaebc48030",
     "datasets/heldout/code.json": "0e3940d7b3a47b13",
     "datasets/heldout/explanations.json": "28677f6244a4ad3b",
     "datasets/heldout/variants.json": "91d75083b80d11a4",

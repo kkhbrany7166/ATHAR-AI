@@ -1,14 +1,15 @@
 {
   "meta": {
-    "commit": "cc7085f",
-    "ran_at": "2026-10-31 09:11:22 +0300",
+    "commit": "5a60100",
+    "ran_at": "2026-10-31 09:29:15 +0300",
     "llm": {
-      "provider": "none",
-      "model": "",
-      "configured": false,
+      "provider": "openai",
+      "model": "gpt-4.1-mini",
+      "configured": true,
       "analyzer": "auto",
       "timeout_seconds": 45.0,
-      "max_calls": 400
+      "max_calls": 400,
+      "max_cost_usd": 0.45
     },
     "baseline_version": "rules-v1",
     "reader_prompt_version": "reader-v2",
@@ -58,6 +59,15 @@
       "abstains_when_evidence_is_insufficient": 1.0,
       "wrongly_abstains_when_decidable": 0.464,
       "c3_correct": 16,
+      "quotes": {
+        "returned": 0,
+        "verbatim": 0
+      },
+      "negation": {
+        "n": 0,
+        "no_false_misconception": 0,
+        "c3_correct": 0
+      },
       "c3_confusion": [
         {
           "expected": "met",
@@ -565,7 +575,548 @@
       ]
     },
     "llm": {
-      "not_run": "No model credentials configured. Nothing was simulated or replayed in its place."
+      "n": 32,
+      "reader": "llm",
+      "errors": 0,
+      "misconceptions": {
+        "MC-STOP-IMPLICIT": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "tp": 7,
+          "fp": 0,
+          "fn": 0
+        },
+        "MC-BASE-SMALLEST": {
+          "precision": 1.0,
+          "recall": 0.857,
+          "f1": 0.923,
+          "tp": 6,
+          "fp": 0,
+          "fn": 1
+        },
+        "micro": {
+          "precision": 1.0,
+          "recall": 0.929,
+          "f1": 0.963,
+          "tp": 13,
+          "fp": 0,
+          "fn": 1
+        }
+      },
+      "c3_accuracy": 0.469,
+      "abstains_when_evidence_is_insufficient": 0.5,
+      "wrongly_abstains_when_decidable": 0.0,
+      "c3_correct": 15,
+      "quotes": {
+        "returned": 99,
+        "verbatim": 99
+      },
+      "negation": {
+        "n": 0,
+        "no_false_misconception": 0,
+        "c3_correct": 0
+      },
+      "c3_confusion": [
+        {
+          "expected": "met",
+          "got": "partial",
+          "count": 14
+        },
+        {
+          "expected": "not_met",
+          "got": "not_met",
+          "count": 13
+        },
+        {
+          "expected": "not_met",
+          "got": "partial",
+          "count": 1
+        },
+        {
+          "expected": "unclear",
+          "got": "not_met",
+          "count": 1
+        },
+        {
+          "expected": "unclear",
+          "got": "partial",
+          "count": 1
+        },
+        {
+          "expected": "unclear",
+          "got": "unclear",
+          "count": 2
+        }
+      ],
+      "abstention_rate": 0.062,
+      "unclear_rate": 0.062,
+      "by_category": {
+        "all": {
+          "n": 32,
+          "fully_correct": 15
+        }
+      },
+      "outputs": [
+        {
+          "id": "hx01",
+          "holds": [],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "The student accurately explains the stopping condition for the power function recursion and why it terminates, showing understanding of progress toward the base case. However, they do not address sum_list's stopping condition or the tracing of power(2, 3), so the explanation is incomplete and partial on stopping conditions, and missing on result combination explanation.",
+          "validation_notes": []
+        },
+        {
+          "id": "hx02",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student fails to explicitly identify the stopping condition, instead suggesting recursion stops automatically, showing a misconception. The explanation lacks tracing of power(2,3) and does not discuss sum_list behavior, providing insufficient evidence to meet criteria C3 and C4.",
+          "validation_notes": []
+        },
+        {
+          "id": "hx03",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student incorrectly identifies the base case stopping condition for power as exponent equal to one instead of zero, indicating a misunderstanding of the base case. They provide no explanation of how the recursion for power(2, 3) unfolds or how results combine, and give no explanation for sum_list.",
+          "validation_notes": []
+        },
+        {
+          "id": "hx04",
+          "holds": [],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "Student explains the stopping condition for power correctly but omits details for sum_list, and does not trace the recursive process. Explanation is too brief to assess full understanding of recursion unfolding and result combining.",
+          "validation_notes": []
+        },
+        {
+          "id": "hx05",
+          "holds": [],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "The student correctly states the base cases and return values for both functions, supporting understanding of stopping conditions. However, they do not explain why recursion must reach these base cases nor trace how recursive calls combine results, so the explanation is incomplete.",
+          "validation_notes": []
+        },
+        {
+          "id": "hx06",
+          "holds": [],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student does not explain the stopping conditions or recursive unfolding; they state uncertainty about how recursion stops and provide no tracing or reasoning for either function.",
+          "validation_notes": []
+        },
+        {
+          "id": "hx07",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student's explanation wrongly attributes recursion termination to reaching a return statement, not to an explicit stopping condition or base case. They do not explain tracing or combining recursive calls. This shows a misconception that recursion stops implicitly rather than by an explicit condition.",
+          "validation_notes": []
+        },
+        {
+          "id": "hx08",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student misunderstands the stopping condition for sum_list by rejecting that it can handle an empty list, displaying a misconception about the base case. The explanation also lacks any description of the power function's recursion or how results combine, failing both explanation criteria.",
+          "validation_notes": []
+        },
+        {
+          "id": "hx09",
+          "holds": [],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "The student shows good understanding of the power function's recursion stopping at exp == 0 and how results combine on return but fails to mention anything about the sum_list function, making the explanation incomplete.",
+          "validation_notes": []
+        },
+        {
+          "id": "hx10",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student incorrectly explains recursion stopping as the computer deciding when to stop, showing a misconception about explicit base cases. There is no evidence of understanding how recursion unfolds or how results combine.",
+          "validation_notes": []
+        },
+        {
+          "id": "hx11",
+          "holds": [],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "The student correctly identifies the base case for the power function and its returned value but omits any explanation about the stopping condition for sum_list and does not trace the recursive calls or describe how results combine, leaving explanations partial and incomplete.",
+          "validation_notes": []
+        },
+        {
+          "id": "hx12",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student incorrectly identifies the stopping condition for power as exp == 1 instead of exp == 0, missing the base case for the smallest valid input. They do not explain why recursion stops correctly or trace power(2, 3), nor do they discuss sum_list and its stopping condition.",
+          "validation_notes": []
+        },
+        {
+          "id": "hx13",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student incorrectly attributes stopping of recursion to the Python recursion limit rather than explicit base cases, showing no understanding of when and why the recursion stops. The explanation lacks any trace of the power function or description of sum_list behavior, failing both explanation criteria.",
+          "validation_notes": []
+        },
+        {
+          "id": "hx14",
+          "holds": [],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "The student explains the stopping condition for power() clearly and traces power(2,3) correctly showing how recursive results combine. However, they do not address sum_list or explain why recursion stops for it, making the explanation partial for both criteria.",
+          "validation_notes": []
+        },
+        {
+          "id": "hx15",
+          "holds": [],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "Student correctly states the base case for power when exponent is zero but does not explain stopping for sum_list or trace the recursion steps of power(2, 3). Explanation partially addresses stopping condition understanding but lacks detail on result combination.",
+          "validation_notes": []
+        },
+        {
+          "id": "hx16",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student incorrectly identifies the base cases for stopping recursion, missing that power should stop at exp==0 and sum_list should stop at the empty list. They also fail to trace the recursive call for power(2,3) or explain the behavior on an empty list, thus not meeting key explanation criteria.",
+          "validation_notes": []
+        },
+        {
+          "id": "hx17",
+          "holds": [],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "Student partially explains the power function's stopping condition and its necessity but does not mention sum_list or detail the recursive call tracing or result combination as required.",
+          "validation_notes": []
+        },
+        {
+          "id": "hx18",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "Student explanation lacks an explicit stopping condition and a detailed trace for power(2,3). They imply recursion stops because inputs get smaller but do not explain how or why. This indicates a misconception that recursion stops implicitly rather than by an explicit base case.",
+          "validation_notes": []
+        },
+        {
+          "id": "hx19",
+          "holds": [],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "The student correctly identifies the base cases for both functions and the return values but provides no trace for power(2,3) or details on the recursion unfolding and combining results.",
+          "validation_notes": []
+        },
+        {
+          "id": "hx20",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student incorrectly places the base case for power at exp==1 instead of exp==0, indicating a misunderstanding of stopping conditions (MC-BASE-SMALLEST). They do not explain why recursion stops or how results combine, nor do they mention sum_list at all.",
+          "validation_notes": []
+        },
+        {
+          "id": "hx21",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": true,
+          "summary": "The student's explanation is extremely minimal ('it stops.') and does not provide any insight into the stopping conditions or recursive call mechanics for either function, so no confident judgment can be made on these criteria.",
+          "validation_notes": []
+        },
+        {
+          "id": "hx22",
+          "holds": [],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "The student gives a very brief and general explanation of recursion stopping and progress but lacks explicit stopping conditions, does not trace the power example, and omits explanation about sum_list. More detail needed to fully assess understanding.",
+          "validation_notes": []
+        },
+        {
+          "id": "hx23",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student's explanation lacks a clear statement of the stopping conditions and incorrectly attributes recursion termination to the call stack emptying rather than explicit base cases. There is no explanation of how results combine or of sum_list([]). This indicates a misconception about why recursion stops.",
+          "validation_notes": []
+        },
+        {
+          "id": "hx24",
+          "holds": [],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "The student understands the stopping condition for the power function and why it returns 1 at exp==0. However, they do not explain the stopping condition for sum_list or how recursion and combining of results works, lacking the required trace of power(2,3).",
+          "validation_notes": []
+        },
+        {
+          "id": "hx25",
+          "holds": [],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "The student partially identifies stopping conditions but is unclear about sum_list's base case and does not explain the recursion's unfolding or result combination.",
+          "validation_notes": []
+        },
+        {
+          "id": "hx26",
+          "holds": [],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "The explanation partially covers the stopping condition for sum_list but omits any discussion about the power function or tracing the recursion, limiting assessment of overall understanding.",
+          "validation_notes": []
+        },
+        {
+          "id": "hx27",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student believes recursion stops on its own like a loop, without explaining the explicit base cases or stopping logic, and provides no trace of the recursion or results combination. This reflects a fundamental misunderstanding of recursive stopping conditions and call returns.",
+          "validation_notes": []
+        },
+        {
+          "id": "hx28",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": true,
+          "summary": "The student does not explain when or why recursion stops, nor trace the recursive calls. They express confusion about the stopping conditions and do not demonstrate understanding.",
+          "validation_notes": []
+        },
+        {
+          "id": "hx29",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "The student incorrectly identifies the base case for power() as exp == 1, ignoring the required base case at exp == 0. They do not explain when recursion stops or trace the recursive process, and they omit explanation for sum_list. This reveals a misconception about the stopping condition and incomplete understanding of recursion.",
+          "validation_notes": []
+        },
+        {
+          "id": "hx30",
+          "holds": [],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "Student explains the stopping condition for power function well but omits any explanation for sum_list and does not trace the recursive calls or describe how results combine.",
+          "validation_notes": []
+        },
+        {
+          "id": "hx31",
+          "holds": [],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "Student identifies the stopping condition for power as 'exp == 0', showing partial understanding of recursion stopping conditions, but does not address sum_list or explain the unfolding or combining of results.",
+          "validation_notes": []
+        },
+        {
+          "id": "hx32",
+          "holds": [],
+          "rejects": [],
+          "c3": "partial",
+          "abstained": false,
+          "summary": "The student correctly identifies the stopping condition for the power function (exp equals zero) but does not explain why or cover the sum_list function. They do not trace the recursive calls or explain how results combine.",
+          "validation_notes": []
+        }
+      ],
+      "trivial_baseline_always_met_no_misconception": {
+        "c3_accuracy": 0.438,
+        "micro_f1": 0.0
+      },
+      "failures": [
+        {
+          "id": "hx01",
+          "text": "The recursion ends once exp hits zero; at that point we hand back 1 since any base to the zeroth power equals ",
+          "expected": [],
+          "found": [],
+          "c3_expected": "met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "hx04",
+          "text": "It doesn't just stop on its own: it stops because the if checks exp == 0 before calling again, and returns 1.",
+          "expected": [],
+          "found": [],
+          "c3_expected": "met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "hx05",
+          "text": "Base case: an empty list gives 0 since adding nothing changes nothing. For power the base case is exp == 0 ret",
+          "expected": [],
+          "found": [],
+          "c3_expected": "met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "hx06",
+          "text": "I'm honestly not sure how it stops, it just works when I run it.",
+          "expected": [],
+          "found": [],
+          "c3_expected": "unclear",
+          "c3_got": "not_met"
+        },
+        {
+          "id": "hx09",
+          "text": "When exp becomes 0 the check is true so it returns 1 directly instead of recursing; every call before it is wa",
+          "expected": [],
+          "found": [],
+          "c3_expected": "met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "hx11",
+          "text": "It stops at exp = 0. Returns 1.",
+          "expected": [],
+          "found": [],
+          "c3_expected": "met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "hx14",
+          "text": "power(2,3) -> 2*power(2,2) -> ... -> power(2,0)=1, then 2, 4, 8 on the way back. It stops at exponent zero.",
+          "expected": [],
+          "found": [],
+          "c3_expected": "met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "hx15",
+          "text": "لما exp يصير صفر the function returns 1 and stops.",
+          "expected": [],
+          "found": [],
+          "c3_expected": "met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "hx17",
+          "text": "When n reaches zero it gives back 1; if it didn't check for zero it would run forever and crash with Recursion",
+          "expected": [],
+          "found": [],
+          "c3_expected": "met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "hx19",
+          "text": "The empty list is the base case: sum_list([]) is 0. power's base case is when exp is 0 and the answer is 1, th",
+          "expected": [],
+          "found": [],
+          "c3_expected": "met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "hx22",
+          "text": "The base case makes it stop. Each recursive call is closer to the base case.",
+          "expected": [],
+          "found": [],
+          "c3_expected": "unclear",
+          "c3_got": "partial"
+        },
+        {
+          "id": "hx24",
+          "text": "exp==0 is my stopping condition. I chose it because zero is the smallest exponent allowed by the problem, and ",
+          "expected": [],
+          "found": [],
+          "c3_expected": "met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "hx25",
+          "text": "For sum_list I stop at the last element. For power I stop when exp is 0.",
+          "expected": [
+            "MC-BASE-SMALLEST"
+          ],
+          "found": [],
+          "c3_expected": "not_met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "hx26",
+          "text": "When the list is empty there's nothing to add so it returns 0, that's the base case. Without it, xs[0] would r",
+          "expected": [],
+          "found": [],
+          "c3_expected": "met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "hx30",
+          "text": "It terminates when the exponent argument is zero. That call returns 1 without recursing, and since we subtract",
+          "expected": [],
+          "found": [],
+          "c3_expected": "met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "hx31",
+          "text": "The return statement only gives a value back; what actually stops the recursion is the exp == 0 check.",
+          "expected": [],
+          "found": [],
+          "c3_expected": "met",
+          "c3_got": "partial"
+        },
+        {
+          "id": "hx32",
+          "text": "It halts when exp is zero.",
+          "expected": [],
+          "found": [],
+          "c3_expected": "met",
+          "c3_got": "partial"
+        }
+      ]
     }
   },
   "verifier": {
@@ -608,7 +1159,55 @@
       ]
     },
     "llm": {
-      "not_run": "No model credentials configured. Nothing was simulated or replayed in its place."
+      "n": 12,
+      "reader": "llm",
+      "accuracy": 0.833,
+      "correct": 10,
+      "confusion": [
+        {
+          "expected": "demonstrated",
+          "got": "demonstrated",
+          "count": 3
+        },
+        {
+          "expected": "demonstrated",
+          "got": "insufficient_evidence",
+          "count": 1
+        },
+        {
+          "expected": "insufficient_evidence",
+          "got": "insufficient_evidence",
+          "count": 3
+        },
+        {
+          "expected": "insufficient_evidence",
+          "got": "still_developing",
+          "count": 1
+        },
+        {
+          "expected": "still_developing",
+          "got": "still_developing",
+          "count": 4
+        }
+      ],
+      "failures": [
+        {
+          "id": "hv09",
+          "expected": "insufficient_evidence",
+          "got": "still_developing",
+          "reasons": [
+            "Every test passes, but the written reasoning still describes the misconception."
+          ]
+        },
+        {
+          "id": "hv10",
+          "expected": "demonstrated",
+          "got": "insufficient_evidence",
+          "reasons": [
+            "Every test passes, but the reasoning was judged partial. Professor review recommended."
+          ]
+        }
+      ]
     }
   },
   "code": {
@@ -673,6 +1272,18 @@
         "c2_expected": "partial",
         "c2_got": "partial"
       }
+    ]
+  },
+  "llm_usage": {
+    "calls": 43,
+    "failures": 0,
+    "input_tokens": 77048,
+    "output_tokens": 17273,
+    "avg_latency_s": 2.9,
+    "estimated_cost_usd": 0.0585,
+    "price_basis_per_1m": [
+      0.4,
+      1.6
     ]
   }
 }

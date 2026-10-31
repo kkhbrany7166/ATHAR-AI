@@ -25,7 +25,7 @@ def sha(data: bytes) -> str:
 
 def main() -> None:
     datasets = {str(p.relative_to(ROOT)): sha(p.read_bytes()) for p in sorted((ROOT / "datasets").rglob("*.json"))}
-    prompt_src = explanations.SYSTEM + inspect.getsource(explanations.build_prompt) + json.dumps(explanations.ExplanationReading.model_json_schema(), sort_keys=True)
+    prompt_src = explanations.system_prompt() + inspect.getsource(explanations.build_prompt) + json.dumps(explanations.ExplanationReading.model_json_schema(), sort_keys=True)
     freeze = {
         "frozen_at": time.strftime("%Y-%m-%d %H:%M:%S %z"),
         "commit": subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip(),

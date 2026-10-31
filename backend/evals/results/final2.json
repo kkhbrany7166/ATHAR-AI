@@ -1,0 +1,434 @@
+{
+  "split": "final2",
+  "provenance": "Hand-written after reader-v2 results were seen and before reader-v3 existed; committed before any run. Untouched for every reader version reported.",
+  "readers": {
+    "rules": {
+      "n": 24,
+      "reader": "rules",
+      "errors": 0,
+      "misconceptions": {
+        "MC-STOP-IMPLICIT": {
+          "precision": 0.5,
+          "recall": 0.167,
+          "f1": 0.25,
+          "tp": 1,
+          "fp": 1,
+          "fn": 5
+        },
+        "MC-BASE-SMALLEST": {
+          "precision": 0.667,
+          "recall": 0.667,
+          "f1": 0.667,
+          "tp": 2,
+          "fp": 1,
+          "fn": 1
+        },
+        "micro": {
+          "precision": 0.6,
+          "recall": 0.333,
+          "f1": 0.429,
+          "tp": 3,
+          "fp": 2,
+          "fn": 6
+        }
+      },
+      "c3_correct": 12,
+      "category_correct": 14,
+      "working_code_confused_reasoning": {
+        "n": 7,
+        "caught": 2
+      },
+      "code_fails_reasoning_right": [
+        {
+          "id": "g09",
+          "c3": "met",
+          "category": "concept_gap"
+        },
+        {
+          "id": "g11",
+          "c3": "met",
+          "category": "execution_error"
+        },
+        {
+          "id": "g12",
+          "c3": "met",
+          "category": "execution_error"
+        }
+      ],
+      "unclear_handled": {
+        "n": 4,
+        "correct": 3
+      },
+      "quotes": {
+        "returned": 0,
+        "verbatim": 0
+      },
+      "c3_confusion": [
+        {
+          "expected": "met",
+          "got": "met",
+          "count": 6
+        },
+        {
+          "expected": "met",
+          "got": "not_met",
+          "count": 2
+        },
+        {
+          "expected": "met",
+          "got": "unclear",
+          "count": 2
+        },
+        {
+          "expected": "not_met",
+          "got": "met",
+          "count": 1
+        },
+        {
+          "expected": "not_met",
+          "got": "not_met",
+          "count": 3
+        },
+        {
+          "expected": "not_met",
+          "got": "unclear",
+          "count": 6
+        },
+        {
+          "expected": "unclear",
+          "got": "met",
+          "count": 1
+        },
+        {
+          "expected": "unclear",
+          "got": "unclear",
+          "count": 3
+        }
+      ],
+      "category_confusion": [
+        {
+          "expected": "concept_gap",
+          "got": "concept_gap",
+          "count": 4
+        },
+        {
+          "expected": "demonstrated",
+          "got": "demonstrated",
+          "count": 3
+        },
+        {
+          "expected": "demonstrated",
+          "got": "reasoning_gap",
+          "count": 2
+        },
+        {
+          "expected": "demonstrated",
+          "got": "reasoning_unconfirmed",
+          "count": 2
+        },
+        {
+          "expected": "execution_error",
+          "got": "execution_error",
+          "count": 2
+        },
+        {
+          "expected": "reasoning_gap",
+          "got": "reasoning_gap",
+          "count": 2
+        },
+        {
+          "expected": "reasoning_gap",
+          "got": "reasoning_unconfirmed",
+          "count": 5
+        },
+        {
+          "expected": "reasoning_unconfirmed",
+          "got": "demonstrated",
+          "count": 1
+        },
+        {
+          "expected": "reasoning_unconfirmed",
+          "got": "reasoning_unconfirmed",
+          "count": 3
+        }
+      ],
+      "outputs": [
+        {
+          "id": "g01",
+          "holds": [],
+          "c3": "unclear",
+          "category": "reasoning_unconfirmed",
+          "abstained": false,
+          "code_issue": "",
+          "summary": "",
+          "error": ""
+        },
+        {
+          "id": "g02",
+          "holds": [],
+          "c3": "unclear",
+          "category": "reasoning_unconfirmed",
+          "abstained": false,
+          "code_issue": "",
+          "summary": "",
+          "error": ""
+        },
+        {
+          "id": "g03",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "c3": "not_met",
+          "category": "reasoning_gap",
+          "abstained": false,
+          "code_issue": "",
+          "summary": "",
+          "error": ""
+        },
+        {
+          "id": "g04",
+          "holds": [],
+          "c3": "met",
+          "category": "demonstrated",
+          "abstained": false,
+          "code_issue": "",
+          "summary": "",
+          "error": ""
+        },
+        {
+          "id": "g05",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "c3": "not_met",
+          "category": "reasoning_gap",
+          "abstained": false,
+          "code_issue": "",
+          "summary": "",
+          "error": ""
+        },
+        {
+          "id": "g06",
+          "holds": [],
+          "c3": "unclear",
+          "category": "reasoning_unconfirmed",
+          "abstained": false,
+          "code_issue": "",
+          "summary": "",
+          "error": ""
+        },
+        {
+          "id": "g07",
+          "holds": [],
+          "c3": "unclear",
+          "category": "reasoning_unconfirmed",
+          "abstained": false,
+          "code_issue": "",
+          "summary": "",
+          "error": ""
+        },
+        {
+          "id": "g08",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "c3": "not_met",
+          "category": "reasoning_gap",
+          "abstained": false,
+          "code_issue": "",
+          "summary": "",
+          "error": ""
+        },
+        {
+          "id": "g09",
+          "holds": [],
+          "c3": "met",
+          "category": "concept_gap",
+          "abstained": false,
+          "code_issue": "",
+          "summary": "",
+          "error": ""
+        },
+        {
+          "id": "g10",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "c3": "not_met",
+          "category": "concept_gap",
+          "abstained": false,
+          "code_issue": "",
+          "summary": "",
+          "error": ""
+        },
+        {
+          "id": "g11",
+          "holds": [],
+          "c3": "met",
+          "category": "execution_error",
+          "abstained": false,
+          "code_issue": "",
+          "summary": "",
+          "error": ""
+        },
+        {
+          "id": "g12",
+          "holds": [],
+          "c3": "met",
+          "category": "execution_error",
+          "abstained": false,
+          "code_issue": "",
+          "summary": "",
+          "error": ""
+        },
+        {
+          "id": "g13",
+          "holds": [],
+          "c3": "met",
+          "category": "concept_gap",
+          "abstained": false,
+          "code_issue": "",
+          "summary": "",
+          "error": ""
+        },
+        {
+          "id": "g14",
+          "holds": [],
+          "c3": "met",
+          "category": "demonstrated",
+          "abstained": false,
+          "code_issue": "",
+          "summary": "",
+          "error": ""
+        },
+        {
+          "id": "g15",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "c3": "not_met",
+          "category": "reasoning_gap",
+          "abstained": false,
+          "code_issue": "",
+          "summary": "",
+          "error": ""
+        },
+        {
+          "id": "g16",
+          "holds": [],
+          "c3": "unclear",
+          "category": "reasoning_unconfirmed",
+          "abstained": false,
+          "code_issue": "",
+          "summary": "",
+          "error": ""
+        },
+        {
+          "id": "g17",
+          "holds": [],
+          "c3": "unclear",
+          "category": "reasoning_unconfirmed",
+          "abstained": false,
+          "code_issue": "",
+          "summary": "",
+          "error": ""
+        },
+        {
+          "id": "g18",
+          "holds": [],
+          "c3": "unclear",
+          "category": "reasoning_unconfirmed",
+          "abstained": false,
+          "code_issue": "",
+          "summary": "",
+          "error": ""
+        },
+        {
+          "id": "g19",
+          "holds": [],
+          "c3": "unclear",
+          "category": "reasoning_unconfirmed",
+          "abstained": false,
+          "code_issue": "",
+          "summary": "",
+          "error": ""
+        },
+        {
+          "id": "g20",
+          "holds": [],
+          "c3": "unclear",
+          "category": "concept_gap",
+          "abstained": false,
+          "code_issue": "",
+          "summary": "",
+          "error": ""
+        },
+        {
+          "id": "g21",
+          "holds": [],
+          "c3": "unclear",
+          "category": "reasoning_unconfirmed",
+          "abstained": false,
+          "code_issue": "",
+          "summary": "",
+          "error": ""
+        },
+        {
+          "id": "g22",
+          "holds": [],
+          "c3": "met",
+          "category": "demonstrated",
+          "abstained": false,
+          "code_issue": "",
+          "summary": "",
+          "error": ""
+        },
+        {
+          "id": "g23",
+          "holds": [],
+          "c3": "unclear",
+          "category": "reasoning_unconfirmed",
+          "abstained": false,
+          "code_issue": "",
+          "summary": "",
+          "error": ""
+        },
+        {
+          "id": "g24",
+          "holds": [],
+          "c3": "met",
+          "category": "demonstrated",
+          "abstained": false,
+          "code_issue": "",
+          "summary": "",
+          "error": ""
+        }
+      ]
+    }
+  },
+  "llm_usage": {
+    "calls": 0,
+    "failures": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "avg_latency_s": null,
+    "estimated_cost_usd": 0.0,
+    "price_basis_per_1m": [
+      0.4,
+      1.6
+    ]
+  },
+  "meta": {
+    "ran_at": "2026-10-31 09:40:14 +0300",
+    "commit": "6498ae8",
+    "llm": {
+      "provider": "openai",
+      "model": "gpt-4.1-mini",
+      "configured": true,
+      "analyzer": "auto",
+      "timeout_seconds": 45.0,
+      "max_calls": 400,
+      "max_cost_usd": 1.0
+    }
+  }
+}
