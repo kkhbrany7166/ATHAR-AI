@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
 import { EvidenceTag } from "../../components/Evidence";
+import { misconceptionLabel } from "../../lib/labels";
 import type { Intervention, InterventionStudent, Item, Outcome } from "../../lib/types";
 import { Button, Callout, CodeBlock, Crumb, ErrorState, Loading, Section, SynthTag, Tag, cx, fmtDate } from "../../components/ui";
 
@@ -39,7 +40,7 @@ export function InterventionPage() {
         {iv.insight_id ? <><Crumb to={`/p/insights/${iv.insight_id}`}>Insight</Crumb> / </> : null}Intervention
       </div>
       <header className="pb-6">
-        <div className="eyebrow mb-2">{KIND_LABEL[iv.kind]}{iv.misconception_code ? ` · ${iv.misconception_code}` : ""}</div>
+        <div className="eyebrow mb-2" title={iv.misconception_code}>{KIND_LABEL[iv.kind]}{iv.misconception_code ? ` · ${misconceptionLabel(iv.misconception_code)}` : ""}</div>
         <h1 className="font-serif text-[32px] leading-[1.15] tracking-[-0.01em]">{iv.title}</h1>
         <p className="text-muted mt-2">For {iv.target_student_ids.length} students, from {iv.assignment.title}.</p>
       </header>
@@ -360,7 +361,10 @@ function StudentRow({ s }: { s: InterventionStudent }) {
           <div className="text-faint">After · new independent check</div>
           {v ? (
             <>
-              <div className="text-ink mt-0.5 flex flex-wrap items-center gap-2"><EvidenceTag kind="verified">{OUTCOME[v.outcome].label}</EvidenceTag>
+              <div className="text-ink mt-0.5 flex flex-wrap items-center gap-2">{v.outcome === "demonstrated" ? <EvidenceTag kind="verified">{OUTCOME[v.outcome].label}</EvidenceTag>
+                  : <span className={cx("inline-flex items-center h-6 px-2 rounded-[4px] border text-[12px] font-medium",
+                      v.outcome === "still_developing" ? "border-amber/70 text-amber" : "border-line-strong text-muted")}
+                      title="Decided by fixed rules from a new, independent attempt">{OUTCOME[v.outcome].label}</span>}
                 <span className="text-faint num">{v.tests_passed}/{v.tests_total} tests · reasoning {v.explanation_judgment.replace("_", " ") || "—"}</span></div>
               <div className="text-muted mt-1">{v.reasons[0]}</div>
               <Link to={`/p/submissions/${v.submission_id}`} className="link">Open the attempt</Link>

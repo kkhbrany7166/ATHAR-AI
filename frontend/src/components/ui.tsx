@@ -14,7 +14,7 @@ export function Button({ variant = "secondary", className, ...props }: ButtonHTM
     <button
       {...props}
       className={cx(
-        "inline-flex items-center gap-2 rounded px-3.5 h-9 text-[14px] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+        "inline-flex items-center gap-2 whitespace-nowrap rounded px-3.5 h-9 text-[14px] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
         variant === "primary" && "bg-accent text-ink hover:bg-accent-strong",
         variant === "secondary" && "border border-line-strong text-ink hover:bg-raised",
         variant === "ghost" && "text-muted hover:text-ink hover:bg-raised",

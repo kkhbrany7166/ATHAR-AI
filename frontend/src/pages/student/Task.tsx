@@ -25,6 +25,9 @@ export function TaskPage() {
   const key = ["task", taskId];
   const [active, setActive] = useState<string | null>(null);
   const q = useQuery({ queryKey: key, queryFn: () => api<StudentTask>(`/api/student/tasks/${taskId}`) });
+  useEffect(() => {  // keep the current step visible in the step bar on narrow screens
+    document.querySelector('[aria-current="step"]')?.scrollIntoView({ inline: "center", block: "nearest" });
+  }, [active, q.data]);
   const post = (path: string, json?: unknown) => api<StudentTask>(`/api/student/tasks/${taskId}/${path}`, { method: "POST", json: json ?? {} });
   const onOk = (t: StudentTask) => { qc.setQueryData(key, t); qc.invalidateQueries({ queryKey: ["student-home"] }); };
 
@@ -181,8 +184,8 @@ function CodeEditor({ value, onChange, rows = 10 }: { value: string; onChange: (
     requestAnimationFrame(() => { el.selectionStart = el.selectionEnd = s + 4; });
   };
   return (
-    <textarea value={value} onChange={(e) => onChange(e.target.value)} onKeyDown={onKey} rows={rows} spellCheck={false}
-      aria-label="Code editor" className="w-full bg-canvas border border-line-strong rounded-md px-4 py-3 font-mono text-[13.5px] leading-[1.65] text-ink" />
+    <textarea value={value} onChange={(e) => onChange(e.target.value)} onKeyDown={onKey} rows={rows} spellCheck={false} wrap="off"
+      aria-label="Code editor" className="w-full whitespace-pre overflow-x-auto bg-canvas border border-line-strong rounded-md px-4 py-3 font-mono text-[13.5px] leading-[1.65] text-ink" />
   );
 }
 

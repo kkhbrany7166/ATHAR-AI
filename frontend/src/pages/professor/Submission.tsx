@@ -79,10 +79,10 @@ export function SubmissionPage() {
 
       <div className="mb-2"><EvidenceLegend kinds={["test", d.reading?.source === "baseline" ? "rules" : "ai", "professor"]} /></div>
 
-      <div className="grid lg:grid-cols-2 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_360px] gap-x-10">
+      <div className="grid lg:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_330px] gap-x-10">
         {/* 1. What the student wrote, and how it was read */}
         <div className="min-w-0">
-          <Section title="Their reasoning" aside={quotes.length ? "Highlighted: words quoted as evidence" : undefined}>
+          <Section title="Their reasoning" aside={quotes.length ? "Highlighted = quoted as evidence" : undefined}>
             {d.explanation ? (
               <p className="font-serif text-[17px] leading-[1.75] text-ink max-w-prose"><Highlighted text={d.explanation} quotes={quotes} /></p>
             ) : <p className="text-faint">No explanation submitted.</p>}
@@ -249,7 +249,8 @@ function ReadingPanel({ r }: { r: NonNullable<SubmissionDetail["reading"]> }) {
       {r.summary && <p className="text-ink max-w-prose">{r.summary}</p>}
       <dl className="grid sm:grid-cols-2 gap-x-8 gap-y-3 mt-3 text-[13.5px]">
         {r.code_issue && <div><dt className="text-faint">What the failing tests suggest</dt><dd className="text-muted">{r.code_issue.replaceAll("_", " ")}</dd></div>}
-        {r.objectives.length > 0 && <div><dt className="text-faint">Learning goals</dt><dd className="text-muted">{r.objectives.map((o) => `${objectiveLabel(o.objective_code)}: ${o.status.replace("_", " ")}`).join(" · ")}</dd></div>}
+        {r.objectives.length > 0 && <div><dt className="text-faint">Learning goals</dt><dd className="text-muted">{r.objectives.filter((o, i, all) => all.findIndex((x) => x.objective_code === o.objective_code) === i)
+                  .map((o) => `${objectiveLabel(o.objective_code)}: ${o.status.replace("_", " ")}`).join(" · ")}</dd></div>}
         {r.rejected_ideas.length > 0 && <div className="sm:col-span-2"><dt className="text-faint">Ideas the student explicitly rejects (not counted against them)</dt>
           <dd className="text-muted">{r.rejected_ideas.map((x) => `${misconceptionLabel(x.code)}: “${x.quote}”`).join(" · ")}</dd></div>}
         {r.contradictions.length > 0 && <div className="sm:col-span-2"><dt className="text-faint">Contradictions</dt><dd className="text-muted">{r.contradictions.join(" · ")}</dd></div>}

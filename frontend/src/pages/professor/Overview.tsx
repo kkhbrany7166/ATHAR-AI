@@ -49,7 +49,7 @@ export function OverviewTab({ a }: { a: AssignmentDetail }) {
     <div className="pt-6">
       {/* The question, answered in one line each */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 border-y border-line divide-y sm:divide-y-0 lg:divide-x divide-line">
-        <Fig n={count("concept_gap")} of={submitted} label="fail a smallest-input test" kind="test" />
+        <Fig n={count("concept_gap")} of={submitted} label="fail tests in a way that points to a base-case gap" kind="test" />
         <Fig n={count("reasoning_gap")} of={submitted} label="pass every test, but the explanation was flagged" kind="ai" />
         <Fig n={count("execution_error") + count("reasoning_unconfirmed")} of={submitted} label="need a closer look: code didn't run, or reasoning unclear" />
         <Fig n={count("demonstrated")} of={submitted} label="pass and read as sound: no action proposed" />
@@ -98,7 +98,13 @@ function GroupRow({ g, a, insight, iv, kinds, readerAI }: { g: PlanGroup; a: Ass
   });
   const quiet = g.category === "demonstrated" || g.category === "no_submission";
   const ev = insight?.evidence as InsightEvidence | undefined;
-  const title = g.category === "concept_gap" && g.misconception_code ? `${g.label}: ${misconceptionLabel(g.misconception_code).toLowerCase()}` : g.label;
+  const base = g.label.split(" · ")[0];
+  const title = g.category === "concept_gap" && g.misconception_code ? `${base}: ${misconceptionLabel(g.misconception_code).toLowerCase()}` : base;
+  const why = g.category === "concept_gap" && g.misconception_code === "MC-NO-PROGRESS"
+    ? "Typical tests ran into RecursionError: the recursive call never reaches the base case. Deterministic evidence."
+    : g.category === "concept_gap" && g.misconception_code === "MC-BASE-VALUE"
+      ? "A smallest-input test returned the wrong value. Deterministic evidence."
+      : WHY[g.category];
 
   return (
     <li className={cx("py-5", quiet && "opacity-90")}>
@@ -106,7 +112,7 @@ function GroupRow({ g, a, insight, iv, kinds, readerAI }: { g: PlanGroup; a: Ass
         <div className={cx("font-serif text-[30px] leading-none num", quiet ? "text-muted" : "text-ink")}>{g.students.length}</div>
         <div className="min-w-0">
           <div className="text-[16.5px] text-ink">{title}</div>
-          <p className="text-[14px] text-muted mt-1 max-w-prose">{WHY[g.category]}</p>
+          <p className="text-[14px] text-muted mt-1 max-w-prose">{why}</p>
           <div className="flex flex-wrap items-center gap-2 mt-2.5">
             {kinds.map((k) => <EvidenceTag key={k} kind={k === "ai" && !readerAI ? "rules" : k} />)}
             <span className="text-[13.5px] text-faint">Proposed: <span className="text-muted">{g.action_label.toLowerCase()}</span></span>

@@ -69,9 +69,9 @@ export function AppShell() {
         </nav>
         <div className="px-5 py-4 md:border-t border-line space-y-3">
           <DemoSwitch />
-          <AiStatus />
+          <div className="hidden md:block"><AiStatus /></div>
           {user && (
-            <div className="flex items-center justify-between gap-2">
+            <div className="hidden md:flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <div className="text-[14px] truncate">{user.name}</div>
                 <div className="text-2xs text-faint">{user.is_synthetic ? "Fictional demo account" : user.role}</div>
