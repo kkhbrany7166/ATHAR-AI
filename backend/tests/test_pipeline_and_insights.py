@@ -92,3 +92,14 @@ def test_starting_a_run_while_one_is_active_is_idempotent(db, world):
     run = start_run(db, a, None, background=False)
     assert run.status == "running"
     assert len(db.scalars(select(m.GradingRun)).all()) == 1
+
+
+def test_rule_baseline_is_labelled_and_never_publishable_alone(db, world, rule_baseline):
+    run = start_run(db, world["assignment_id"], None, background=False)
+    assert run.ai_status == "baseline" and run.ai_provider.startswith("rules-")
+    rows = db.scalars(select(m.CriterionEvidence).where(m.CriterionEvidence.source == "baseline")).all()
+    assert rows and all(r.model.startswith("rules-") for r in rows)
+    from athar.grading.evidence import publish_blockers
+    sub = db.scalar(select(m.Submission).where(m.Submission.student_id == world["sara_id"]))
+    assert any("Rule-baseline" in b for b in publish_blockers(sub, list(sub.assignment.criteria)))
+    assert "MC-STOP-IMPLICIT" in _insights(db, run.id)

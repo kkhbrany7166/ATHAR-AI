@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 from athar import db as dbmod
 from athar.ai.explanations import CriterionJudgment, ExplanationAnalysis, MisconceptionSignal
 from athar.ai.provider import LLMError, clear_provider_override, set_provider_override
+from athar.ai.reader import set_analyzer_override
 from athar.seed.demo import seed_demo
 
 
@@ -19,6 +20,7 @@ def world(tmp_path):
         ids = seed_demo(s)
     yield ids
     clear_provider_override()
+    set_analyzer_override(None)
 
 
 @pytest.fixture()
@@ -103,4 +105,12 @@ def scripted():
 
 @pytest.fixture()
 def no_llm():
+    """No LLM and no rule baseline: explanations stay unanalysed."""
     set_provider_override(None)
+    set_analyzer_override("none")
+
+
+@pytest.fixture()
+def rule_baseline():
+    set_provider_override(None)
+    set_analyzer_override("baseline")

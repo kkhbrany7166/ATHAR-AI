@@ -13,7 +13,7 @@ function NavItem({ to, children, end }: { to: string; children: ReactNode; end?:
       to={to}
       end={end}
       className={({ isActive }) =>
-        cx("block rounded px-2.5 py-1.5 text-[13px] transition-colors",
+        cx("block rounded px-2.5 py-1.5 text-[14px] transition-colors",
           isActive ? "bg-raised text-ink" : "text-muted hover:text-ink hover:bg-raised/60")}
     >
       {children}
@@ -69,7 +69,7 @@ export function AppShell() {
           {user && (
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
-                <div className="text-[13px] truncate">{user.name}</div>
+                <div className="text-[14px] truncate">{user.name}</div>
                 <div className="text-2xs text-faint">{user.is_synthetic ? "Demo persona · fictional" : user.role}</div>
               </div>
               <button

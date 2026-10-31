@@ -175,7 +175,7 @@ def confirm_ai(submission_id: int, body: ConfirmAI, user: m.User = Depends(requi
         if body.criterion_ids is not None and c.id not in body.criterion_ids:
             continue
         a = authoritative(sub.evidence, c.id)
-        if a is None or a.source != "ai":
+        if a is None or a.source not in ("ai", "baseline"):
             continue
         if a.judgment not in ("met", "partial", "not_met") or a.points is None:
             skipped.append({"code": c.code, "reason": f"no usable suggestion ({a.judgment})"})

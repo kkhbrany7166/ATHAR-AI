@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from .. import models as m
 
 AI_POINTS = {"met": 1.0, "partial": 0.5, "not_met": 0.0}
+# Machine readings of written work. Never authoritative for publishing on their own.
+SUGGESTION_SOURCES = ("ai", "baseline")
 
 
 @dataclass
@@ -56,7 +58,7 @@ def probe_hits(test_case: m.TestCase, status: str, error_type: str, load_failed:
 def authoritative(evidence: list[m.CriterionEvidence], criterion_id: int) -> m.CriterionEvidence | None:
     """Professor decision beats tests beats AI suggestion. Latest row wins within a source."""
     rows = sorted((e for e in evidence if e.criterion_id == criterion_id), key=lambda e: (e.created_at, e.id))
-    for source in ("professor", "tests", "rules", "ai"):
+    for source in ("professor", "tests", "rules", "ai", "baseline"):
         mine = [e for e in rows if e.source == source]
         if mine:
             return mine[-1]
@@ -73,8 +75,9 @@ def publish_blockers(submission: m.Submission, criteria: list[m.RubricCriterion]
         a = authoritative(submission.evidence, c.id)
         if a is None:
             blockers.append(f"{c.code}: no evidence yet")
-        elif a.source == "ai":
-            blockers.append(f"{c.code}: AI suggestion not yet confirmed by the professor")
+        elif a.source in SUGGESTION_SOURCES:
+            label = "AI suggestion" if a.source == "ai" else "Rule-baseline reading"
+            blockers.append(f"{c.code}: {label} not yet confirmed by the professor")
         elif a.points is None:
             blockers.append(f"{c.code}: no points assigned")
     return blockers
@@ -88,5 +91,5 @@ def submission_total(submission: m.Submission, criteria: list[m.RubricCriterion]
         if a is None or a.points is None:
             return None, unconfirmed
         total += a.points
-        unconfirmed |= a.source == "ai"
+        unconfirmed |= a.source in SUGGESTION_SOURCES
     return round(total, 2), unconfirmed

@@ -25,7 +25,7 @@ export function InsightPage() {
 
   return (
     <>
-      <div className="text-[12px] text-faint mb-5">
+      <div className="text-[13px] text-faint mb-5">
         <Crumb to="/p">Courses</Crumb> / <Crumb to={`/p/courses/${i.assignment.course_id}`}>{i.assignment.course_code}</Crumb> /{" "}
         <Crumb to={`/p/assignments/${i.assignment.id}`}>{i.assignment.title.split("—")[0].trim()}</Crumb> / Insight
       </div>
@@ -45,7 +45,7 @@ export function InsightPage() {
         <Figure value={c.explanation_only + c.both} label="with supporting quotes in their explanation" />
         <Figure value={c.working_code_confused_reasoning} label="passed every test but explained it this way" tone={c.working_code_confused_reasoning ? "amber" : undefined} />
       </div>
-      <p className="text-[12.5px] text-faint mt-3 max-w-prose">{i.summary}</p>
+      <p className="text-[13.5px] text-faint mt-3 max-w-prose">{i.summary}</p>
 
       <div className="grid lg:grid-cols-[minmax(0,1fr)_300px] gap-x-12">
         <div>
@@ -59,10 +59,10 @@ export function InsightPage() {
                       {x.quote ? (
                         <blockquote className="font-serif text-[17px] leading-[1.55] text-ink">“{x.quote}”</blockquote>
                       ) : (
-                        <div className="text-muted text-[13px] italic">No explanation quote. Evidence comes from tests.</div>
+                        <div className="text-muted text-[14px] italic">No explanation quote. Evidence comes from tests.</div>
                       )}
-                      {x.test_evidence && <div className="font-mono text-[12px] text-brick mt-2">{x.test_evidence}</div>}
-                      <div className="flex flex-wrap items-center gap-2 mt-2 text-[12.5px] text-muted">
+                      {x.test_evidence && <div className="font-mono text-[13px] text-brick mt-2">{x.test_evidence}</div>}
+                      <div className="flex flex-wrap items-center gap-2 mt-2 text-[13.5px] text-muted">
                         <span>{x.student_name}</span>
                         {x.is_synthetic && <SynthTag />}
                         {x.sources.map((s) => <Tag key={s} tone={s === "ai" ? "amber" : "neutral"}>{s === "ai" ? "AI-read explanation" : "Tests"}</Tag>)}
@@ -77,7 +77,7 @@ export function InsightPage() {
 
           {e.tests.length > 0 && (
             <Section title="Test outcomes" aside="This group compared with the rest of the class">
-              <table className="w-full text-[13px]">
+              <table className="w-full text-[14px]">
                 <thead>
                   <tr className="text-left text-faint text-2xs uppercase tracking-[0.1em]">
                     <th className="font-medium pb-2">Probe test</th>
@@ -89,16 +89,16 @@ export function InsightPage() {
                 <tbody className="divide-y divide-line border-t border-line">
                   {e.tests.map((t) => (
                     <tr key={t.test_case_id}>
-                      <td className="py-3 pr-4 font-mono text-[12px]">{t.name} {t.hidden && <span className="text-faint font-sans">(hidden)</span>}</td>
+                      <td className="py-3 pr-4 font-mono text-[13px]">{t.name} {t.hidden && <span className="text-faint font-sans">(hidden)</span>}</td>
                       <td className="py-3 pr-4">
-                        <div className="num text-[12.5px] mb-1">{t.group_passed}/{t.group_total}</div>
+                        <div className="num text-[13.5px] mb-1">{t.group_passed}/{t.group_total}</div>
                         <Meter value={t.group_passed} total={t.group_total} tone="brick" />
                       </td>
                       <td className="py-3 pr-4">
-                        <div className="num text-[12.5px] mb-1">{t.others_passed}/{t.others_total}</div>
+                        <div className="num text-[13.5px] mb-1">{t.others_passed}/{t.others_total}</div>
                         <Meter value={t.others_passed} total={t.others_total} />
                       </td>
-                      <td className="py-3 text-muted text-[12.5px]">
+                      <td className="py-3 text-muted text-[13.5px]">
                         {t.common_failures.map((f) => `${f.kind} (${f.count})`).join(", ") || "—"}
                       </td>
                     </tr>
@@ -109,11 +109,11 @@ export function InsightPage() {
           )}
 
           <Section title="Rubric criteria" aside="Share judged “met”: this group / everyone else">
-            <table className="w-full text-[13px]">
+            <table className="w-full text-[14px]">
               <tbody className="divide-y divide-line">
                 {[...linked, ...unlinked].map((x) => (
                   <tr key={x.criterion_id} className={x.linked ? "" : "text-faint"}>
-                    <td className="py-2.5 pr-3 font-mono text-[12px] w-10">{x.code}</td>
+                    <td className="py-2.5 pr-3 font-mono text-[13px] w-10">{x.code}</td>
                     <td className="py-2.5 pr-4">{x.title}{x.linked && <span className="text-2xs text-accent-ink ml-2">same objective</span>}</td>
                     <td className="py-2.5 pr-4 num text-right whitespace-nowrap">
                       {x.group_judged ? `${pct(x.group_met, x.group_judged)}` : <span className="text-faint" title="No usable judgments">no evidence</span>}
@@ -133,23 +133,23 @@ export function InsightPage() {
 
           <Section title="Next step">
             <div className="flex flex-wrap items-center justify-between gap-4">
-              <p className="text-muted text-[13px] max-w-prose">
+              <p className="text-muted text-[14px] max-w-prose">
                 Review the examples above. When you're ready, ATHAR will draft a targeted intervention for these {c.students} students
                 for you to edit and approve: an explanation, practice with progressive hints, and a follow-up check on a new problem.
               </p>
-              <span className="text-[12.5px] text-faint border border-line rounded px-3 py-2" title="Coming in milestone 2">
+              <span className="text-[13.5px] text-faint border border-line rounded px-3 py-2" title="Coming in milestone 2">
                 Draft intervention · milestone 2
               </span>
             </div>
           </Section>
         </div>
 
-        <aside className="lg:pt-6 space-y-8 text-[13px]">
+        <aside className="lg:pt-6 space-y-8 text-[14px]">
           <div>
             <div className="eyebrow mb-2">Assessment conditions</div>
             <div className="text-ink">{KIND[e.conditions.kind] ?? e.conditions.kind} · {CONDITIONS[e.conditions.conditions]?.label}</div>
             <p className="text-muted mt-1">{CONDITIONS[e.conditions.conditions]?.help}</p>
-            <p className="text-faint mt-2 text-[12.5px]">{e.conditions.ai_policy}</p>
+            <p className="text-faint mt-2 text-[13.5px]">{e.conditions.ai_policy}</p>
           </div>
 
           {e.contradictions.length > 0 && (
@@ -192,7 +192,7 @@ function Figure({ value, label, tone }: { value: number; label: string; tone?: "
   return (
     <div className="py-4 px-4 first:pl-0">
       <div className={`font-serif text-[30px] leading-none num ${tone === "amber" ? "text-amber" : ""}`}>{value}</div>
-      <div className="text-[12px] text-muted mt-1.5 leading-4">{label}</div>
+      <div className="text-[13px] text-muted mt-1.5 leading-4">{label}</div>
     </div>
   );
 }

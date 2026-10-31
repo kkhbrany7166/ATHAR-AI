@@ -18,7 +18,7 @@ export function Courses() {
             <Link key={c.id} to={`/p/courses/${c.id}`} className="flex items-center justify-between py-4 px-1 hover:bg-surface/60">
               <div>
                 <div className="text-[15px]"><span className="text-faint mr-2">{c.code}</span>{c.title}</div>
-                <div className="text-[12.5px] text-muted mt-0.5 num">{c.term} · {c.student_count} students · {c.assignment_count} {c.assignment_count === 1 ? "assignment" : "assignments"}</div>
+                <div className="text-[13.5px] text-muted mt-0.5 num">{c.term} · {c.student_count} students · {c.assignment_count} {c.assignment_count === 1 ? "assignment" : "assignments"}</div>
               </div>
               {c.is_synthetic && <SynthTag />}
             </Link>
@@ -39,7 +39,7 @@ export function CourseOverview() {
 
   return (
     <>
-      <div className="text-[12px] text-faint mb-5"><Crumb to="/p">Courses</Crumb> / {c.code}</div>
+      <div className="text-[13px] text-faint mb-5"><Crumb to="/p">Courses</Crumb> / {c.code}</div>
       <PageHeader
         eyebrow={<span className="flex items-center gap-2">{c.code} · {c.term} {c.is_synthetic && <SynthTag />}</span>}
         title={c.title}
@@ -60,11 +60,11 @@ export function CourseOverview() {
                   <span className="font-serif text-[26px] text-ink num leading-none">{i.student_count}</span>
                   <span className="min-w-0">
                     <span className="block text-ink">{i.title}</span>
-                    <span className="block text-[12.5px] text-muted truncate">
+                    <span className="block text-[13.5px] text-muted truncate">
                       {i.kind === "misconception" ? "Possible misconception" : "Support"} · {i.assignment.title}
                     </span>
                   </span>
-                  <span className="text-[13px] text-faint group-hover:text-accent-ink">Review evidence →</span>
+                  <span className="text-[14px] text-faint group-hover:text-accent-ink">Review evidence →</span>
                 </Link>
               </li>
             ))}
@@ -73,7 +73,7 @@ export function CourseOverview() {
       </Section>
 
       <Section title="Assignments">
-        <table className="w-full text-[13px]">
+        <table className="w-full text-[14px]">
           <thead>
             <tr className="text-left text-faint text-2xs uppercase tracking-[0.1em]">
               <th className="font-medium pb-2">Title</th><th className="font-medium pb-2">Type</th>
@@ -105,11 +105,11 @@ export function CourseOverview() {
           <ol className="space-y-4">
             {c.objectives.map((o) => (
               <li key={o.id} className="grid grid-cols-[52px_1fr] gap-3">
-                <span className="font-mono text-[12px] text-accent-ink pt-0.5">{o.code}</span>
+                <span className="font-mono text-[13px] text-accent-ink pt-0.5">{o.code}</span>
                 <div>
                   <div className="text-ink">{o.title}</div>
                   {o.misconceptions.length > 0 && (
-                    <div className="text-[12.5px] text-faint mt-1">
+                    <div className="text-[13.5px] text-faint mt-1">
                       Misconceptions to watch for: {o.misconceptions.map((m) => m.title.toLowerCase()).join("; ")}.
                     </div>
                   )}
@@ -119,7 +119,7 @@ export function CourseOverview() {
           </ol>
         </Section>
         <Section title="Course materials">
-          <ul className="space-y-2 text-[13px]">
+          <ul className="space-y-2 text-[14px]">
             {c.materials.map((m) => (
               <li key={m.id} className="flex justify-between gap-3">
                 <span>{m.title}</span><span className="text-faint">{m.kind.replace("_", " ")}</span>

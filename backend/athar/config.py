@@ -21,6 +21,7 @@ class Settings:
     anthropic_model: str
     openai_model: str
     cors_origins: tuple[str, ...]
+    analyzer: str  # auto | llm | baseline | none  (how written explanations are read)
 
 
 def _detect_provider() -> str:
@@ -44,4 +45,5 @@ def get_settings() -> Settings:
         anthropic_model=os.getenv("ATHAR_ANTHROPIC_MODEL", "claude-opus-5-5"),
         openai_model=os.getenv("ATHAR_OPENAI_MODEL", "gpt-4.1-mini"),
         cors_origins=("http://localhost:5710", "http://127.0.0.1:5710"),
+        analyzer=os.getenv("ATHAR_ANALYZER", "auto").strip().lower(),
     )

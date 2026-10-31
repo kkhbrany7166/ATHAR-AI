@@ -32,7 +32,7 @@ export function StudentHomePage() {
                 <Link to={`/s/assignments/${a.id}`} className="flex flex-wrap items-center justify-between gap-3 py-4 group">
                   <div>
                     <div className="text-ink group-hover:text-accent-ink transition-colors">{a.title}</div>
-                    <div className="text-[12.5px] text-muted mt-0.5">
+                    <div className="text-[13.5px] text-muted mt-0.5">
                       {KIND[a.kind]} · {CONDITIONS[a.conditions]?.label} · due {fmtDate(a.due_at)}
                     </div>
                   </div>
@@ -44,7 +44,7 @@ export function StudentHomePage() {
         </Section>
       ))}
       <Section title="Coming next">
-        <p className="text-muted text-[13px] max-w-prose">
+        <p className="text-muted text-[14px] max-w-prose">
           When your professor approves follow-up practice for a concept, it will appear here, with a guided workspace to
           think, work with the assistant, and then show what you've learned.
         </p>
@@ -63,7 +63,7 @@ export function StudentAssignmentPage() {
 
   return (
     <>
-      <div className="text-[12px] text-faint mb-5"><Crumb to="/s">My learning</Crumb> / {a.course_code}</div>
+      <div className="text-[13px] text-faint mb-5"><Crumb to="/s">My learning</Crumb> / {a.course_code}</div>
       <PageHeader eyebrow={`${a.course_code} · due ${fmtDate(a.due_at)}`} title={a.title}>
         <span className="flex flex-wrap gap-1.5 mt-1"><Tag>{KIND[a.kind]}</Tag><Tag>{CONDITIONS[a.conditions]?.label}</Tag></span>
       </PageHeader>
@@ -86,13 +86,13 @@ export function StudentAssignmentPage() {
         </div>
         <aside className="lg:pt-6">
           <div className="eyebrow mb-3">Feedback</div>
-          {!latest ? <p className="text-muted text-[13px]">You haven't submitted this one.</p>
+          {!latest ? <p className="text-muted text-[14px]">You haven't submitted this one.</p>
             : !latest.feedback ? (
-              <p className="text-muted text-[13px]">
+              <p className="text-muted text-[14px]">
                 Your professor is reviewing submissions. Feedback appears here once they've confirmed it. ATHAR never releases a grade on its own.
               </p>
             ) : (
-              <div className="space-y-4 text-[13px]">
+              <div className="space-y-4 text-[14px]">
                 <div className="font-serif text-[28px] num">{latest.feedback.total}<span className="text-faint text-[17px]">/{latest.feedback.max_total}</span></div>
                 {latest.feedback.criteria.map((c) => (
                   <div key={c.code}>
@@ -103,7 +103,7 @@ export function StudentAssignmentPage() {
                 ))}
                 <div>
                   <div className="eyebrow mb-1.5">Visible tests</div>
-                  <ul className="space-y-1 font-mono text-[12px]">
+                  <ul className="space-y-1 font-mono text-[13px]">
                     {latest.feedback.tests.map((t) => <li key={t.name} className={t.passed ? "text-accent-ink" : "text-brick"}>{t.passed ? "✓" : "✗"} {t.name}</li>)}
                   </ul>
                 </div>
@@ -111,7 +111,7 @@ export function StudentAssignmentPage() {
             )}
           <div className="mt-8">
             <div className="eyebrow mb-2">Rubric</div>
-            <ul className="space-y-2 text-[12.5px] text-muted">
+            <ul className="space-y-2 text-[13.5px] text-muted">
               {a.criteria.map((c) => <li key={c.code}><span className="text-ink">{c.title}</span> · {c.max_points} pts</li>)}
             </ul>
           </div>

@@ -81,8 +81,8 @@ def compute_insights(db: Session, assignment: m.Assignment, run: m.GradingRun) -
             continue
         tests_only, expl_only, both = [], [], []
         for sid, rows in per_sub.items():
-            sources = {r.source for r in rows}
-            (both if sources == {"tests", "ai"} else tests_only if sources == {"tests"} else expl_only).append(sid)
+            sources = {"explanation" if r.source in ("ai", "baseline") else r.source for r in rows}
+            (both if sources == {"tests", "explanation"} else tests_only if sources == {"tests"} else expl_only).append(sid)
         group = list(per_sub)
         group_set = set(group)
         working_but_confused = [sid for sid in expl_only if test_met(sub_by_id[sid])]
@@ -129,8 +129,8 @@ def compute_insights(db: Session, assignment: m.Assignment, run: m.GradingRun) -
                                     "Explanation-only cases could be undercounted."})
         if code in ("MC-STOP-IMPLICIT",) and not any(p for t in tests for p in (t.probes or []) if p.get("misconception") == code):
             missing.append({"kind": "no_test_probe", "count": 0,
-                            "text": "No test can detect this belief. It rests only on written explanations, read by AI and not yet confirmed by you."})
-        low_conf = [sid for sid, rows in per_sub.items() if all(r.source == "ai" and r.confidence == "low" for r in rows)]
+                            "text": "No test can detect this belief. It rests only on machine readings of written explanations, not yet confirmed by you."})
+        low_conf = [sid for sid, rows in per_sub.items() if all(r.source in ("ai", "baseline") and r.confidence == "low" for r in rows)]
         if low_conf:
             missing.append({"kind": "low_confidence", "count": len(low_conf),
                             "text": f"For {len(low_conf)} of these students, the only evidence is a low-confidence AI reading."})
@@ -141,7 +141,7 @@ def compute_insights(db: Session, assignment: m.Assignment, run: m.GradingRun) -
                                    "submission_ids": working_but_confused,
                                    "text": f"{len(working_but_confused)} students passed every test, but their explanation suggests this misconception."})
         says_right = [sid for sid in tests_only
-                      if all((a := authoritative(sub_by_id[sid].evidence, c.id)) is not None and a.source == "ai" and a.judgment == "met"
+                      if all((a := authoritative(sub_by_id[sid].evidence, c.id)) is not None and a.source in ("ai", "baseline") and a.judgment == "met"
                              for c in expl_criteria if c.objective_id == mc.objective_id) and expl_status.get(sid) == "analyzed"]
         if says_right:
             contradictions.append({"kind": "explanation_correct_code_wrong", "count": len(says_right), "submission_ids": says_right,
@@ -201,7 +201,7 @@ def _examples(per_sub, sub_by_id, users, both, expl_only, tests_only, k: int = 4
     for sid in order[:k]:
         s = sub_by_id[sid]
         rows = per_sub[sid]
-        quote = next((r.quote for r in rows if r.source == "ai" and r.quote), "")
+        quote = next((r.quote for r in rows if r.source in ("ai", "baseline") and r.quote), "")
         test_detail = next((r.detail for r in rows if r.source == "tests"), "")
         u = users.get(s.student_id)
         out.append({"submission_id": sid, "student_id": s.student_id, "student_name": u.name if u else "",

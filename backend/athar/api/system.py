@@ -46,3 +46,29 @@ def demo_login(body: Login, db: Session = Depends(get_db)):
 @router.get("/me")
 def me(user: m.User = Depends(current_user)):
     return ser.user_brief(user)
+
+
+@router.get("/public/highlight")
+def highlight(db: Session = Depends(get_db)):
+    """One real, aggregate finding for the landing page. Counts only; no names or student text."""
+    run = db.scalar(select(m.GradingRun).where(m.GradingRun.status == "done").order_by(m.GradingRun.id.desc()).limit(1))
+    if run is None:
+        return {"available": False}
+    insights = db.scalars(select(m.Insight).where(m.Insight.run_id == run.id, m.Insight.kind == "misconception")).all()
+    if not insights:
+        return {"available": False}
+    course = db.get(m.Assignment, run.assignment_id).course
+    confused = max(insights, key=lambda i: i.evidence["counts"]["working_code_confused_reasoning"])
+    n_confused = confused.evidence["counts"]["working_code_confused_reasoning"]
+    if n_confused >= 3:
+        return {"available": True, "course_code": course.code, "students": n_confused,
+                "submitted": confused.evidence["counts"]["submitted"],
+                "headline": f"{n_confused} students wrote working code. Their explanations tell a different story.",
+                "detail": f"Every test passed, yet their reasoning points to the same gap: {confused.title.lower()}.",
+                "source": run.ai_status}
+    top = max(insights, key=lambda i: i.student_count)
+    c = top.evidence["counts"]
+    return {"available": True, "course_code": course.code, "students": top.student_count, "submitted": c["submitted"],
+            "headline": f"{top.student_count} of {c['submitted']} students share the same gap.",
+            "detail": f"{top.title}. Most of their code still passes the typical tests, so the grade alone would hide it.",
+            "source": run.ai_status}

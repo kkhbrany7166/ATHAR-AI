@@ -14,7 +14,7 @@ export function Button({ variant = "secondary", className, ...props }: ButtonHTM
     <button
       {...props}
       className={cx(
-        "inline-flex items-center gap-2 rounded px-3.5 h-9 text-[13px] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+        "inline-flex items-center gap-2 rounded px-3.5 h-9 text-[14px] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
         variant === "primary" && "bg-accent text-ink hover:bg-accent-strong",
         variant === "secondary" && "border border-line-strong text-ink hover:bg-raised",
         variant === "ghost" && "text-muted hover:text-ink hover:bg-raised",
@@ -41,8 +41,8 @@ export function Section({ title, aside, children, className }: { title: ReactNod
   return (
     <section className={cx("pt-6 pb-2", className)}>
       <div className="flex items-baseline justify-between gap-4 border-b border-line pb-2.5 mb-4">
-        <h2 className="text-[13px] font-semibold tracking-[0.01em] text-ink">{title}</h2>
-        {aside && <div className="text-[12px] text-faint">{aside}</div>}
+        <h2 className="text-[14px] font-semibold tracking-[0.01em] text-ink">{title}</h2>
+        {aside && <div className="text-[13px] text-faint">{aside}</div>}
       </div>
       {children}
     </section>
@@ -88,7 +88,7 @@ export function JudgmentMark({ judgment, compact }: { judgment: Judgment | null;
   if (!judgment) return <span className="text-faint">—</span>;
   const j = JUDGMENT[judgment];
   return (
-    <span className="inline-flex items-center gap-1.5 text-[12.5px] text-muted" title={j.label}>
+    <span className="inline-flex items-center gap-1.5 text-[13.5px] text-muted" title={j.label}>
       <span className={cx("inline-block w-2 h-2 rounded-full", j.dot)} />
       {!compact && j.label}
     </span>
@@ -99,7 +99,7 @@ export function Callout({ tone = "neutral", title, children }: { tone?: "neutral
   return (
     <div
       className={cx(
-        "border-l-2 pl-4 py-1.5 text-[13px]",
+        "border-l-2 pl-4 py-1.5 text-[14px]",
         tone === "neutral" && "border-line-strong text-muted",
         tone === "amber" && "border-amber/70 text-muted",
         tone === "brick" && "border-brick/70 text-muted",
@@ -114,7 +114,7 @@ export function Callout({ tone = "neutral", title, children }: { tone?: "neutral
 
 export function Loading({ label = "Loading" }: { label?: string }) {
   return (
-    <div className="py-16 text-faint text-[13px] flex items-center gap-3" role="status">
+    <div className="py-16 text-faint text-[14px] flex items-center gap-3" role="status">
       <span className="inline-block w-3 h-3 rounded-full border-2 border-line-strong border-t-accent-ink animate-spin" />
       {label}…
     </div>
@@ -134,7 +134,7 @@ export function Empty({ title, children }: { title: string; children?: ReactNode
   return (
     <div className="py-10 text-center">
       <div className="text-ink font-medium">{title}</div>
-      {children && <div className="text-muted text-[13px] mt-1 max-w-md mx-auto">{children}</div>}
+      {children && <div className="text-muted text-[14px] mt-1 max-w-md mx-auto">{children}</div>}
     </div>
   );
 }
@@ -146,7 +146,7 @@ export function Crumb({ to, children }: { to: string; children: ReactNode }) {
 export function CodeBlock({ code, className }: { code: string; className?: string }) {
   const lines = code.replace(/\n$/, "").split("\n");
   return (
-    <pre className={cx("font-mono text-[12.5px] leading-[1.65] bg-canvas border border-line rounded-md py-3 overflow-x-auto", className)}>
+    <pre className={cx("font-mono text-[13.5px] leading-[1.65] bg-canvas border border-line rounded-md py-3 overflow-x-auto", className)}>
       {lines.map((l, i) => (
         <div key={i} className="flex">
           <span className="select-none w-10 shrink-0 text-right pr-4 text-faint/70 num">{i + 1}</span>

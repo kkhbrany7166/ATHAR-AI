@@ -25,7 +25,7 @@ export function AssignmentPage() {
 
   return (
     <>
-      <div className="text-[12px] text-faint mb-5">
+      <div className="text-[13px] text-faint mb-5">
         <Crumb to="/p">Courses</Crumb> / <Crumb to={`/p/courses/${a.course_id}`}>{a.course_code}</Crumb> / Assignment
       </div>
       <PageHeader
@@ -48,7 +48,7 @@ export function AssignmentPage() {
             role="tab"
             aria-selected={tab === t.id}
             onClick={() => setParams({ tab: t.id }, { replace: true })}
-            className={cx("pb-2.5 -mb-px text-[13px] border-b-2 transition-colors",
+            className={cx("pb-2.5 -mb-px text-[14px] border-b-2 transition-colors",
               tab === t.id ? "border-accent-strong text-ink" : "border-transparent text-muted hover:text-ink")}
           >
             {t.label}
@@ -95,7 +95,7 @@ function GradingPanel({ a }: { a: AssignmentDetail }) {
   return (
     <div className="border-y border-line py-4 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <dl className="flex flex-wrap gap-x-8 gap-y-2 text-[13px]">
+        <dl className="flex flex-wrap gap-x-8 gap-y-2 text-[14px]">
           {[
             ["Submitted", `${s.submitted} / ${s.enrolled}`],
             ["Evidence prepared", s.graded],
@@ -117,7 +117,7 @@ function GradingPanel({ a }: { a: AssignmentDetail }) {
 
       {running && live && (
         <div className="space-y-2 max-w-xl">
-          <div className="text-[12.5px] text-muted">
+          <div className="text-[13.5px] text-muted">
             {live.stage === "tests" || live.status === "queued"
               ? `Running tests in the sandbox: ${live.tests_done} of ${live.total || s.submitted}`
               : live.stage === "explanations"
@@ -132,7 +132,7 @@ function GradingPanel({ a }: { a: AssignmentDetail }) {
         <Callout tone="brick" title="The grading run failed">{live.error || "Unknown error"}. Nothing from this run was published.</Callout>
       )}
       {!running && live?.status === "done" && (
-        <div className="text-[12.5px] text-faint">
+        <div className="text-[13.5px] text-faint">
           Evidence prepared {live.finished_at ? new Date(live.finished_at).toLocaleString() : ""}.
           {" "}Tests ran for all {live.total} submissions in an isolated process.
           {live.ai_status === "used" && ` Written explanations read by ${live.ai_provider.split(":")[1] ?? live.ai_provider}; every quoted span was checked against the student's text.`}
@@ -190,8 +190,8 @@ function InsightsTab({ a }: { a: AssignmentDetail }) {
                         {i.objective && <span className="font-mono text-[11px] text-accent-ink">{i.objective.code}</span>}
                         <span className="text-[15px] text-ink">{i.title}</span>
                       </div>
-                      <p className="text-[13px] text-muted max-w-prose">{i.summary}</p>
-                      <div className="flex flex-wrap gap-x-5 gap-y-1 mt-2 text-[12px] text-faint num">
+                      <p className="text-[14px] text-muted max-w-prose">{i.summary}</p>
+                      <div className="flex flex-wrap gap-x-5 gap-y-1 mt-2 text-[13px] text-faint num">
                         <span>Tests only {e.counts.tests_only}</span>
                         <span>Explanation only {e.counts.explanation_only}</span>
                         <span>Both {e.counts.both}</span>
@@ -200,7 +200,7 @@ function InsightsTab({ a }: { a: AssignmentDetail }) {
                         )}
                       </div>
                     </div>
-                    <span className="text-[13px] text-faint group-hover:text-accent-ink self-center">Evidence →</span>
+                    <span className="text-[14px] text-faint group-hover:text-accent-ink self-center">Evidence →</span>
                   </Link>
                 </li>
               );
@@ -217,7 +217,7 @@ function SupportBlock({ insight }: { insight: Insight }) {
   const e = insight.evidence as SupportEvidence;
   return (
     <Section title="Students who may need direct support" aside={insight.summary}>
-      <div className="grid md:grid-cols-2 gap-x-12 gap-y-4 text-[13px]">
+      <div className="grid md:grid-cols-2 gap-x-12 gap-y-4 text-[14px]">
         <div>
           <div className="eyebrow mb-2">Two or more criteria not met</div>
           {e.struggling.length === 0 ? <div className="text-faint">None</div> : (
@@ -276,12 +276,12 @@ function SubmissionsTab({ a }: { a: AssignmentDetail }) {
         <div className="flex flex-wrap gap-1">
           {([["all", "All"], ["review", "Needs review"], ["misconception", "Misconception evidence"], ["ready", "Reviewed"]] as [Filter, string][]).map(([f, l]) => (
             <button key={f} onClick={() => setFilter(f)}
-              className={cx("h-7 px-2.5 rounded text-[12.5px]", filter === f ? "bg-raised text-ink" : "text-muted hover:text-ink")}>
+              className={cx("h-7 px-2.5 rounded text-[13.5px]", filter === f ? "bg-raised text-ink" : "text-muted hover:text-ink")}>
               {l}
             </button>
           ))}
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Find a student"
-            className="ml-2 h-7 w-44 bg-surface border border-line rounded px-2 text-[12.5px] placeholder:text-faint" />
+            className="ml-2 h-7 w-44 bg-surface border border-line rounded px-2 text-[13.5px] placeholder:text-faint" />
         </div>
         <Button onClick={() => publish.mutate()} disabled={publish.isPending}>Publish reviewed grades</Button>
       </div>
@@ -294,7 +294,7 @@ function SubmissionsTab({ a }: { a: AssignmentDetail }) {
         </div>
       )}
       <div className="overflow-x-auto">
-        <table className="w-full text-[13px] min-w-[760px]">
+        <table className="w-full text-[14px] min-w-[760px]">
           <thead>
             <tr className="text-left text-faint text-2xs uppercase tracking-[0.1em] border-b border-line">
               <th className="font-medium py-2">Student</th>
@@ -332,7 +332,7 @@ function SubmissionsTab({ a }: { a: AssignmentDetail }) {
                     {r.misconceptions.map((m) => <Tag key={m} tone="brick">{m.replace("MC-", "")}</Tag>)}
                   </span>
                 </td>
-                <td className="py-2.5 text-muted text-[12.5px]">{r.grade_status}</td>
+                <td className="py-2.5 text-muted text-[13.5px]">{r.grade_status}</td>
               </tr>
             ))}
           </tbody>
@@ -357,17 +357,17 @@ function RubricTab({ a }: { a: AssignmentDetail }) {
       <Section title="Task">
         <p className="whitespace-pre-line max-w-prose text-muted">{a.prompt}</p>
         <p className="mt-3 max-w-prose text-muted"><span className="text-ink">Written explanation. </span>{a.explanation_prompt}</p>
-        <p className="mt-3 max-w-prose text-[12.5px] text-faint"><span className="text-muted">AI policy. </span>{a.ai_policy}</p>
+        <p className="mt-3 max-w-prose text-[13.5px] text-faint"><span className="text-muted">AI policy. </span>{a.ai_policy}</p>
       </Section>
       <Section title="Rubric" aside={`${a.criteria.reduce((s, c) => s + c.max_points, 0)} points`}>
-        <table className="w-full text-[13px]">
+        <table className="w-full text-[14px]">
           <tbody className="divide-y divide-line">
             {a.criteria.map((c) => (
               <tr key={c.id}>
-                <td className="py-3 pr-4 font-mono text-[12px] text-accent-ink w-10 align-top">{c.code}</td>
+                <td className="py-3 pr-4 font-mono text-[13px] text-accent-ink w-10 align-top">{c.code}</td>
                 <td className="py-3 pr-4 align-top">
                   <div className="text-ink">{c.title}</div>
-                  <div className="text-muted text-[12.5px]">{c.description}</div>
+                  <div className="text-muted text-[13.5px]">{c.description}</div>
                 </td>
                 <td className="py-3 pr-4 align-top text-muted whitespace-nowrap">
                   {c.method === "tests" ? "Scored by tests" : "AI suggests, you confirm"}
@@ -380,16 +380,16 @@ function RubricTab({ a }: { a: AssignmentDetail }) {
         </table>
       </Section>
       <Section title="Tests" aside="Probes link a failing test to a misconception hypothesis">
-        <table className="w-full text-[13px]">
+        <table className="w-full text-[14px]">
           <tbody className="divide-y divide-line">
             {a.tests.map((t) => {
               const crit = a.criteria.find((c) => c.id === t.criterion_id);
               return (
                 <tr key={t.id}>
-                  <td className="py-2.5 pr-4 font-mono text-[12px]">{t.name}</td>
+                  <td className="py-2.5 pr-4 font-mono text-[13px]">{t.name}</td>
                   <td className="py-2.5 pr-4 text-faint font-mono text-[11px]">{crit?.code}</td>
                   <td className="py-2.5 pr-4">{t.hidden && <Tag>Hidden from students</Tag>}</td>
-                  <td className="py-2.5 text-[12px] text-muted">
+                  <td className="py-2.5 text-[13px] text-muted">
                     {t.probes.map((p) => `${p.misconception.replace("MC-", "")} on ${p.on === "error" ? (p.error_types ?? []).join("/") : "wrong value"}`).join(" · ")}
                   </td>
                 </tr>
@@ -401,7 +401,7 @@ function RubricTab({ a }: { a: AssignmentDetail }) {
       <Section title="Misconceptions to watch for" aside="Hypotheses. ATHAR checks for them, never assumes them">
         <ul className="space-y-3">
           {a.misconceptions.map((m) => (
-            <li key={m.code} className="grid grid-cols-[150px_1fr] gap-4 text-[13px]">
+            <li key={m.code} className="grid grid-cols-[150px_1fr] gap-4 text-[14px]">
               <span className="font-mono text-[11.5px] text-faint pt-0.5">{m.code}</span>
               <div><div className="text-ink">{m.title}</div><div className="text-muted">{m.description}</div></div>
             </li>
@@ -409,7 +409,7 @@ function RubricTab({ a }: { a: AssignmentDetail }) {
         </ul>
       </Section>
       <Section title="Reference solution" aside={<button className="link" onClick={() => setShowSolution((v) => !v)}>{showSolution ? "Hide" : "Show"}</button>}>
-        {showSolution ? <CodeBlock code={a.reference_solution} /> : <p className="text-[12.5px] text-faint">Never shown to students.</p>}
+        {showSolution ? <CodeBlock code={a.reference_solution} /> : <p className="text-[13.5px] text-faint">Never shown to students.</p>}
       </Section>
     </div>
   );

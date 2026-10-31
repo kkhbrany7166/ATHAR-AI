@@ -15,8 +15,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from .. import models as m
-from ..ai import explanations
-from ..ai.provider import LLMError, LLMProvider, get_provider
+from ..ai.reader import Reader, choose_reader
 from ..db import SessionLocal
 from ..insights import compute_insights
 from . import evidence as ev
@@ -64,13 +63,11 @@ def _test_summary(tests: list[m.TestCase], report: RunReport) -> str:
     return "\n".join(lines)
 
 
-def execute_run(run_id: int, provider: LLMProvider | None | object = ...) -> None:
+def execute_run(run_id: int) -> None:
     db = SessionLocal()
     run = db.get(m.GradingRun, run_id)
     try:
-        if provider is ...:
-            provider = get_provider()
-        _execute(db, run, provider)  # type: ignore[arg-type]
+        _execute(db, run, choose_reader())
     except Exception as e:  # record the failure; never pretend the run succeeded
         db.rollback()
         run = db.get(m.GradingRun, run_id)
@@ -82,7 +79,7 @@ def execute_run(run_id: int, provider: LLMProvider | None | object = ...) -> Non
         db.close()
 
 
-def _execute(db: Session, run: m.GradingRun, provider: LLMProvider | None) -> None:
+def _execute(db: Session, run: m.GradingRun, reader: Reader) -> None:
     assignment = db.get(m.Assignment, run.assignment_id)
     tests = list(assignment.tests)
     criteria = list(assignment.criteria)
@@ -94,7 +91,7 @@ def _execute(db: Session, run: m.GradingRun, provider: LLMProvider | None) -> No
     ).all()
 
     run.status, run.stage, run.total = "running", "tests", len(subs)
-    run.ai_provider = f"{provider.name}:{provider.model}" if provider else "none"
+    run.ai_provider = reader.label
     db.commit()
 
     # ---- 1. tests (parallel sandbox processes; DB writes stay on this thread) ----
@@ -145,22 +142,22 @@ def _execute(db: Session, run: m.GradingRun, provider: LLMProvider | None) -> No
         sub, report = args
         if not sub.explanation.strip():
             return sub, None, None
-        if provider is None:
+        if reader.kind == "none":
             return sub, None, "unavailable"
         try:
-            result = explanations.analyze(
-                provider, explanation=sub.explanation, criteria=crit_payload, misconceptions=mc_payload,
+            result = reader.read(
+                explanation=sub.explanation, criteria=crit_payload, misconceptions=mc_payload,
                 assignment_prompt=assignment.prompt, explanation_prompt=assignment.explanation_prompt,
                 code=sub.code, test_summary=_test_summary(tests, report),
             )
             return sub, result, None
-        except (LLMError, Exception) as e:  # noqa: BLE001 - every failure is recorded per submission
+        except Exception as e:  # noqa: BLE001 - every failure is recorded per submission
             return sub, None, f"{e.__class__.__name__}: {e}"[:500]
 
     if expl_criteria:
-        with ThreadPoolExecutor(max_workers=6 if provider else 1) as pool:
+        with ThreadPoolExecutor(max_workers=6 if reader.kind == "llm" else 1) as pool:
             for sub, result, err in pool.map(analyze_one, list(zip(subs, reports))):
-                _store_explanation_evidence(db, run, sub, expl_criteria, crit_by_code, result, err, provider)
+                _store_explanation_evidence(db, run, sub, expl_criteria, crit_by_code, result, err, reader)
                 if err and err != "unavailable":
                     run.ai_failed += 1
                 elif result is not None:
@@ -169,14 +166,14 @@ def _execute(db: Session, run: m.GradingRun, provider: LLMProvider | None) -> No
 
     if not expl_criteria:
         run.ai_status = "not_needed"
-    elif provider is None:
+    elif reader.kind == "none":
         run.ai_status = "unavailable"
     elif run.ai_failed and run.ai_done:
         run.ai_status = "partial"
     elif run.ai_failed:
         run.ai_status = "failed"
     else:
-        run.ai_status = "used"
+        run.ai_status = "used" if reader.kind == "llm" else "baseline"
 
     # ---- 3. status + insights ----
     for sub in subs:
@@ -192,7 +189,7 @@ def _execute(db: Session, run: m.GradingRun, provider: LLMProvider | None) -> No
     db.commit()
 
 
-def _store_explanation_evidence(db, run, sub, expl_criteria, crit_by_code, result, err, provider) -> None:
+def _store_explanation_evidence(db, run, sub, expl_criteria, crit_by_code, result, err, reader: Reader) -> None:
     if result is None:
         if not sub.explanation.strip():
             for c in expl_criteria:
@@ -206,14 +203,14 @@ def _store_explanation_evidence(db, run, sub, expl_criteria, crit_by_code, resul
         for c in expl_criteria:
             db.add(m.CriterionEvidence(submission_id=sub.id, criterion_id=c.id, run_id=run.id, source="ai", judgment=judgment,
                                        points=None, rationale=rationale, needs_review=True, review_reasons=[judgment],
-                                       model=f"{provider.name}:{provider.model}" if provider else ""))
+                                       model=reader.label))
         return
 
-    model = f"{provider.name}:{provider.model}"
+    model, source = reader.label, reader.source
     for c in expl_criteria:
         v = result.criteria.get(c.code)
         if v is None:
-            db.add(m.CriterionEvidence(submission_id=sub.id, criterion_id=c.id, run_id=run.id, source="ai", judgment="ai_failed",
+            db.add(m.CriterionEvidence(submission_id=sub.id, criterion_id=c.id, run_id=run.id, source=source, judgment="ai_failed",
                                        points=None, rationale="The AI response did not include this criterion.",
                                        needs_review=True, review_reasons=["missing_from_ai_output"], model=model))
             continue
@@ -221,9 +218,9 @@ def _store_explanation_evidence(db, run, sub, expl_criteria, crit_by_code, resul
         reasons = list(v.review_reasons)
         if result.rejected:
             reasons.append("ai_output_partially_rejected")
-        db.add(m.CriterionEvidence(submission_id=sub.id, criterion_id=c.id, run_id=run.id, source="ai", judgment=v.judgment,
+        db.add(m.CriterionEvidence(submission_id=sub.id, criterion_id=c.id, run_id=run.id, source=source, judgment=v.judgment,
                                    points=points, rationale=v.rationale, quotes=v.quotes, confidence=v.confidence,
                                    needs_review=bool(reasons), review_reasons=sorted(set(reasons)), model=model))
     for s in result.signals:
-        db.add(m.MisconceptionEvidence(submission_id=sub.id, misconception_code=s.code, run_id=run.id, source="ai",
+        db.add(m.MisconceptionEvidence(submission_id=sub.id, misconception_code=s.code, run_id=run.id, source=source,
                                        detail=s.reasoning, quote=s.quote, confidence=s.confidence))

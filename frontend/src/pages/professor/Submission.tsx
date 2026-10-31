@@ -51,7 +51,7 @@ export function SubmissionPage() {
 
   return (
     <>
-      <div className="text-[12px] text-faint mb-5">
+      <div className="text-[13px] text-faint mb-5">
         <Crumb to="/p">Courses</Crumb> / <Crumb to={`/p/assignments/${d.assignment_id}?tab=submissions`}>{d.assignment_title.split("—")[0].trim()}</Crumb> / Submission
       </div>
       <header className="flex flex-wrap items-end justify-between gap-4 pb-6">
@@ -68,7 +68,7 @@ export function SubmissionPage() {
           <div className="font-serif text-[30px] num leading-none">
             {d.total ?? "—"}<span className="text-faint text-[18px]">/{d.max_total}</span>
           </div>
-          <div className="text-[12px] mt-1 text-muted">
+          <div className="text-[13px] mt-1 text-muted">
             {d.total === null ? "Some criteria have no points yet" : d.includes_unconfirmed_ai ? <span className="text-amber">Includes unconfirmed AI suggestions</span> : "Every criterion confirmed"}
           </div>
         </div>
@@ -81,14 +81,14 @@ export function SubmissionPage() {
               <p className="font-serif text-[16.5px] leading-[1.7] text-ink max-w-prose"><Highlighted text={d.explanation} quotes={quotes} /></p>
             ) : <p className="text-faint">No explanation submitted.</p>}
             {d.ai_use_disclosure && (
-              <p className="text-[12.5px] text-muted mt-4"><span className="text-faint">AI use disclosed by student: </span>{d.ai_use_disclosure}</p>
+              <p className="text-[13.5px] text-muted mt-4"><span className="text-faint">AI use disclosed by student: </span>{d.ai_use_disclosure}</p>
             )}
           </Section>
           <Section title="Code">
             <CodeBlock code={d.code} />
           </Section>
           <Section title="Test results" aside={`${d.tests.filter((t) => t.status === "pass").length} of ${d.tests.length} passed`}>
-            <table className="w-full text-[12.5px]">
+            <table className="w-full text-[13.5px]">
               <tbody className="divide-y divide-line">
                 {d.tests.map((t) => (
                   <tr key={t.id}>
@@ -106,7 +106,7 @@ export function SubmissionPage() {
           </Section>
           {d.misconceptions.length > 0 && (
             <Section title="Misconception evidence">
-              <ul className="space-y-3 text-[13px]">
+              <ul className="space-y-3 text-[14px]">
                 {d.misconceptions.map((m) => (
                   <li key={m.id}>
                     <div className="flex items-center gap-2"><span className="font-mono text-[11.5px] text-brick">{m.code}</span><SourceTag source={m.source} /></div>
@@ -136,7 +136,7 @@ export function SubmissionPage() {
               </Callout>
             ) : (
               <div className="flex items-center justify-between gap-4">
-                <p className="text-muted text-[13px]">Every criterion rests on tests or your decision.</p>
+                <p className="text-muted text-[14px]">Every criterion rests on tests or your decision.</p>
                 <Button variant="primary" disabled={publish.isPending} onClick={() => publish.mutate(d)}>Publish feedback</Button>
               </div>
             )}
@@ -166,17 +166,17 @@ function CriterionReview({ sub, c, onSaved }: { sub: Detail; c: Detail["criteria
     <div className="border-b border-line pb-5 last:border-0">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-ink"><span className="font-mono text-[12px] text-accent-ink mr-2">{c.code}</span>{c.title}</div>
-          <div className="text-[12px] text-faint mt-0.5">{c.method === "tests" ? "Scored by tests" : "AI suggests, you decide"} · {c.max_points} pts</div>
+          <div className="text-ink"><span className="font-mono text-[13px] text-accent-ink mr-2">{c.code}</span>{c.title}</div>
+          <div className="text-[13px] text-faint mt-0.5">{c.method === "tests" ? "Scored by tests" : "AI suggests, you decide"} · {c.max_points} pts</div>
         </div>
         <div className="text-right shrink-0">
           <JudgmentMark judgment={c.state.judgment} />
-          <div className="num text-[13px] mt-0.5">{c.state.points ?? "—"}<span className="text-faint">/{c.max_points}</span></div>
+          <div className="num text-[14px] mt-0.5">{c.state.points ?? "—"}<span className="text-faint">/{c.max_points}</span></div>
         </div>
       </div>
       <ul className="mt-3 space-y-3">
         {shown.map((e) => (
-          <li key={e.id} className={cx("text-[13px]", e.source !== c.state.source && "opacity-60")}>
+          <li key={e.id} className={cx("text-[14px]", e.source !== c.state.source && "opacity-60")}>
             <div className="flex flex-wrap items-center gap-1.5 mb-1">
               {!["ai_unavailable", "ai_failed"].includes(e.judgment) && <SourceTag source={e.source} />}
               {e.source === "ai" && e.confidence && <span className="text-2xs text-faint">confidence {e.confidence}</span>}
@@ -193,26 +193,26 @@ function CriterionReview({ sub, c, onSaved }: { sub: Detail; c: Detail["criteria
             <div className="flex flex-wrap gap-2 items-center">
               {(["met", "partial", "not_met"] as const).map((j) => (
                 <button key={j} onClick={() => { setJudgment(j); setPoints(String(j === "met" ? c.max_points : j === "partial" ? c.max_points / 2 : 0)); }}
-                  className={cx("h-7 px-2.5 rounded text-[12.5px] border", judgment === j ? "border-accent-strong text-ink bg-accent-wash" : "border-line-strong text-muted")}>
+                  className={cx("h-7 px-2.5 rounded text-[13.5px] border", judgment === j ? "border-accent-strong text-ink bg-accent-wash" : "border-line-strong text-muted")}>
                   {j === "not_met" ? "Not met" : j[0].toUpperCase() + j.slice(1)}
                 </button>
               ))}
-              <label className="text-[12.5px] text-muted ml-auto flex items-center gap-1.5">
+              <label className="text-[13.5px] text-muted ml-auto flex items-center gap-1.5">
                 Points
                 <input type="number" min={0} max={c.max_points} step={0.5} value={points} onChange={(e) => setPoints(e.target.value)}
                   className="w-16 h-7 bg-canvas border border-line-strong rounded px-2 num text-ink" />
               </label>
             </div>
             <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="Comment for the student (optional)"
-              className="w-full bg-canvas border border-line-strong rounded px-2 py-1.5 text-[13px] placeholder:text-faint" />
-            {save.error && <div className="text-brick text-[12.5px]">{(save.error as Error).message}</div>}
+              className="w-full bg-canvas border border-line-strong rounded px-2 py-1.5 text-[14px] placeholder:text-faint" />
+            {save.error && <div className="text-brick text-[13.5px]">{(save.error as Error).message}</div>}
             <div className="flex gap-2 justify-end">
               <Button variant="ghost" onClick={() => setEditing(false)}>Cancel</Button>
               <Button variant="primary" disabled={save.isPending} onClick={() => save.mutate()}>Save decision</Button>
             </div>
           </div>
         ) : (
-          <button className="link text-[12.5px] mt-3" onClick={() => setEditing(true)}>
+          <button className="link text-[13.5px] mt-3" onClick={() => setEditing(true)}>
             {c.state.source === "professor" ? "Change your decision" : c.method === "tests" ? "Override" : "Decide"}
           </button>
         )
