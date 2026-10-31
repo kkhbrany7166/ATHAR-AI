@@ -17,3 +17,4 @@ frontend/dist/
 review-package/
 # Review package (built locally, never committed)
 /athar-review-package.zip
+/athar-review-package/
