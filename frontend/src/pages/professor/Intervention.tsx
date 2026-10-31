@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
+import { EvidenceTag } from "../../components/Evidence";
 import type { Intervention, InterventionStudent, Item, Outcome } from "../../lib/types";
 import { Button, Callout, CodeBlock, Crumb, ErrorState, Loading, Section, SynthTag, Tag, cx, fmtDate } from "../../components/ui";
 
@@ -11,11 +12,9 @@ export const OUTCOME: Record<Outcome, { label: string; tone: "accent" | "amber" 
   insufficient_evidence: { label: "Insufficient evidence", tone: "neutral", dot: "border border-faint" },
 };
 
-const STEPS = ["draft", "approved", "active", "completed"] as const;
 const KIND_LABEL: Record<string, string> = {
   concept_practice: "Concept practice", debugging: "Debugging exercise", explain_reasoning: "Explain-your-reasoning task",
 };
-const STEP_LABEL: Record<string, string> = { draft: "Drafted", approved: "Approved", active: "Delivered to students", completed: "Closed" };
 
 export function InterventionPage() {
   const { interventionId } = useParams();
@@ -31,7 +30,6 @@ export function InterventionPage() {
   if (q.isLoading) return <Loading />;
   if (q.error) return <ErrorState error={q.error} />;
   const iv = q.data!;
-  const stepIdx = STEPS.indexOf(iv.status as (typeof STEPS)[number]);
 
   return (
     <>
@@ -46,18 +44,26 @@ export function InterventionPage() {
         <p className="text-muted mt-2">For {iv.target_student_ids.length} students, from {iv.assignment.title}.</p>
       </header>
 
-      {/* Status rail */}
-      <ol className="flex flex-wrap border-y border-line">
-        {iv.status === "rejected" ? (
-          <li className="py-3 text-brick text-[14px]">Rejected. Nothing was sent to students.</li>
-        ) : STEPS.map((s, i) => (
-          <li key={s} className={cx("flex-1 min-w-[140px] py-3 pr-4 text-[13.5px] border-t-2 -mt-px",
-            i <= stepIdx ? "border-accent-strong text-ink" : "border-transparent text-faint")}>
-            <span className="num text-faint mr-2">{i + 1}</span>{STEP_LABEL[s]}
-            {s === "approved" && iv.approved_at && <span className="block text-2xs text-faint mt-0.5">{fmtDate(iv.approved_at)}</span>}
-          </li>
-        ))}
-      </ol>
+      {/* The loop for this intervention: evidence → plan → approval → delivery → verification */}
+      {iv.status === "rejected" ? (
+        <p className="py-3 border-y border-line text-brick text-[14px]">Rejected. Nothing was sent to students.</p>
+      ) : (
+        <ol className="grid grid-cols-2 md:grid-cols-5 border-y border-line" aria-label="Intervention progress">
+          {[
+            { label: "Evidence", value: `${iv.target_student_ids.length} students`, sub: "from tests and readings", on: true },
+            { label: "Plan", value: iv.explanation_source.startsWith("ai:") ? "AI draft" : "Template", sub: "you can edit it", on: true },
+            { label: "Your approval", value: iv.approved_at ? fmtDate(iv.approved_at) : "Waiting", sub: iv.approved_at ? "approved" : "nothing sent yet", on: !!iv.approved_at },
+            { label: "Delivered", value: `${iv.progress.delivered} activities`, sub: "one per student", on: iv.progress.delivered > 0 },
+            { label: "Verified", value: `${iv.progress.verified} new attempts`, sub: "checked by fixed rules", on: iv.progress.verified > 0 },
+          ].map((x, i) => (
+            <li key={x.label} className={cx("py-4 pr-4 border-t-2 -mt-px", x.on ? "border-accent-strong" : "border-transparent")}>
+              <div className="text-[12.5px] text-faint num">{i + 1} · {x.label}</div>
+              <div className={cx("text-[15.5px] mt-1", x.on ? "text-ink" : "text-faint")}>{x.value}</div>
+              <div className="text-[13px] text-faint">{x.sub}</div>
+            </li>
+          ))}
+        </ol>
+      )}
 
       {act.error && <div className="mt-4"><Callout tone="brick" title="That didn't go through">{(act.error as Error).message}</Callout></div>}
       {iv.execution_error && <div className="mt-4"><Callout tone="brick" title="Execution failed and was rolled back">{iv.execution_error}</Callout></div>}
@@ -205,12 +211,16 @@ function ItemSummary({ item, brokenLabel }: { item: Item; brokenLabel?: string }
         {v.valid ? <Tag tone="accent">Validated</Tag> : <Tag tone="brick">Failed validation</Tag>}
       </div>
       <p className="text-muted text-[14px] mt-1.5 max-w-prose">{item.prompt}</p>
-      <p className="text-[13px] text-faint mt-2">
-        Reference solution passes {v.reference_passed}/{v.total} tests.{" "}
-        {v.misconception_caught_by.length > 0
-          ? <>Code with the misconception is caught by <span className="font-mono text-[12px] text-muted">{v.misconception_caught_by.join(", ")}</span>.</>
-          : "Code with the misconception is not caught."}
-      </p>
+      <div className="grid sm:grid-cols-2 gap-3 mt-3 text-[13.5px]" aria-label="Validation result">
+        <div className={cx("rounded-md border px-3 py-2.5", v.reference_passed === v.total && v.total > 0 ? "border-accent/60 bg-accent-wash/40" : "border-brick/50")}>
+          <div className="text-faint">{brokenLabel ? "Fixed version" : "Correct solution"}</div>
+          <div className="text-ink mt-0.5">{v.reference_passed === v.total && v.total > 0 ? "✓" : "✗"} passes {v.reference_passed} of {v.total} tests</div>
+        </div>
+        <div className={cx("rounded-md border px-3 py-2.5", v.misconception_caught_by.length ? "border-accent/60 bg-accent-wash/40" : "border-brick/50")}>
+          <div className="text-faint">{brokenLabel ?? "Code with the misconception"}</div>
+          <div className="text-ink mt-0.5">{v.misconception_caught_by.length ? <>✓ caught: <span className="font-mono text-[12.5px] text-muted">{v.misconception_caught_by.join(", ")}</span></> : "✗ not caught, so this check can't tell them apart"}</div>
+        </div>
+      </div>
       {v.problems.length > 0 && <ul className="text-brick text-[13px] mt-1 list-disc ml-4">{v.problems.map((p) => <li key={p}>{p}</li>)}</ul>}
       <button type="button" className="link text-[13px] mt-2" onClick={(e) => { e.preventDefault(); setOpen((x) => !x); }}>
         {open ? "Hide" : "Show"} solutions and tests
@@ -329,34 +339,34 @@ function StudentRow({ s }: { s: InterventionStudent }) {
   const v = s.verification;
   const t = s.task;
   const status = !t ? "Not delivered" : v ? null : t.status === "assigned" ? "Not opened yet" : "Working on it";
+  const practice = t && !t.is_simulated
+    ? [t.has_initial && "wrote first thoughts", t.practice_attempts > 0 && `${t.practice_attempts} practice runs`,
+       t.hints_revealed > 0 && `${t.hints_revealed} hints`, t.has_revised && "revised answer"].filter(Boolean).join(" · ")
+    : "";
   return (
-    <li className="py-3.5 grid sm:grid-cols-[1fr_auto] gap-x-6 gap-y-1.5">
-      <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-ink">{s.name}</span>
-          {s.is_demo_persona ? <Tag tone="slate">Demo persona</Tag> : s.is_synthetic && <SynthTag />}
-          {t?.is_simulated && <Tag>Simulated attempt</Tag>}
-        </div>
-        <div className="text-[13px] text-faint mt-1">
-          Before: {s.before.map((b) => b.source === "tests" ? b.detail : `“${b.quote}”`).join(" · ") || "—"}
-        </div>
-        {t && !t.is_simulated && (
-          <div className="text-[13px] text-faint mt-0.5">
-            {[t.has_initial && "initial reasoning", t.practice_attempts > 0 && `${t.practice_attempts} practice runs`,
-              t.hints_revealed > 0 && `${t.hints_revealed} hints`, t.has_revised && "revised reasoning", t.has_reflection && "reflection"]
-              .filter(Boolean).join(" · ") || "No activity yet"}
-          </div>
-        )}
-        {v && <div className="text-[13px] text-muted mt-1">{v.reasons[0]}</div>}
+    <li className="py-4">
+      <div className="flex flex-wrap items-center gap-2 mb-2">
+        <span className="text-ink text-[15.5px]">{s.name}</span>
+        {s.is_demo_persona ? <Tag tone="slate">Demo persona</Tag> : s.is_synthetic && <SynthTag />}
+        {t?.is_simulated && <Tag>Simulated attempt</Tag>}
       </div>
-      <div className="sm:text-right">
-        {v ? (
-          <>
-            <span className="inline-flex items-center gap-1.5 text-[14px]"><span className={cx("w-2 h-2 rounded-full", OUTCOME[v.outcome].dot)} />{OUTCOME[v.outcome].label}</span>
-            <div className="text-[12.5px] text-faint num">{v.tests_passed}/{v.tests_total} tests · reasoning {v.explanation_judgment || "—"}</div>
-            <Link to={`/p/submissions/${v.submission_id}`} className="link text-[13px]">Open attempt</Link>
-          </>
-        ) : <span className="text-[13.5px] text-faint">{status}</span>}
+      <div className="grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3 text-[13.5px]">
+        <div className="border-l-2 border-line-strong pl-3">
+          <div className="text-faint">Before · Assignment 3</div>
+          <div className="text-muted mt-0.5">{s.before.map((b) => b.source === "tests" ? b.detail : `“${b.quote}”`).join(" · ") || "—"}</div>
+          {practice && <div className="text-faint mt-1">Practice (assisted): {practice}</div>}
+        </div>
+        <div className={cx("pl-3 border-l-2", v ? (v.outcome === "demonstrated" ? "border-accent-strong" : v.outcome === "still_developing" ? "border-amber" : "border-line-strong") : "border-line")}>
+          <div className="text-faint">After · new independent check</div>
+          {v ? (
+            <>
+              <div className="text-ink mt-0.5 flex flex-wrap items-center gap-2"><EvidenceTag kind="verified">{OUTCOME[v.outcome].label}</EvidenceTag>
+                <span className="text-faint num">{v.tests_passed}/{v.tests_total} tests · reasoning {v.explanation_judgment.replace("_", " ") || "—"}</span></div>
+              <div className="text-muted mt-1">{v.reasons[0]}</div>
+              <Link to={`/p/submissions/${v.submission_id}`} className="link">Open the attempt</Link>
+            </>
+          ) : <div className="text-faint mt-0.5">{status}</div>}
+        </div>
       </div>
     </li>
   );

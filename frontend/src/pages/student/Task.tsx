@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
@@ -7,11 +7,11 @@ import { Button, CONDITIONS, Crumb, ErrorState, Loading, Tag, cx } from "../../c
 
 const STEPS_BY_KIND: Record<string, { id: string; label: string }[]> = {
   concept_practice: [
-    { id: "why", label: "Why this, why now" }, { id: "think", label: "Think first" }, { id: "practice", label: "Practise with support" },
-    { id: "reflect", label: "Look back" }, { id: "check", label: "Show what you can do" },
+    { id: "why", label: "Why this" }, { id: "think", label: "Think first" }, { id: "practice", label: "Practise with help" },
+    { id: "reflect", label: "Look back" }, { id: "check", label: "Show it" },
   ],
-  debugging: [{ id: "why", label: "Why this, why now" }, { id: "check", label: "Fix the program" }],
-  explain_reasoning: [{ id: "why", label: "Why this, why now" }, { id: "check", label: "Explain your own code" }],
+  debugging: [{ id: "why", label: "Why this" }, { id: "check", label: "Fix the program" }],
+  explain_reasoning: [{ id: "why", label: "Why this" }, { id: "check", label: "Explain your own code" }],
 };
 const INTRO: Record<string, string> = {
   concept_practice: "A short path in five steps, about twenty minutes. Practice is where help is welcome; the last step is where you show what you can do on your own.",
@@ -23,6 +23,7 @@ export function TaskPage() {
   const { taskId } = useParams();
   const qc = useQueryClient();
   const key = ["task", taskId];
+  const [active, setActive] = useState<string | null>(null);
   const q = useQuery({ queryKey: key, queryFn: () => api<StudentTask>(`/api/student/tasks/${taskId}`) });
   const post = (path: string, json?: unknown) => api<StudentTask>(`/api/student/tasks/${taskId}/${path}`, { method: "POST", json: json ?? {} });
   const onOk = (t: StudentTask) => { qc.setQueryData(key, t); qc.invalidateQueries({ queryKey: ["student-home"] }); };
@@ -31,96 +32,115 @@ export function TaskPage() {
   if (q.error) return <ErrorState error={q.error} />;
   const t = q.data!;
   const STEPS = STEPS_BY_KIND[t.kind] ?? STEPS_BY_KIND.concept_practice;
-  const concept = t.kind === "concept_practice";
   const done = {
     why: true, think: !!t.initial_reasoning, practice: t.practice_attempts.some((a) => a.passed === a.total),
-    reflect: !!t.revised_reasoning && !!t.reflection, check: t.results.length > 0,
+    reflect: !!t.revised_reasoning, check: t.results.length > 0,
   } as Record<string, boolean>;
+  const current = active ?? (STEPS.find((s) => s.id !== "why" && !done[s.id])?.id ?? STEPS[STEPS.length - 1].id);
+  const idx = STEPS.findIndex((s) => s.id === current);
+  const go = (id: string) => { setActive(id); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const step = STEPS[idx];
 
   return (
     <>
       <div className="text-[13px] text-faint mb-5"><Crumb to="/s">My learning</Crumb> / {t.course_code}</div>
-      <header className="pb-8 max-w-3xl">
+      <header className="pb-6 max-w-3xl">
         <div className="eyebrow mb-2">From your professor</div>
-        <h1 className="font-serif text-[34px] leading-[1.12] tracking-[-0.01em]">{t.title}</h1>
+        <h1 className="font-serif text-[32px] sm:text-[36px] leading-[1.12] tracking-[-0.01em]">{t.title}</h1>
         <p className="text-muted mt-3 text-[16px]">{INTRO[t.kind] ?? INTRO.concept_practice}</p>
       </header>
 
-      <div className="grid lg:grid-cols-[200px_minmax(0,1fr)] gap-x-12">
-        <nav className="hidden lg:block">
-          <ol className="sticky top-8 space-y-1 text-[14px]">
-            {STEPS.map((s, i) => (
-              <li key={s.id}>
-                <a href={`#${s.id}`} className="flex items-center gap-3 py-1.5 text-muted hover:text-ink">
-                  <span className={cx("w-6 h-6 rounded-full grid place-items-center text-[12px] num border",
-                    done[s.id] ? "bg-accent border-accent text-ink" : "border-line-strong text-faint")}>{done[s.id] ? "✓" : i + 1}</span>
-                  {s.label}
-                </a>
+      {/* Step bar: visible on every screen size; any step can be revisited */}
+      <nav aria-label="Activity steps" className="border-y border-line -mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto">
+        <ol className="flex min-w-max">
+          {STEPS.map((s, i) => {
+            const isCurrent = s.id === current;
+            const independent = s.id === "check";
+            return (
+              <li key={s.id} className="flex items-center">
+                <button onClick={() => go(s.id)} aria-current={isCurrent ? "step" : undefined}
+                  className={cx("flex items-center gap-2.5 h-14 pr-5 text-[14.5px] border-b-2 -mb-px transition-colors",
+                    isCurrent ? "border-accent-strong text-ink" : "border-transparent text-muted hover:text-ink")}>
+                  <span className={cx("w-7 h-7 rounded-full grid place-items-center text-[13px] num border shrink-0",
+                    done[s.id] && s.id !== "why" ? "bg-accent border-accent text-ink" : isCurrent ? "border-accent-strong text-ink" : "border-line-strong text-faint")}>
+                    {done[s.id] && s.id !== "why" ? "✓" : i + 1}
+                  </span>
+                  <span className="whitespace-nowrap">{s.label}</span>
+                  {independent && <span className="text-[12px] text-faint whitespace-nowrap">on your own</span>}
+                </button>
+                {i < STEPS.length - 1 && <span aria-hidden className="text-line-strong pr-5">—</span>}
               </li>
-            ))}
-          </ol>
-        </nav>
+            );
+          })}
+        </ol>
+      </nav>
 
-        <div className="min-w-0 max-w-[760px] space-y-14">
-          <Step id="why" n={1} title="Why this, why now">
+      <div className="max-w-[820px] pt-8 min-h-[50vh]">
+        <h2 className="font-serif text-[26px] mb-1">{step.label}</h2>
+        <p className="text-[14px] text-faint mb-6">Step {idx + 1} of {STEPS.length}{step.id === "practice" ? " · help is welcome here" : step.id === "check" ? " · this part is on your own" : ""}</p>
+
+        {step.id === "why" && (
+          <div>
             {t.my_earlier_evidence.length > 0 && (
-              <p className="text-[16px] text-ink">
-                In {t.from_assignment.split("—")[0].trim()}, {t.kind === "explain_reasoning" ? "your code worked, and you wrote:" : "your code ran into this:"}{" "}
-                {t.my_earlier_evidence.map((e) => <code key={e} className="font-mono text-[13.5px] text-amber bg-amber-wash px-1.5 py-0.5 rounded mr-1">{e}</code>)}
-                It's one of the most common places to get stuck with recursion, and a good one to understand properly.
-              </p>
+              <div className="mb-6">
+                <div className="text-[14px] text-faint mb-2">In {t.from_assignment.split("—")[0].trim()}, {t.kind === "explain_reasoning" ? "your code worked, and you wrote:" : "your code ran into this:"}</div>
+                <div className="flex flex-wrap gap-2">{t.my_earlier_evidence.map((e) => <code key={e} className="font-mono text-[14px] text-amber bg-amber-wash px-2 py-1 rounded">{e}</code>)}</div>
+                <p className="text-muted mt-3 text-[15px]">It's one of the most common places to get stuck with recursion, and a good one to understand properly. Nothing here is graded until the last step.</p>
+              </div>
             )}
-            <div className="mt-6 border-l-2 border-accent-strong pl-5">
-              <p className="font-serif text-[17px] leading-[1.75] text-ink whitespace-pre-line">{t.explanation}</p>
+            <div className="border-l-2 border-accent-strong pl-5">
+              <p className="font-serif text-[17.5px] leading-[1.8] text-ink whitespace-pre-line">{t.explanation}</p>
             </div>
-          </Step>
+          </div>
+        )}
 
-          {concept && <Step id="think" n={2} title="Think first" badge={<Tag>Just your thinking. Not graded</Tag>}>
-            <p className="text-muted mb-4">{t.practice?.explanation_prompt} Write what you think now, before any help. You'll look back at it later.</p>
+        {step.id === "think" && (
+          <div>
+            <p className="text-ink text-[16px] mb-1">{t.practice?.explanation_prompt}</p>
+            <p className="text-muted mb-4 text-[15px]">Write what you think now, before any help. It isn't graded, and you'll compare it with your answer later.</p>
             <Checkpoint value={t.initial_reasoning} placeholder="I think it should return…" onSave={(text) => post("checkpoint", { kind: "initial", text }).then(onOk)} />
-          </Step>}
+          </div>
+        )}
 
-          {concept && t.practice && (
-            <Step id="practice" n={3} title="Practise with support" badge={<Tag tone="accent">Assisted practice</Tag>}>
-              <Practice t={t} post={post} onOk={onOk} />
-            </Step>
-          )}
+        {step.id === "practice" && t.practice && (
+          <div className="border-l-2 border-accent/70 pl-5">
+            <Practice t={t} post={post} onOk={onOk} />
+          </div>
+        )}
 
-          {concept && <Step id="reflect" n={4} title="Look back">
-            <div className="space-y-6">
+        {step.id === "reflect" && (
+          <div className="space-y-6">
+            <p className="text-ink text-[16px]">Answer the same question again: {t.practice?.explanation_prompt}</p>
+            <div className="grid md:grid-cols-2 gap-5">
               <div>
-                <p className="text-muted mb-3">Answer the same question again: {t.practice?.explanation_prompt}</p>
-                {t.initial_reasoning && <p className="text-[14px] text-faint mb-3">Earlier you wrote: <span className="italic">“{t.initial_reasoning}”</span></p>}
+                <div className="eyebrow mb-2">Before practice</div>
+                <p className="text-muted italic bg-surface border border-line rounded-md px-4 py-3 min-h-[72px]">{t.initial_reasoning ? `“${t.initial_reasoning}”` : "You skipped this. That's fine."}</p>
+              </div>
+              <div>
+                <div className="eyebrow mb-2">Now</div>
                 <Checkpoint value={t.revised_reasoning} placeholder="Now I think…" onSave={(text) => post("checkpoint", { kind: "revised", text }).then(onOk)} />
               </div>
-              <div>
-                <p className="text-muted mb-3">What changed in how you think about where recursion stops?</p>
-                <Checkpoint value={t.reflection} placeholder="What I understand differently now is…" onSave={(text) => post("checkpoint", { kind: "reflection", text }).then(onOk)} />
-              </div>
             </div>
-          </Step>}
+            <details className="text-[15px]">
+              <summary className="cursor-pointer text-muted hover:text-ink">Optional: note what changed in your thinking</summary>
+              <div className="mt-3"><Checkpoint value={t.reflection} placeholder="What I understand differently now is…" onSave={(text) => post("checkpoint", { kind: "reflection", text }).then(onOk)} /></div>
+            </details>
+          </div>
+        )}
 
-          {t.check && (
-            <Step id="check" n={STEPS.length} title={STEPS[STEPS.length - 1].label} badge={<Tag>{CONDITIONS[t.check.conditions]?.label}</Tag>}>
-              <FollowUp t={t} post={post} onOk={onOk} />
-            </Step>
-          )}
+        {step.id === "check" && t.check && (
+          <div className="border border-line-strong rounded-lg p-5 sm:p-6">
+            <div className="flex flex-wrap items-center gap-2 mb-4"><Tag>{CONDITIONS[t.check.conditions]?.label}</Tag><span className="text-[13.5px] text-faint">No hints or assistant here. That's what makes it your own evidence.</span></div>
+            <FollowUp t={t} post={post} onOk={onOk} />
+          </div>
+        )}
+
+        <div className="flex items-center justify-between gap-3 mt-10 pt-5 border-t border-line">
+          {idx > 0 ? <Button variant="ghost" onClick={() => go(STEPS[idx - 1].id)}>← {STEPS[idx - 1].label}</Button> : <span />}
+          {idx < STEPS.length - 1 && <Button variant="primary" onClick={() => go(STEPS[idx + 1].id)}>{STEPS[idx + 1].label} →</Button>}
         </div>
       </div>
     </>
-  );
-}
-
-function Step({ id, n, title, badge, children }: { id: string; n: number; title: string; badge?: ReactNode; children: ReactNode }) {
-  return (
-    <section id={id} className="scroll-mt-8">
-      <div className="flex flex-wrap items-center gap-3 border-b border-line pb-3 mb-5">
-        <span className="font-serif text-[15px] text-faint num">{n}</span>
-        <h2 className="font-serif text-[22px]">{title}</h2>
-        {badge && <span className="ml-auto">{badge}</span>}
-      </div>
-      {children}
-    </section>
   );
 }
 

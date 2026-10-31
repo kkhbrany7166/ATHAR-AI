@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api";
+import { misconceptionLabel } from "../../lib/labels";
 import { Callout, ErrorState, Loading, PageHeader, Section, Tag, cx } from "../../components/ui";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -54,6 +55,10 @@ export function EvaluationPage() {
           (negation, abstention, fabricated quotes, timeouts, malformed output), but no accuracy is claimed for it. Nothing was simulated or replayed in its place.
         </Callout>
       )}
+
+      <Headline data={data} />
+      <Datasets data={data} />
+      {data.classroom && <Classroom c={data.classroom} />}
 
       <Section title="Reading written explanations" aside="Correct / total">
         <div className="overflow-x-auto">
@@ -213,6 +218,89 @@ function Final2({ f2 }: { f2: R }) {
         That errs on the side of caution, not harm. The explanation-only ablation was prompted partly by one case in this set, so it is
         reported as an ablation, not as a clean result.
       </p>
+    </Section>
+  );
+}
+
+function Headline({ data }: { data: Record<string, R> }) {
+  const f = data.final?.explanations?.llm, b = data.final?.explanations?.baseline;
+  const f2 = data.final2?.readers;
+  if (!f?.misconceptions || !f2?.["reader-v3"]) return null;
+  const items = [
+    { v: `${Math.round(f.misconceptions.micro.f1 * 100)}%`, vs: `${Math.round(b.misconceptions.micro.f1 * 100)}%`, label: "misconception F1, AI vs rules", sub: `Final set, ${f.n} explanations, untouched` },
+    { v: `${f2["reader-v3"].working_code_confused_reasoning.caught}/${f2["reader-v3"].working_code_confused_reasoning.n}`, vs: `${f2.rules.working_code_confused_reasoning.caught}/${f2.rules.working_code_confused_reasoning.n}`, label: "working code, confused reasoning caught", sub: `Final-2, ${f2["reader-v3"].n} cases, untouched` },
+    { v: `${f.c3_correct}/${f.n}`, vs: `${b.c3_correct}/${b.n}`, label: "stopping-condition judgment: the weak spot", sub: "The AI calls correct explanations “partial”" },
+  ];
+  return (
+    <div className="grid md:grid-cols-3 border-y border-line md:divide-x divide-line mb-4">
+      {items.map((x) => (
+        <div key={x.label} className="py-5 md:px-5 md:first:pl-0">
+          <div className="flex items-baseline gap-3"><span className="font-serif text-[34px] leading-none num">{x.v}</span><span className="text-faint num text-[14px]">rules {x.vs}</span></div>
+          <div className="text-[14.5px] text-ink mt-2">{x.label}</div>
+          <div className="text-[13px] text-faint">{x.sub}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Datasets({ data }: { data: Record<string, R> }) {
+  const rows = [
+    ["Development", data.dev?.explanations?.baseline?.n, "Generated from the synthetic class templates. The rule reader was written from it, so it is optimistic for rules.", "Used for building"],
+    ["Held-out", data.heldout?.explanations?.baseline?.n, "Hand-written later. Unseen by the rules, but its failures shaped the AI prompt.", "Not unseen for AI"],
+    ["Final", data.final?.explanations?.baseline?.n, "Hand-written and committed before any run. Reader-v2 measured once.", "Untouched"],
+    ["Final-2", data.final2?.readers?.rules?.n, "Code + explanation together. Written before reader-v3 existed; v2 and v3 measured once.", "Untouched"],
+  ];
+  return (
+    <Section title="What was measured, on what" aside="All data is synthetic, labelled by one person">
+      <div className="overflow-x-auto">
+        <table className="w-full text-[14px] min-w-[560px]">
+          <tbody className="divide-y divide-line">
+            {rows.map(([name, n, what, status]) => (
+              <tr key={name as string}>
+                <td className="py-2.5 pr-4 text-ink whitespace-nowrap">{name}</td>
+                <td className="py-2.5 pr-4 num text-muted whitespace-nowrap">{n ?? "—"} cases</td>
+                <td className="py-2.5 pr-4 text-muted">{what}</td>
+                <td className="py-2.5 text-right whitespace-nowrap"><Tag tone={status === "Untouched" ? "accent" : "neutral"}>{status}</Tag></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-[13.5px] text-faint mt-3 max-w-prose">
+        Iteration: reader-v2 → reader-v3 was written from development failures only (it missed confused reasoning behind passing code).
+        A v3.1 prompt was tried and rejected because it flagged more students wrongly. Each version was chosen before the untouched set it is reported on.
+      </p>
+    </Section>
+  );
+}
+
+function Classroom({ c }: { c: R }) {
+  const rows = Object.entries(c.recovery as Record<string, R>);
+  return (
+    <Section title="The synthetic class: where the AI over-flags" aside={`Live from stored readings · ${c.reader}`}>
+      <p className="text-muted text-[14.5px] max-w-prose mb-4">
+        The demo class was generated with known patterns, so ATHAR's flags can be checked against them. Flags from failing tests match well.
+        Flags from the AI reading catch every planted case but add many extra ones, which is why every AI flag is presented as a suggestion to review.
+      </p>
+      <div className="overflow-x-auto">
+        <table className="w-full text-[14px] min-w-[520px]">
+          <thead><tr className="text-left text-faint text-2xs uppercase tracking-[0.1em] border-b border-line">
+            <th className="font-medium py-2">Pattern</th><th className="font-medium py-2 text-right">Planted</th><th className="font-medium py-2 text-right">Flagged</th>
+            <th className="font-medium py-2 text-right">Correct flags</th><th className="font-medium py-2 text-right">Extra flags</th></tr></thead>
+          <tbody className="divide-y divide-line">
+            {rows.map(([code, r]) => (
+              <tr key={code}>
+                <td className="py-2.5" title={code}>{misconceptionLabel(code)}</td>
+                <td className="py-2.5 text-right num">{r.planted}</td>
+                <td className="py-2.5 text-right num">{r.detected}</td>
+                <td className="py-2.5 text-right num">{r.true_positive}</td>
+                <td className={cx("py-2.5 text-right num", r.extra > r.true_positive / 2 ? "text-amber" : "text-muted")}>{r.extra}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </Section>
   );
 }

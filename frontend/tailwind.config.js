@@ -32,7 +32,7 @@ export default {
         arabic: ['"Noto Naskh Arabic"', "serif"],
       },
       fontSize: {
-        "2xs": ["0.6875rem", { lineHeight: "1rem", letterSpacing: "0.02em" }],
+        "2xs": ["0.75rem", { lineHeight: "1.05rem", letterSpacing: "0.02em" }],
       },
       borderRadius: { DEFAULT: "6px", md: "8px", lg: "10px" },
       maxWidth: { prose: "68ch" },
