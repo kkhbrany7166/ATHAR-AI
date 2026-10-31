@@ -18,10 +18,10 @@ from .. import models as m
 from ..ai.provider import LLMError, get_provider
 from ..ai.reader import choose_reader
 from ..grading.pipeline import record_test_evidence, store_explanation_evidence
-from ..grading.sandbox import TestSpec, run_tests
+from ..grading.sandbox import RunReport, TestSpec, run_tests
 from ..seed import content
-from .validation import validate_item
-from .verifier import RULE_VERSION, TestObservation, VerifierInput, verify
+from .validation import validate_debug_item, validate_item
+from .verifier import RULE_VERSION, TestObservation, VerifierInput, verify, verify_debug, verify_reasoning
 
 
 class InterventionError(Exception):
@@ -69,6 +69,15 @@ def ensure_item_bank(db: Session, course: m.Course) -> list[m.AssessmentItem]:
                                         misconception_solution=item.misconception_solution, misconception_code=item.misconception_code)
         db.add(item)
         existing[spec["key"]] = item
+    d = content.DEBUG_ITEM
+    if d["key"] not in existing:
+        item = m.AssessmentItem(course_id=course.id, objective_id=objectives.get(d["objective"]), misconception_code="", key=d["key"],
+                                role="debug", title=d["title"], prompt=d["prompt"], explanation_prompt=d["explanation_prompt"],
+                                starter_code=d["starter_code"], reference_solution=d["reference_solution"],
+                                misconception_solution=d["starter_code"], tests=d["tests"], hints=[], source="item_bank")
+        item.validation = validate_debug_item(tests=item.tests, reference_solution=item.reference_solution, broken_code=item.starter_code)
+        db.add(item)
+        existing[d["key"]] = item
     db.flush()
     return list(existing.values())
 
@@ -90,7 +99,38 @@ Address students directly and kindly. Explain the idea, give one small worked ex
 and end with one question they can ask themselves. Do not mention grades, AI, or that anyone made a mistake."""
 
 
-def _template_explanation(mc: m.Misconception, notes: str) -> str:
+TITLES = {
+    ("concept_practice", "MC-BASE-SMALLEST"): "Base cases that reach the smallest input",
+    ("concept_practice", "MC-BASE-VALUE"): "What a base case should return",
+    ("debugging", ""): "Getting sum_list to run",
+    ("explain_reasoning", ""): "Explaining where recursion stops",
+}
+
+TEMPLATES = {
+    "MC-BASE-VALUE": (
+        "A base case is not just a place to stop: it is the answer to the smallest version of the problem, and every other answer is "
+        "built on top of it. For a product, the empty case must return 1, because multiplying by 1 changes nothing. For a sum, 0. "
+        "If the base case returns 0 for a product, or None for a sum, that wrong value gets folded into every result.\n\n"
+        "Ask yourself: if this function received the smallest possible input, what is the true answer, and does it leave the "
+        "combining step unchanged?"),
+    "debugging": (
+        "Your recursion idea may well be right, but your program didn't run, so the tests couldn't show it. That's worth fixing first.\n\n"
+        "When Python can't run a file it tells you exactly where: the error type (SyntaxError, NameError) and the line. Read the message "
+        "before reading the code. Look for a missing colon after def or if, and for names that don't match exactly, because sum_list "
+        "and sumlist are different names to Python.\n\nFix one error, run the tests again, and repeat."),
+    "explain_reasoning": (
+        "Your code for this assignment works. This task is about the part code can't show: being able to say exactly why it stops.\n\n"
+        "Recursion doesn't stop on its own, and it doesn't stop because a function returns. It stops because a call reaches an input for "
+        "which an explicit condition is true, and that call returns without calling itself again. A good explanation names that "
+        "condition, says why every valid input eventually reaches it, and says why the value returned there is the right answer."),
+}
+
+
+def _template_explanation(kind: str, code: str, notes: str) -> str:
+    if kind != "concept_practice":
+        return TEMPLATES[kind]
+    if code in TEMPLATES:
+        return TEMPLATES[code]
     para = next((p.strip() for p in notes.split("\n\n") if "Base case" in p), "")
     para = " ".join(line.strip() for line in para.splitlines())
     return (
@@ -103,16 +143,22 @@ def _template_explanation(mc: m.Misconception, notes: str) -> str:
     )
 
 
-def draft_explanation(db: Session, course: m.Course, mc: m.Misconception) -> tuple[str, str]:
+def draft_explanation(db: Session, course: m.Course, kind: str, mc: m.Misconception | None, evidence: list[str]) -> tuple[str, str]:
     notes = "\n\n".join(x.text for x in db.scalars(select(m.Material).where(m.Material.course_id == course.id)).all())
+    code = mc.code if mc else ""
     provider = get_provider()
     if provider is None:
-        return _template_explanation(mc, notes), "template"
-    user = f"<misconception>\n{mc.title}: {mc.description}\n</misconception>\n\n<course_notes>\n{notes}\n</course_notes>"
+        return _template_explanation(kind, code, notes), "template"
+    focus = (f"{mc.title}: {mc.description}" if mc else
+             "Their code did not run (syntax or naming errors)" if kind == "debugging" else
+             "Their code works, but their explanation of where the recursion stops was confused or missing")
+    sample = "\n".join(f"- {e}" for e in evidence[:6])
+    user = (f"<activity_kind>{kind}</activity_kind>\n<what_the_group_shares>\n{focus}\n</what_the_group_shares>\n"
+            f"<anonymised_evidence>\n{sample}\n</anonymised_evidence>\n\n<course_notes>\n{notes}\n</course_notes>")
     try:
         out = provider.parse(DRAFT_SYSTEM, user, DraftExplanation, max_tokens=2000)
     except LLMError as e:
-        return _template_explanation(mc, notes), f"template (AI draft failed: {e})"[:80]
+        return _template_explanation(kind, code, notes), f"template (AI draft failed: {e})"[:80]
     norm = " ".join(notes.split()).lower()
     cited = [c for c in out.cited_passages if len(c.strip()) > 8 and " ".join(c.split()).lower() in norm]
     source = f"ai:{provider.model}" + ("" if cited else " (no verified citation)")
@@ -127,23 +173,53 @@ def draft_from_insight(db: Session, insight: m.Insight, user: m.User) -> m.Inter
     if existing:
         return existing
     assignment = db.get(m.Assignment, insight.assignment_id)
+    kind = "explain_reasoning" if insight.misconception_code == "MC-STOP-IMPLICIT" else "concept_practice"
+    examples = [x.get("test_evidence") or x.get("quote") for x in insight.evidence.get("examples", [])]
+    iv = draft_for_group(db, assignment, kind, insight.misconception_code if kind == "concept_practice" else "",
+                         list(insight.evidence["student_ids"]), user, evidence=[e for e in examples if e], insight=insight)
+    return iv
+
+
+def draft_for_group(db: Session, assignment: m.Assignment, kind: str, misconception_code: str, student_ids: list[int], user: m.User,
+                    *, evidence: list[str] | None = None, insight: m.Insight | None = None) -> m.Intervention:
+    """Draft one intervention of the kind the evidence calls for. Idempotent per (assignment, kind, misconception) while open."""
+    if kind not in ("concept_practice", "debugging", "explain_reasoning"):
+        raise InterventionError(f"Unknown intervention kind {kind!r}.", 422)
+    if not student_ids:
+        raise InterventionError("Choose at least one student.", 422)
+    existing = db.scalar(select(m.Intervention).where(
+        m.Intervention.assignment_id == assignment.id, m.Intervention.kind == kind, m.Intervention.misconception_code == misconception_code,
+        m.Intervention.status.in_(("draft", "approved", "active"))))
+    if existing:
+        return existing
     course = assignment.course
-    mc = db.scalar(select(m.Misconception).where(m.Misconception.code == insight.misconception_code))
     items = ensure_item_bank(db, course)
-    practice, followup = _pick(items, "practice", mc.code), _pick(items, "followup", mc.code)
-    if followup is None:
-        raise InterventionError("No validated follow-up item exists for this misconception yet.", 422)
-    text, source = draft_explanation(db, course, mc)
+    mc = db.scalar(select(m.Misconception).where(m.Misconception.code == misconception_code)) if misconception_code else None
+    practice = followup = None
+    if kind == "concept_practice":
+        if mc is None:
+            raise InterventionError("A concept intervention needs a misconception.", 422)
+        practice, followup = _pick(items, "practice", mc.code), _pick(items, "followup", mc.code)
+        if followup is None:
+            raise InterventionError(f"No validated follow-up check exists for {mc.code} yet. Add one to the item bank, or generate one with AI.", 422)
+    elif kind == "debugging":
+        followup = next((i for i in items if i.role == "debug" and i.validation.get("valid")), None)
+        if followup is None:
+            raise InterventionError("No validated debugging exercise is available.", 422)
+    text, source = draft_explanation(db, course, kind, mc, evidence or [])
     iv = m.Intervention(
-        course_id=course.id, assignment_id=assignment.id, insight_id=insight.id, misconception_code=mc.code,
-        objective_id=mc.objective_id, status="draft", title=f"Base cases that reach the smallest input",
+        course_id=course.id, assignment_id=assignment.id, insight_id=insight.id if insight else None, kind=kind,
+        misconception_code=misconception_code, objective_id=mc.objective_id if mc else None, status="draft",
+        title=TITLES.get((kind, misconception_code), TITLES.get((kind, ""), "Targeted practice")),
         explanation=text, explanation_source=source, practice_item_id=practice.id if practice else None,
-        followup_item_id=followup.id, target_student_ids=list(insight.evidence["student_ids"]), created_by=user.id,
+        followup_item_id=followup.id if followup else None, target_student_ids=sorted(set(student_ids)), created_by=user.id,
     )
     db.add(iv)
     db.flush()
-    insight.status = "intervention_drafted"
-    _audit(db, user.id, "intervention.draft", iv, insight_id=insight.id, explanation_source=source, targets=len(iv.target_student_ids))
+    if insight:
+        insight.status = "intervention_drafted"
+    _audit(db, user.id, "intervention.draft", iv, kind=kind, misconception=misconception_code, explanation_source=source,
+           targets=len(iv.target_student_ids))
     db.commit()
     return iv
 
@@ -178,7 +254,7 @@ def update_draft(db: Session, iv: m.Intervention, user: m.User, *, explanation: 
 def approve_and_execute(db: Session, iv: m.Intervention, user: m.User) -> m.Intervention:
     if iv.status == "draft":
         item = db.get(m.AssessmentItem, iv.followup_item_id) if iv.followup_item_id else None
-        if item is None or not item.validation.get("valid"):
+        if iv.kind != "explain_reasoning" and (item is None or not item.validation.get("valid")):
             raise InterventionError("The follow-up check has not passed validation, so it cannot be approved.", 422)
         if not iv.target_student_ids:
             raise InterventionError("Choose at least one student.", 422)
@@ -195,11 +271,26 @@ def execute(db: Session, iv: m.Intervention, user: m.User | None) -> dict[str, i
     """Create the follow-up assignment and one task per target. Safe to call repeatedly."""
     if iv.status not in ("approved", "active"):
         raise InterventionError("Only an approved intervention can be executed.")
-    item = db.get(m.AssessmentItem, iv.followup_item_id)
+    item = db.get(m.AssessmentItem, iv.followup_item_id) if iv.followup_item_id else None
     created_tasks = 0
     try:
+        if iv.followup_assignment_id is None and iv.kind == "explain_reasoning":
+            rc = content.REASONING_CHECK
+            a = m.Assignment(course_id=iv.course_id, title=rc["title"], prompt=rc["prompt"], explanation_prompt=rc["prompt"],
+                             kind="assessment_check", conditions="unsupervised", targeted=True, status="open",
+                             ai_policy="Explain in your own words. Your code is not re-graded here; only your explanation is read.",
+                             due_at=datetime.now(timezone.utc) + timedelta(days=7))
+            db.add(a)
+            db.flush()
+            objectives = {o.code: o.id for o in a.course.objectives}
+            for i, c in enumerate(rc["criteria"]):
+                db.add(m.RubricCriterion(assignment_id=a.id, position=i, code=c["code"], title=c["title"], description=c["description"],
+                                         method=c["method"], max_points=c["max_points"], objective_id=objectives.get(c["objective"])))
+            iv.followup_assignment_id = a.id
         if iv.followup_assignment_id is None:
-            a = m.Assignment(course_id=iv.course_id, title=f"Follow-up check: {item.title.removeprefix('Check: ')}",
+            title = (f"Debugging: {item.title.removeprefix('Debug: ')}" if iv.kind == "debugging"
+                     else f"Follow-up check: {item.title.removeprefix('Check: ')}")
+            a = m.Assignment(course_id=iv.course_id, title=title,
                              prompt=item.prompt, explanation_prompt=item.explanation_prompt, kind="assessment_check",
                              conditions="unsupervised", targeted=True, status="open", starter_code=item.starter_code,
                              reference_solution=item.reference_solution,
@@ -209,7 +300,8 @@ def execute(db: Session, iv: m.Intervention, user: m.User | None) -> dict[str, i
             db.flush()
             objectives = {o.code: o.id for o in a.course.objectives}
             crits = {}
-            for i, c in enumerate(content.FOLLOWUP_CRITERIA):
+            crit_specs = content.FOLLOWUP_CRITERIA if iv.kind == "concept_practice" else [c for c in content.FOLLOWUP_CRITERIA if c["method"] == "tests"]
+            for i, c in enumerate(crit_specs):
                 crit = m.RubricCriterion(assignment_id=a.id, position=i, code=c["code"], title=c["title"], description=c["description"],
                                          method=c["method"], max_points=c["max_points"], objective_id=objectives.get(c["objective"]))
                 db.add(crit)
@@ -340,6 +432,11 @@ def submit_followup(db: Session, t: m.InterventionTask, *, code: str, explanatio
     if iv.status != "active":
         raise InterventionError("This check is closed.")
     a = db.get(m.Assignment, iv.followup_assignment_id)
+    if iv.kind == "explain_reasoning":
+        # The student explains their *own* earlier code; the server uses the stored code, not whatever the client sends.
+        orig = db.scalar(select(m.Submission).where(m.Submission.assignment_id == iv.assignment_id, m.Submission.student_id == t.student_id)
+                         .order_by(m.Submission.attempt.desc()).limit(1))
+        code = orig.code if orig else ""
     attempt = 1 + len(db.scalars(select(m.Submission.id).where(m.Submission.assignment_id == a.id, m.Submission.student_id == t.student_id)).all())
     sub = m.Submission(assignment_id=a.id, student_id=t.student_id, attempt=attempt, code=code, explanation=explanation.strip(),
                        ai_use_disclosure=disclosure, conditions=a.conditions, is_synthetic=simulated or t.student.is_synthetic,
@@ -348,7 +445,7 @@ def submit_followup(db: Session, t: m.InterventionTask, *, code: str, explanatio
     db.flush()
     tests = list(a.tests)
     criteria = list(a.criteria)
-    report = run_tests(code, [TestSpec(x.id, x.function, x.args, x.expected) for x in tests])
+    report = run_tests(code, [TestSpec(x.id, x.function, x.args, x.expected) for x in tests]) if tests else RunReport(outcomes=[])
     load_failed = record_test_evidence(db, sub, report, tests, [c for c in criteria if c.method == "tests"], None)
 
     expl_criteria = [c for c in criteria if c.method == "explanation"]
@@ -373,11 +470,17 @@ def submit_followup(db: Session, t: m.InterventionTask, *, code: str, explanatio
     by_id = {x.id: x for x in tests}
     obs = [TestObservation(by_id[o.id].name, o.status, o.error_type, by_id[o.id].probes or [], by_id[o.id].hidden) for o in report.outcomes]
     stop = result.criteria.get("C3") if result else None
-    vres = verify(VerifierInput(
-        misconception_code=iv.misconception_code, tests=obs, load_failed=load_failed, explanation=explanation,
-        stopping_judgment=stop.judgment if stop else None, explanation_signals=[s.code for s in result.signals] if result else [],
-        conditions=a.conditions,
-    ))
+    signals = [s.code for s in result.signals] if result else []
+    if iv.kind == "explain_reasoning":
+        vres = verify_reasoning(explanation=explanation, stopping_judgment=stop.judgment if stop else None,
+                                explanation_signals=signals, abstained=bool(result and result.abstained))
+    elif iv.kind == "debugging":
+        vres = verify_debug(obs, load_failed)
+    else:
+        vres = verify(VerifierInput(
+            misconception_code=iv.misconception_code, tests=obs, load_failed=load_failed, explanation=explanation,
+            stopping_judgment=stop.judgment if stop else None, explanation_signals=signals, conditions=a.conditions,
+        ))
     ver = m.Verification(task_id=t.id, submission_id=sub.id, outcome=vres.outcome, reasons=vres.reasons, tests_passed=vres.passed,
                          tests_total=vres.total, explanation_judgment=stop.judgment if stop else ("" if not err else "not_read"),
                          explanation_reader=reader.label if result else (err or ""), rule_version=RULE_VERSION)
@@ -392,28 +495,28 @@ def submit_followup(db: Session, t: m.InterventionTask, *, code: str, explanatio
 
 # ------------------------------------------------------------------ synthetic classmates (demo only)
 
-SIM_CODE = {
-    "correct": 'def repeat_text(s, n):\n    if n == 0:\n        return ""\n    return s + repeat_text(s, n - 1)\n',
-    "correct_alt": 'def repeat_text(s, n):\n    if n <= 0:\n        return ""\n    else:\n        return repeat_text(s, n - 1) + s\n',
-    "still_smallest": "def repeat_text(s, n):\n    if n == 1:\n        return s\n    return s + repeat_text(s, n - 1)\n",
-}
 SIM_EXPLANATION = {
     "solid": [
-        "It stops when n is 0 and returns an empty string, because repeating something zero times gives nothing. Each call lowers n by one so it always reaches 0.",
-        "The base case is n == 0, which returns \"\". That is the smallest valid input, and every recursive call uses n - 1, so we always get there.",
+        "It stops when n is 0, the smallest valid input, and returns the answer for that case directly. Each call lowers n by one so it always reaches 0.",
+        "The base case is the smallest input (n == 0 or the empty list). It returns the right value for nothing at all, and every call moves closer to it.",
     ],
     "still_confused": [
-        "It keeps adding s until it runs out of copies, then the recursion is finished and it returns.",
-        "The return statement stops the recursion once all the copies are added.",
+        "It keeps going until it runs out of things to do, then the recursion is finished and it returns.",
+        "The return statement stops the recursion once everything is added up.",
     ],
-    "smallest": ["It stops when n is 1 because one copy is just s. n = 0 wouldn't really be passed in."],
+    "smallest": ["It stops when n is 1 because that's the last real step. n = 0 wouldn't really be passed in."],
 }
 
 
 def simulate_synthetic(db: Session, iv: m.Intervention, seed: int = 7) -> dict[str, int]:
-    """Have synthetic classmates attempt the follow-up through the real submission path. Outcomes come from the verifier."""
+    """Have synthetic classmates attempt the follow-up through the real submission path. Outcomes come from the verifier.
+
+    Attempts are built from the item's own reference and misconception solutions, so they are valid for whichever
+    check the professor approved. The explanation pools are generic and labelled simulated in the UI.
+    """
     if iv.status != "active":
         raise InterventionError("Simulation needs an active intervention.")
+    item = db.get(m.AssessmentItem, iv.followup_item_id) if iv.followup_item_id else None
     rng = random.Random(seed + iv.id)
     done = 0
     for t in sorted(iv.tasks, key=lambda x: x.student_id):
@@ -422,14 +525,16 @@ def simulate_synthetic(db: Session, iv: m.Intervention, seed: int = 7) -> dict[s
         r = rng.random()
         if r < 0.12:
             continue  # did not attempt
+        good = item.reference_solution if item else ""
+        bad = item.misconception_solution if item else ""
         if r < 0.62:
-            code, expl = SIM_CODE[rng.choice(["correct", "correct_alt"])], rng.choice(SIM_EXPLANATION["solid"])
+            code, expl = good, rng.choice(SIM_EXPLANATION["solid"])
         elif r < 0.80:
-            code, expl = SIM_CODE["correct"], rng.choice(SIM_EXPLANATION["still_confused"])
+            code, expl = good, rng.choice(SIM_EXPLANATION["still_confused"])
         elif r < 0.92:
-            code, expl = SIM_CODE["still_smallest"], SIM_EXPLANATION["smallest"][0]
+            code, expl = bad, SIM_EXPLANATION["smallest"][0]
         else:
-            code, expl = SIM_CODE["correct"], ""
+            code, expl = good, ""
         t.initial_reasoning = t.initial_reasoning or "(simulated)"
         submit_followup(db, t, code=code, explanation=expl, simulated=True)
         done += 1

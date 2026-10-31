@@ -232,3 +232,66 @@ ITEM_BANK = [
         "hints": [],
     },
 ]
+
+_P_VALUE = [{"misconception": "MC-BASE-VALUE", "on": "wrong_value"},
+            {"misconception": "MC-BASE-SMALLEST", "on": "error", "error_types": _SMALLEST_ERR}]
+
+ITEM_BANK += [
+    {
+        "key": "product_list_value", "role": "practice", "misconception": "MC-BASE-VALUE", "objective": "REC-1",
+        "title": "Practice: product_list", "prompt": ITEM_BANK[0]["prompt"],
+        "explanation_prompt": "What does product_list([]) return, and why is that the right answer for a product?",
+        "starter_code": "def product_list(xs):\n    pass\n",
+        "reference_solution": ITEM_BANK[0]["reference_solution"],
+        "misconception_solution": "def product_list(xs):\n    if not xs:\n        return 0\n    return xs[0] * product_list(xs[1:])\n",
+        "tests": [
+            _t("product_list([2, 3, 4]) is 24", "product_list", [[2, 3, 4]], 24, "C1"),
+            _t("product_list([7]) is 7", "product_list", [[7]], 7, "C1"),
+            _t("product_list([]) is 1", "product_list", [[]], 1, "C2", _P_VALUE),
+        ],
+        "hints": [
+            "The base case is the answer to the smallest problem. What is the product of no numbers at all?",
+            "Whatever you return for [] gets multiplied into every other answer. Which number leaves a product unchanged?",
+            "Return 1 for the empty list: x * 1 == x, so it never changes the result.",
+        ],
+    },
+    {
+        "key": "countdown_value", "role": "followup", "misconception": "MC-BASE-VALUE", "objective": "REC-1",
+        "title": "Check: countdown", "prompt": ITEM_BANK[2]["prompt"], "explanation_prompt": ITEM_BANK[2]["explanation_prompt"],
+        "starter_code": "def countdown(n):\n    pass\n", "reference_solution": ITEM_BANK[2]["reference_solution"],
+        "misconception_solution": "def countdown(n):\n    if n == 0:\n        return None\n    rest = countdown(n - 1)\n    return [n] + (rest or [])\n",
+        "tests": [
+            _t("countdown(3) is [3, 2, 1]", "countdown", [3], [3, 2, 1], "C1"),
+            _t("countdown(1) is [1]", "countdown", [1], [1], "C1"),
+            _t("countdown(0) is []", "countdown", [0], [], "C2", _P_VALUE),
+        ],
+        "hints": [],
+    },
+]
+
+# A debugging activity for students whose code failed for reasons unrelated to recursion (syntax, names).
+DEBUG_ITEM = {
+    "key": "debug_sum_list", "role": "debug", "misconception": "", "objective": "REC-2",
+    "title": "Debug: sum_list",
+    "prompt": "This sum_list has the right idea but won't run. Find and fix the errors so every test passes. "
+              "Read the error message first: it tells you the line.",
+    "explanation_prompt": "Which errors did you find, and how did the error messages point you to them?",
+    "starter_code": "def sum_list(xs)\n    if not xs:\n        return 0\n    return xs[0] + sumlist(xs[1:])\n",
+    "reference_solution": "def sum_list(xs):\n    if not xs:\n        return 0\n    return xs[0] + sum_list(xs[1:])\n",
+    "tests": [
+        _t("sum_list([4, 1, 7]) is 12", "sum_list", [[4, 1, 7]], 12, "C1"),
+        _t("sum_list([10]) is 10", "sum_list", [[10]], 10, "C1"),
+        _t("sum_list([]) is 0", "sum_list", [[]], 0, "C2"),
+    ],
+}
+
+# Explanation-only check for students whose code works but whose reasoning is confused or unconfirmed.
+REASONING_CHECK = {
+    "title": "Explain your reasoning: stopping conditions",
+    "prompt": "Your code for Assignment 3 is shown below. Without changing it, explain in your own words exactly when and why "
+              "power stops recursing, what power(5, 0) returns and why, and what would go wrong if that check were missing.",
+    "criteria": [
+        {"code": "C3", "title": "Explains when and why the recursion stops", "method": "explanation", "objective": "REC-1", "max_points": 2,
+         "description": "Names the explicit stopping condition, why it is reached for every valid input, and why it returns that value."},
+    ],
+}

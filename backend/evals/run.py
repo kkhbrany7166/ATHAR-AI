@@ -66,7 +66,17 @@ def dev_sets() -> dict:
     code = [{"id": f"dc{i:03d}", "code": p.code, "misconceptions": code_label(p.code_pattern)[0], "c2": code_label(p.code_pattern)[1]}
             for i, p in enumerate(plans) if p.code]
 
-    from athar.interventions.service import SIM_CODE, SIM_EXPLANATION
+    rt = next(i for i in content.ITEM_BANK if i["key"] == "repeat_text")
+    SIM_CODE = {"correct": rt["reference_solution"], "still_smallest": rt["misconception_solution"],
+                "correct_alt": 'def repeat_text(s, n):\n    if n <= 0:\n        return ""\n    else:\n        return repeat_text(s, n - 1) + s\n'}
+    # Dev explanations: written in the same style as the synthetic-class templates (rules-v1 was built from that style).
+    SIM_EXPLANATION = {
+        "solid": ["It stops when n is 0 and returns an empty string, because repeating something zero times gives nothing. Each call lowers n by one so it always reaches 0.",
+                  "The base case is n == 0, which returns \"\". That is the smallest valid input, and every recursive call uses n - 1, so we always get there."],
+        "still_confused": ["It keeps adding s until it runs out of copies, then the recursion is finished and it returns.",
+                           "The return statement stops the recursion once all the copies are added."],
+        "smallest": ["It stops when n is 1 because one copy is just s. n = 0 wouldn't really be passed in."],
+    }
     ver = []
     for k in ("correct", "correct_alt"):
         for e in SIM_EXPLANATION["solid"]:

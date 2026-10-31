@@ -59,3 +59,17 @@ def validate_item(*, tests: list[dict[str, Any]], reference_solution: str, misco
         "checked_at": datetime.now(timezone.utc).isoformat(),
         "method": "sandbox: reference must pass all tests; misconception implementation must fail a probe as described",
     }
+
+
+def validate_debug_item(*, tests: list[dict[str, Any]], reference_solution: str, broken_code: str) -> dict[str, Any]:
+    """A debugging exercise is valid if the fixed version passes every test and the broken version does not."""
+    problems = []
+    ref = run_tests(reference_solution, _specs(tests))
+    if ref.load_error or any(o.status != "pass" for o in ref.outcomes):
+        problems.append("The fixed version does not pass every test.")
+    broken = run_tests(broken_code, _specs(tests))
+    if all(o.status == "pass" for o in broken.outcomes):
+        problems.append("The broken version already passes, so there is nothing to debug.")
+    return {"valid": not problems, "problems": problems, "reference_passed": sum(o.status == "pass" for o in ref.outcomes),
+            "total": len(tests), "misconception_caught_by": [f"broken version: {broken.load_error['type']}" if broken.load_error else "broken version fails tests"],
+            "checked_at": datetime.now(timezone.utc).isoformat(), "method": "sandbox: fixed passes all, broken fails"}

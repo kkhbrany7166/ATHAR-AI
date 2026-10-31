@@ -321,6 +321,8 @@ class Intervention(Base):
     objective_id: Mapped[int | None] = mapped_column(ForeignKey("learning_objectives.id"), nullable=True)
     # draft → approved → active → completed ; draft → rejected
     status: Mapped[str] = mapped_column(String(20), default="draft")
+    # concept_practice | debugging | explain_reasoning  (chosen from the evidence; see interventions/planning.py)
+    kind: Mapped[str] = mapped_column(String(30), default="concept_practice")
     title: Mapped[str] = mapped_column(String(300))
     explanation: Mapped[str] = mapped_column(Text)
     explanation_source: Mapped[str] = mapped_column(String(80))  # template | ai:<model>

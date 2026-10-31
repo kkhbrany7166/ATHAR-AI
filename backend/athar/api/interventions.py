@@ -11,6 +11,7 @@ from .. import models as m
 from .. import serializers as ser
 from ..auth import owned_assignment, require_professor, require_student
 from ..db import get_db
+from ..interventions import planning
 from ..interventions import service as svc
 
 router = APIRouter(prefix="/api", tags=["interventions"])
@@ -84,10 +85,10 @@ def intervention_out(db: Session, iv: m.Intervention) -> dict:
         })
     counts = {k: sum(1 for v in latest.values() if v.outcome == k) for k in ("demonstrated", "still_developing", "insufficient_evidence")}
     items = db.scalars(select(m.AssessmentItem).where(m.AssessmentItem.course_id == iv.course_id, m.AssessmentItem.role == "followup",
-                                                      m.AssessmentItem.misconception_code == iv.misconception_code)).all()
+                                                      m.AssessmentItem.misconception_code == iv.misconception_code)).all() if iv.kind == "concept_practice" else []
     a = db.get(m.Assignment, iv.assignment_id)
     return {
-        "id": iv.id, "status": iv.status, "title": iv.title, "misconception_code": iv.misconception_code,
+        "id": iv.id, "status": iv.status, "kind": iv.kind, "title": iv.title, "misconception_code": iv.misconception_code,
         "course_id": iv.course_id, "course_code": a.course.code, "assignment": {"id": a.id, "title": a.title}, "insight_id": iv.insight_id,
         "explanation": iv.explanation, "explanation_source": iv.explanation_source, "professor_note": iv.professor_note,
         "practice_item": item_out(iv.practice_item), "followup_item": item_out(iv.followup_item),
@@ -125,8 +126,38 @@ def list_interventions(course_id: int, user: m.User = Depends(require_professor)
     if course is None or course.professor_id != user.id:
         raise HTTPException(404, "Course not found")
     ivs = db.scalars(select(m.Intervention).where(m.Intervention.course_id == course_id).order_by(m.Intervention.id.desc())).all()
-    return [{"id": iv.id, "title": iv.title, "status": iv.status, "targets": len(iv.target_student_ids),
+    return [{"id": iv.id, "title": iv.title, "status": iv.status, "kind": iv.kind, "targets": len(iv.target_student_ids),
              "insight_id": iv.insight_id, "created_at": ser.iso(iv.created_at)} for iv in ivs]
+
+
+@router.get("/professor/assignments/{assignment_id}/plan")
+def plan(assignment_id: int, user: m.User = Depends(require_professor), db: Session = Depends(get_db)):
+    a = owned_assignment(db, user, assignment_id)
+    return planning.plan_for_assignment(db, a)
+
+
+class GroupDraft(BaseModel):
+    category: str
+    misconception_code: str = ""
+    student_ids: list[int] = Field(min_length=1)
+
+
+@router.post("/professor/assignments/{assignment_id}/plan/draft")
+def draft_group(assignment_id: int, body: GroupDraft, user: m.User = Depends(require_professor), db: Session = Depends(get_db)):
+    """Draft the intervention the diagnosis proposes for a group. The kind comes from fixed rules, not from the client."""
+    a = owned_assignment(db, user, assignment_id)
+    kind = planning.CATEGORY_ACTION.get(body.category)
+    if kind not in ("concept_practice", "debugging", "explain_reasoning"):
+        raise HTTPException(422, "This group has no automated intervention.")
+    current = planning.plan_for_assignment(db, a)
+    group = next((g for g in current["groups"] if g["category"] == body.category and g["misconception_code"] == body.misconception_code), None)
+    allowed = {s["student_id"] for s in group["students"]} if group else set()
+    if not set(body.student_ids) <= allowed:
+        raise HTTPException(422, "Some students are not in this group according to the current evidence.")
+    evidence = [e for s in (group["students"] if group else []) for e in s["evidence"]][:8]
+    iv = _guard(svc.draft_for_group, db, a, kind, body.misconception_code if kind == "concept_practice" else "",
+                body.student_ids, user, evidence=evidence)
+    return intervention_out(db, iv)
 
 
 class DraftEdit(BaseModel):
@@ -198,7 +229,8 @@ def task_out(db: Session, t: m.InterventionTask) -> dict:
     ver = db.scalars(select(m.Verification).where(m.Verification.task_id == t.id).order_by(m.Verification.id)).all()
     item = iv.practice_item
     return {
-        "id": t.id, "status": t.status, "title": iv.title, "course_code": a.course.code if a else "",
+        "id": t.id, "status": t.status, "kind": iv.kind, "title": iv.title, "course_code": a.course.code if a else "",
+        "my_original_code": orig_sub.code if orig_sub else "",
         "from_assignment": db.get(m.Assignment, iv.assignment_id).title,
         "my_earlier_evidence": mine, "explanation": iv.explanation, "explanation_source": iv.explanation_source,
         "initial_reasoning": t.initial_reasoning, "revised_reasoning": t.revised_reasoning, "reflection": t.reflection,
