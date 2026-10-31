@@ -1,0 +1,215 @@
+{
+ "description": "FINAL-2 untouched set (code + explanation together). Written after reader-v2 final-set and dev results were inspected and BEFORE reader-v3 existed. Committed before any run. Label policy for c3: 'met' = names a correct, explicit stopping condition at the smallest input for the function(s) discussed and makes no incorrect stopping claim; 'not_met' = states a wrong stopping belief or value; 'unclear' = too vague or uncertain to judge. misconceptions = held stopping-condition beliefs stated in the explanation. expected_category = the action group a careful instructor would choose.",
+ "cases": [
+  {
+   "id": "g01",
+   "code": "def power(base, exp):\n    if exp == 0:\n        return 1\n    return base * power(base, exp - 1)\n\ndef sum_list(xs):\n    if not xs:\n        return 0\n    return xs[0] + sum_list(xs[1:])\n",
+   "explanation": "It stops by itself once there's nothing left to multiply; then it gives back the product. power(2,3) is 2*2*2.",
+   "misconceptions": [
+    "MC-STOP-IMPLICIT"
+   ],
+   "c3": "not_met",
+   "expected_category": "reasoning_gap"
+  },
+  {
+   "id": "g02",
+   "code": "def power(base, exp):\n    if exp == 0:\n        return 1\n    return base * power(base, exp - 1)\n\ndef sum_list(xs):\n    if not xs:\n        return 0\n    return xs[0] + sum_list(xs[1:])\n",
+   "explanation": "Python ends the recursion when the last return happens. Each call returns to the one before, multiplying by base.",
+   "misconceptions": [
+    "MC-STOP-IMPLICIT"
+   ],
+   "c3": "not_met",
+   "expected_category": "reasoning_gap"
+  },
+  {
+   "id": "g03",
+   "code": "def power(base, exp):\n    if exp == 0:\n        return 1\n    return base * power(base, exp - 1)\n\ndef sum_list(xs):\n    if not xs:\n        return 0\n    return xs[0] + sum_list(xs[1:])\n",
+   "explanation": "The recursion just finishes when it runs out of exponent. Also for power(2,3): 2*power(2,2) = 2*4 = 8 after power(2,0) returns 1.",
+   "misconceptions": [
+    "MC-STOP-IMPLICIT"
+   ],
+   "c3": "not_met",
+   "expected_category": "reasoning_gap"
+  },
+  {
+   "id": "g04",
+   "code": "def power(base, exp):\n    if exp == 0:\n        return 1\n    return base * power(base, exp - 1)\n\ndef sum_list(xs):\n    if not xs:\n        return 0\n    return xs[0] + sum_list(xs[1:])\n",
+   "explanation": "The exp == 0 branch is the base case and returns 1 because x**0 is 1; since exp drops by one per call from a non-negative start, it always gets there.",
+   "misconceptions": [],
+   "c3": "met",
+   "expected_category": "demonstrated"
+  },
+  {
+   "id": "g05",
+   "code": "def power(base, exp):\n    if exp == 0:\n        return 1\n    return base * power(base, exp - 1)\n\ndef sum_list(xs, i=0):\n    if i == len(xs):\n        return 0\n    return xs[i] + sum_list(xs, i + 1)\n",
+   "explanation": "When i equals len(xs) we've passed every element, so I return 0 for the empty remainder; i grows by one each call so it always reaches the end.",
+   "misconceptions": [],
+   "c3": "met",
+   "expected_category": "demonstrated"
+  },
+  {
+   "id": "g06",
+   "code": "def power(base, exp):\n    if exp == 0:\n        return 1\n    return base * power(base, exp - 1)\n\ndef sum_list(xs):\n    if not xs:\n        return 0\n    return xs[0] + sum_list(xs[1:])\n",
+   "explanation": "it works.",
+   "misconceptions": [],
+   "c3": "unclear",
+   "expected_category": "reasoning_unconfirmed"
+  },
+  {
+   "id": "g07",
+   "code": "def power(base, exp):\n    if exp == 0:\n        return 1\n    return base * power(base, exp - 1)\n\ndef sum_list(xs):\n    if not xs:\n        return 0\n    return xs[0] + sum_list(xs[1:])\n",
+   "explanation": "I used recursion with a base case like in lecture 7.",
+   "misconceptions": [],
+   "c3": "unclear",
+   "expected_category": "reasoning_unconfirmed"
+  },
+  {
+   "id": "g08",
+   "code": "def power(base, exp):\n    if exp == 0:\n        return 1\n    return base * power(base, exp - 1)\n\ndef sum_list(xs):\n    if not xs:\n        return 0\n    return xs[0] + sum_list(xs[1:])\n",
+   "explanation": "The real stopping point is exp == 1, since b to the first power is b; zero isn't something anyone would pass in.",
+   "misconceptions": [
+    "MC-BASE-SMALLEST"
+   ],
+   "c3": "not_met",
+   "expected_category": "reasoning_gap"
+  },
+  {
+   "id": "g09",
+   "code": "def power(base, exp):\n    if exp == 1:\n        return base\n    return base * power(base, exp - 1)\n\ndef sum_list(xs):\n    if not xs:\n        return 0\n    return xs[0] + sum_list(xs[1:])\n",
+   "explanation": "The base case is exp == 0, returning 1, because any number to the power zero is one.",
+   "misconceptions": [],
+   "c3": "met",
+   "expected_category": "concept_gap"
+  },
+  {
+   "id": "g10",
+   "code": "def power(base, exp):\n    if exp == 1:\n        return base\n    return base * power(base, exp - 1)\n\ndef sum_list(xs):\n    if not xs:\n        return 0\n    return xs[0] + sum_list(xs[1:])\n",
+   "explanation": "I stop at exp == 1 since that's the last multiplication.",
+   "misconceptions": [
+    "MC-BASE-SMALLEST"
+   ],
+   "c3": "not_met",
+   "expected_category": "concept_gap"
+  },
+  {
+   "id": "g11",
+   "code": "def power(base, exp):\n    if exp == 0\n        return 1\n    return base * power(base, exp - 1)\n\ndef sum_list(xs):\n    if not xs:\n        return 0\n    return xs[0] + sum_list(xs[1:])\n",
+   "explanation": "Stops at exp == 0 returning 1; every call lowers exp so it always gets there.",
+   "misconceptions": [],
+   "c3": "met",
+   "expected_category": "execution_error"
+  },
+  {
+   "id": "g12",
+   "code": "def power(base, exp):\n    if exp == 0:\n        return 1\n    return base * Power(base, exp - 1)\n\ndef sum_list(xs):\n    if not xs:\n        return 0\n    return xs[0] + sum_list(xs[1:])\n",
+   "explanation": "The base case exp == 0 returns 1, and each call uses exp - 1.",
+   "misconceptions": [],
+   "c3": "met",
+   "expected_category": "execution_error"
+  },
+  {
+   "id": "g13",
+   "code": "def power(base, exp):\n    if exp == 0:\n        return 0\n    return base * power(base, exp - 1)\n\ndef sum_list(xs):\n    if not xs:\n        return 0\n    return xs[0] + sum_list(xs[1:])\n",
+   "explanation": "When exp is 0 I return 0 since nothing is being multiplied.",
+   "misconceptions": [],
+   "c3": "not_met",
+   "expected_category": "concept_gap"
+  },
+  {
+   "id": "g14",
+   "code": "def power(base, exp):\n    if exp == 0:\n        return 1\n    return base * power(base, exp - 1)\n\ndef sum_list(xs):\n    if not xs:\n        return 0\n    return xs[0] + sum_list(xs[1:])\n",
+   "explanation": "It doesn't stop because of the return; the condition exp == 0 is checked first and that call returns 1 directly.",
+   "misconceptions": [],
+   "c3": "met",
+   "expected_category": "demonstrated"
+  },
+  {
+   "id": "g15",
+   "code": "def power(base, exp):\n    if exp == 0:\n        return 1\n    return base * power(base, exp - 1)\n\ndef sum_list(xs):\n    if not xs:\n        return 0\n    return xs[0] + sum_list(xs[1:])\n",
+   "explanation": "Not at the last element: the stopping point is the empty list, which returns 0, and power stops at exp == 0 with 1.",
+   "misconceptions": [],
+   "c3": "met",
+   "expected_category": "demonstrated"
+  },
+  {
+   "id": "g16",
+   "code": "def power(base, exp):\n    if exp == 0:\n        return 1\n    return base * power(base, exp - 1)\n\ndef sum_list(xs):\n    if not xs:\n        return 0\n    return xs[0] + sum_list(xs[1:])\n",
+   "explanation": "Honestly I copied the structure from the slides and I'm not sure why it stops.",
+   "misconceptions": [],
+   "c3": "unclear",
+   "expected_category": "reasoning_unconfirmed"
+  },
+  {
+   "id": "g17",
+   "code": "def power(base, exp):\n    if exp == 0:\n        return 1\n    return base * power(base, exp - 1)\n\ndef sum_list(xs):\n    if not xs:\n        return 0\n    return xs[0] + sum_list(xs[1:])\n",
+   "explanation": "Each call shrinks exp until the function has nothing more to do, at which point recursion ends automatically. sum_list similarly ends when it has added everything.",
+   "misconceptions": [
+    "MC-STOP-IMPLICIT"
+   ],
+   "c3": "not_met",
+   "expected_category": "reasoning_gap"
+  },
+  {
+   "id": "g18",
+   "code": "def power(base, exp):\n    if exp == 0:\n        return 1\n    return base * power(base, exp - 1)\n\ndef sum_list(xs):\n    if not xs:\n        return 0\n    return xs[0] + sum_list(xs[1:])\n",
+   "explanation": "When the list is empty, sum_list returns 0 (adding nothing gives 0); power's base is exp 0, which gives 1. Both inputs shrink each call.",
+   "misconceptions": [],
+   "c3": "met",
+   "expected_category": "demonstrated"
+  },
+  {
+   "id": "g19",
+   "code": "def power(b, e):\n    return 1 if e == 0 else b * power(b, e - 1)\n\ndef sum_list(xs):\n    return 0 if not xs else xs[0] + sum_list(xs[1:])\n",
+   "explanation": "If e == 0 return 1, else recurse with e - 1. The zero case is the floor every call heads toward.",
+   "misconceptions": [],
+   "c3": "met",
+   "expected_category": "demonstrated"
+  },
+  {
+   "id": "g20",
+   "code": "def power(base, exp):\n    if exp == 1:\n        return base\n    return base * power(base, exp - 1)\n\ndef sum_list(xs):\n    if not xs:\n        return 0\n    return xs[0] + sum_list(xs[1:])\n",
+   "explanation": "It finishes once there are no more multiplications to do.",
+   "misconceptions": [
+    "MC-STOP-IMPLICIT"
+   ],
+   "c3": "not_met",
+   "expected_category": "concept_gap"
+  },
+  {
+   "id": "g21",
+   "code": "def power(base, exp):\n    if exp == 0:\n        return 1\n    return base * power(base, exp - 1)\n\ndef sum_list(xs):\n    if not xs:\n        return 0\n    return xs[0] + sum_list(xs[1:])\n",
+   "explanation": "The program halts when the call stack gets too deep.",
+   "misconceptions": [
+    "MC-STOP-IMPLICIT"
+   ],
+   "c3": "not_met",
+   "expected_category": "reasoning_gap"
+  },
+  {
+   "id": "g22",
+   "code": "def power(base, exp):\n    if exp == 0:\n        return 1\n    return base * power(base, exp - 1)\n\ndef sum_list(xs):\n    if not xs:\n        return 0\n    return xs[0] + sum_list(xs[1:])\n",
+   "explanation": "base case: exp == 0 -> 1. recursive case: base * power(base, exp - 1), so exp shrinks to 0.",
+   "misconceptions": [],
+   "c3": "met",
+   "expected_category": "demonstrated"
+  },
+  {
+   "id": "g23",
+   "code": "def power(base, exp):\n    if exp == 0:\n        return 1\n    return base * power(base, exp - 1)\n\ndef sum_list(xs):\n    if not xs:\n        return 0\n    return xs[0] + sum_list(xs[1:])\n",
+   "explanation": "power stops at 0 and sum_list stops at the last item, which it returns.",
+   "misconceptions": [
+    "MC-BASE-SMALLEST"
+   ],
+   "c3": "not_met",
+   "expected_category": "reasoning_gap"
+  },
+  {
+   "id": "g24",
+   "code": "def power(base, exp):\n    if exp == 0:\n        return 1\n    return base * power(base, exp - 1)\n\ndef sum_list(xs):\n    if not xs:\n        return 0\n    return xs[0] + sum_list(xs[1:])\n",
+   "explanation": "I think it stops when exp is 0? Not totally sure, could also be 1.",
+   "misconceptions": [],
+   "c3": "unclear",
+   "expected_category": "reasoning_unconfirmed"
+  }
+ ]
+}
