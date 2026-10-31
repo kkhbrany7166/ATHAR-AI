@@ -175,6 +175,25 @@ def edit(iv_id: int, body: DraftEdit, user: m.User = Depends(require_professor),
     return intervention_out(db, iv)
 
 
+@router.post("/professor/interventions/{iv_id}/generate-check")
+def generate_check(iv_id: int, user: m.User = Depends(require_professor), db: Session = Depends(get_db)):
+    """Ask the LLM for a new follow-up check. It becomes selectable only if the validator accepts it."""
+    from ..ai.provider import LLMError, get_provider
+    from ..interventions.generation import generate_followup
+
+    iv = _owned(db, user, iv_id)
+    if iv.status != "draft" or iv.kind != "concept_practice":
+        raise HTTPException(409, "New checks can only be generated for a concept intervention in draft.")
+    provider = get_provider()
+    if provider is None:
+        raise HTTPException(503, "No AI provider is configured, so new checks can't be generated. The validated item bank is still available.")
+    try:
+        item = generate_followup(db, provider, iv)
+    except LLMError as e:
+        raise HTTPException(502, f"The AI could not produce a check: {e}") from e
+    return {"item": item_out(item), "intervention": intervention_out(db, iv)}
+
+
 @router.post("/professor/interventions/{iv_id}/approve")
 def approve(iv_id: int, user: m.User = Depends(require_professor), db: Session = Depends(get_db)):
     iv = _owned(db, user, iv_id)
