@@ -8,16 +8,16 @@
 
 | Time | Screen | Show | One line on screen or voice |
 |---|---|---|---|
-| 0:00 | Landing | "Behind every answer is a student." and the classroom moment | *Their code works. ATHAR flags the explanations a professor should read.* Say "flags for review": on this synthetic class about 20 of the flagged cases match the planted labels, and the rest are false or debatable flags (reader-v3 precision ≈ 0.44 here). |
+| 0:00 | Landing | "A correct answer isn't always understanding." and the stored example card (Noura, 10/10 tests, a flagged sentence) | *Their code works. ATHAR flags the explanations a professor should read.* Say "flags for review": on this synthetic class about 20 of the flagged cases match the planted labels, and the rest are false or debatable flags (reader-v3 precision ≈ 0.44 here). |
 | 0:15 | Assignment 3 → Who needs attention | "Believes recursion stops on its own": the count and the "working code, confused reasoning" figure | *The tests pass. The AI read 114 explanations, quoting each one word for word.* |
-| 0:30 | That insight → an example → **Open submission** | The "How the explanation was read" panel: summary, verbatim quotes, the AI tag | *Every claim links to the student's own words. AI suggests; it never grades alone.* |
+| 0:30 | Landing card → *Inspect the evidence*, or a queue row → *See the evidence* | "What ATHAR noticed": the test result, the AI reading and any conflict, then explanation beside code | *Every claim links to the student's own words. AI suggests; it never grades alone.* |
 | 0:50 | The groups on the same tab | Groups: concept gap, working code with confused reasoning, code that didn't run, demonstrated, no submission | *Different needs, different help. Syntax errors get debugging, not a lecture. Students who showed understanding get nothing extra.* |
 | 1:10 | *Plan for 16* on the smallest-input group → **Show solutions and tests** | The validated check: correct code passes, misconception code fails | *The new check is proven to separate understanding from the misconception before any student sees it.* |
-| 1:25 | **Approve and send** | The status rail → *Delivered*, 16 tasks | *Nothing reaches students until the professor approves.* |
-| 1:35 | Sara → *Picked for you* | Her own earlier error, think first, a failing practice run, a hint | *Help is part of practice and is never held against her.* |
-| 2:10 | Sara → *Show what you can do* | Submit the solution below → *You showed it on this task* | *Tests run in a sandbox, AI reads the reasoning, and rules decide. With caveats: one task, unsupervised.* |
+| 1:25 | **Approve and send** | The flow strip moves to *Delivered* ("· now"), 16 tasks | *Nothing reaches students until the professor approves.* |
+| 1:35 | Sara → *Picked for you* → *Why this* | Her own earlier result, then *Think first* (locked once practice starts), a failing practice run, a hint | *Help is part of practice and is never held against her.* |
+| 2:10 | Sara → *Show it* (on your own) | Submit the solution below → *You showed it on this task* | *Tests run in a sandbox, AI reads the reasoning, and rules decide. With caveats: one task, unsupervised.* |
 | 2:25 | Layla → the intervention | Sara verified, before and after, next steps | *The professor sees new evidence, not a claim.* |
-| 2:40 | **Evaluation** | Final-set table (AI 0.93 vs rules 0.12 F1), final-2 "working code, confused reasoning 7/7 vs 2/7", the weaknesses paragraph | *Measured on cases nothing was tuned on, including where it's still weak.* |
+| 2:40 | **Evaluation** | The three numbered findings: AI 0.93 vs rules 0.12 F1 on the final set, 7/7 vs 2/7 on final-2, and the over-flagging. Open one detail section only if there's time | *Measured on cases nothing was tuned on, including where it's still weak.* |
 
 **Optional cuts** if there's time, otherwise use them in the slides:
 - **Abstention:** submission 29 (Tariq), where the AI declines to judge a one-line answer.
