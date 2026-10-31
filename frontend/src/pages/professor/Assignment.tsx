@@ -142,6 +142,12 @@ function GradingPanel({ a }: { a: AssignmentDetail }) {
           {live.ai_status === "used" && ` Written explanations read by ${live.ai_provider.split(":")[1] ?? live.ai_provider}; every quoted span was checked against the student's text.`}
         </div>
       )}
+      {!running && live?.status === "done" && live.ai_status === "replayed" && (
+        <Callout tone="amber" title="Recorded AI readings (replay)">
+          These explanation readings are the stored outputs of an earlier live run ({live.ai_provider}). They were replayed without calling a model,
+          so this isn't fresh inference. Tests were re-run in the sandbox.
+        </Callout>
+      )}
       {!running && live?.status === "done" && live.ai_status === "baseline" && (
         <Callout tone="amber" title="Explanations were read by rules, not by AI">
           No model credentials are configured, so ATHAR's rule-based reader ({live.ai_provider}) read the written explanations.

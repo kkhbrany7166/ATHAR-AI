@@ -18,7 +18,7 @@ ATHAR helps a university professor look past whether code passed, to whether stu
 |---|---|
 | **See it** | Demo video: *link added at submission* · Slides: *link added at submission* · [Product walkthrough](docs/WALKTHROUGH.md) |
 | **Trust it** | [Evaluation results](docs/EVALUATION.md) · [Engineering and evidence audit](docs/AUDIT.md) · [Evidence for each judging criterion](docs/JUDGING.md) |
-| **Run it** | [Run ATHAR locally](#run-atharlocally) · about 10 minutes, no API key needed for the stored demo |
+| **Run it** | [Run ATHAR locally](#run-atharlocally) · about 10 minutes · **no API key needed**: recorded AI readings are replayed and labelled |
 
 ---
 
@@ -353,9 +353,9 @@ git clone <repository-url> athar && cd athar
 cd backend
 python3.12 -m venv .venv
 .venv/bin/pip install -r requirements.txt
-cp .env.example .env            # optional: add OPENAI_API_KEY (or ANTHROPIC_API_KEY); leave empty for the free rule reader
+cp .env.example .env            # no key needed for the demo; add OPENAI_API_KEY only for live AI
 chmod 600 .env
-.venv/bin/python -m athar.cli reset --grade      # seed the synthetic CS201 class and grade it
+.venv/bin/python -m athar.cli reset --replay     # seed the synthetic class, run the real tests, replay recorded AI readings
 .venv/bin/uvicorn athar.main:app --port 8710
 ```
 
@@ -368,10 +368,19 @@ npm run dev                     # http://localhost:5710
 
 Open **http://localhost:5710** and choose **Open the professor view** (Layla) or **Open Sara's student view**. The sidebar button *Demo · switch view* swaps roles from any page.
 
+**Without a key, what's live and what isn't:**
+- **Replayed:** the class's explanation readings, from the recording.
+- **Run for real:** tests, planning, validation, approval, delivery and verification.
+- **Non-AI fallbacks, each labelled in the app:**
+  - the note students read first is a template
+  - Sara's new check is read by the rule reader
+  - the assistant says it isn't connected
+
 | Task | Command (from `backend/`) | Cost |
 |---|---|---|
-| Fresh demo with live AI grading | `.venv/bin/python -m athar.cli reset --grade` | ≈ 114 calls, about $0.22 with gpt-4.1-mini |
-| Fresh demo without a key | same command, no key in `.env` | Free. Uses the labelled rule reader |
+| **Demo with recorded AI readings (recommended for reviewers)** | `.venv/bin/python -m athar.cli reset --replay` | Free, no key. Tests run for real in the sandbox. Explanation readings are the stored outputs of one live gpt-4.1-mini run (`athar/seed/recorded_readings.json`), labelled *recorded, replayed* in the app. Not fresh inference |
+| Demo with live AI grading | `.venv/bin/python -m athar.cli reset --grade` | ≈ 114 calls, about $0.22 with gpt-4.1-mini |
+| Demo with the rule reader only | `reset --grade` with no key in `.env` | Free. Labelled *Rule-based reading (not AI)* |
 | Back to "insights ready", keeping the grading | `.venv/bin/python -m athar.cli reset-interventions` | Free |
 | Planted-label recovery on the class | `.venv/bin/python -m athar.cli eval` | Free |
 | Backend tests | `.venv/bin/python -m pytest -q` | Free. Tests can never call a live model |

@@ -43,7 +43,7 @@ export function OverviewTab({ a }: { a: AssignmentDetail }) {
     (g.category === "concept_gap" ? i.misconception_code === g.misconception_code : g.category === "reasoning_gap" ? i.misconception_code === "MC-STOP-IMPLICIT" : false));
   const ivFor = (g: PlanGroup) => (ivs.data ?? []).find((iv) => iv.assignment_id === a.id && iv.kind === KIND_FOR[g.category] &&
     (g.category !== "concept_gap" || iv.misconception_code === g.misconception_code) && iv.status !== "rejected");
-  const readerAI = plan.data?.reader_status === "used";
+  const readerAI = plan.data?.reader_status === "used" || plan.data?.reader_status === "replayed";
   const submitted = groups.filter((g) => g.category !== "no_submission").reduce((n, g) => n + g.students.length, 0);
 
   return (

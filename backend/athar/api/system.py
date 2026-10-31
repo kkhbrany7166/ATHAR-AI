@@ -113,7 +113,8 @@ def example(db: Session = Depends(get_db)):
     for ev, sub in rows:
         results = db.scalars(select(m.TestResult).where(m.TestResult.submission_id == sub.id)).all()
         if results and all(r.status == "pass" for r in results) and not sub.assignment.targeted:
+            run_replayed = db.scalar(select(m.GradingRun.ai_status).where(m.GradingRun.id == ev.run_id)) == "replayed"
             return {"available": True, "student": sub.student.name, "submission_id": sub.id, "tests_passed": len(results),
                     "tests_total": len(results), "quote": ev.quote, "flag": ev.misconception_code,
-                    "reader": "AI" if ev.source == "ai" else "rule-based reader", "is_synthetic": sub.is_synthetic}
+                    "reader": ("AI (recorded run)" if run_replayed else "AI") if ev.source == "ai" else "rule-based reader", "is_synthetic": sub.is_synthetic}
     return {"available": False}

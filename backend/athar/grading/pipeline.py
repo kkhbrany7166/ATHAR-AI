@@ -32,7 +32,8 @@ def latest_submissions(db: Session, assignment_id: int) -> list[m.Submission]:
     return list(latest.values())
 
 
-def start_run(db: Session, assignment_id: int, user_id: int | None, *, background: bool = True) -> m.GradingRun:
+def start_run(db: Session, assignment_id: int, user_id: int | None, *, background: bool = True,
+              reader: Reader | None = None) -> m.GradingRun:
     """Create a run, or return the one already in progress (idempotent while active)."""
     existing = db.scalar(select(m.GradingRun).where(m.GradingRun.assignment_id == assignment_id, m.GradingRun.status.in_(ACTIVE)))
     if existing:
@@ -42,9 +43,9 @@ def start_run(db: Session, assignment_id: int, user_id: int | None, *, backgroun
     db.add(m.AuditEvent(actor_id=user_id, action="grading.start", entity="assignment", entity_id=assignment_id))
     db.commit()
     if background:
-        threading.Thread(target=execute_run, args=(run.id,), daemon=True).start()
+        threading.Thread(target=execute_run, args=(run.id, reader), daemon=True).start()
     else:
-        execute_run(run.id)
+        execute_run(run.id, reader)
         db.refresh(run)
     return run
 
@@ -63,11 +64,11 @@ def _test_summary(tests: list[m.TestCase], report: RunReport) -> str:
     return "\n".join(lines)
 
 
-def execute_run(run_id: int) -> None:
+def execute_run(run_id: int, reader: Reader | None = None) -> None:
     db = SessionLocal()
     run = db.get(m.GradingRun, run_id)
     try:
-        _execute(db, run, choose_reader())
+        _execute(db, run, reader or choose_reader())
     except Exception as e:  # record the failure; never pretend the run succeeded
         db.rollback()
         run = db.get(m.GradingRun, run_id)
@@ -111,6 +112,7 @@ def _execute(db: Session, run: m.GradingRun, reader: Reader) -> None:
     obj_payload = [{"code": o.code, "title": o.title} for o in assignment.course.objectives]
     mc_payload = [{"code": mc.code, "title": mc.title, "description": mc.description} for mc in misconceptions]
     crit_by_code = {c.code: c for c in expl_criteria}
+    emails = {s.id: s.student.email for s in subs}  # loaded here: worker threads must not touch the session
 
     def analyze_one(args):
         sub, report = args
@@ -122,7 +124,7 @@ def _execute(db: Session, run: m.GradingRun, reader: Reader) -> None:
             result = reader.read(
                 explanation=sub.explanation, criteria=crit_payload, misconceptions=mc_payload,
                 assignment_prompt=assignment.prompt, explanation_prompt=assignment.explanation_prompt,
-                code=sub.code, test_summary=_test_summary(tests, report), objectives=obj_payload,
+                code=sub.code, test_summary=_test_summary(tests, report), objectives=obj_payload, student=emails[sub.id],
                 conditions=f"{assignment.kind}, {assignment.conditions}. {assignment.ai_policy}",
             )
             return sub, result, None
@@ -148,7 +150,7 @@ def _execute(db: Session, run: m.GradingRun, reader: Reader) -> None:
     elif run.ai_failed:
         run.ai_status = "failed"
     else:
-        run.ai_status = "used" if reader.kind == "llm" else "baseline"
+        run.ai_status = {"llm": "used", "replay": "replayed"}.get(reader.kind, "baseline")
 
     # ---- 3. status + insights ----
     for sub in subs:

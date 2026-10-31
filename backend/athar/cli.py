@@ -2,6 +2,7 @@
 
     .venv/bin/python -m athar.cli reset            # drop everything, seed the CS201 demo
     .venv/bin/python -m athar.cli reset --grade    # ...and run grading synchronously
+    .venv/bin/python -m athar.cli reset --replay   # ...grade with recorded AI readings: no key, no cost
     .venv/bin/python -m athar.cli grade            # (re)run grading for the demo assignment
     .venv/bin/python -m athar.cli eval             # compare detected misconceptions with planted labels
     .venv/bin/python -m athar.cli reset-interventions   # back to "insights ready", keeping the AI grading (free)
@@ -21,10 +22,16 @@ from .grading.pipeline import start_run
 from .seed.demo import seed_demo
 
 
-def _grade(db) -> None:
+def _grade(db, replay: bool = False) -> None:
     assignment = db.scalar(select(m.Assignment).order_by(m.Assignment.id))
-    print(f"LLM: {provider_status()}")
-    run = start_run(db, assignment.id, None, background=False)
+    if replay:
+        from .ai.reader import replay_reader
+        reader = replay_reader()
+        print(f"Explanations: {reader.label} (no model calls)")
+    else:
+        reader = None
+        print(f"LLM: {provider_status()}")
+    run = start_run(db, assignment.id, None, background=False, reader=reader)
     print(json.dumps({"run": run.id, "status": run.status, "ai_status": run.ai_status, "graded": run.tests_done,
                       "ai_done": run.ai_done, "ai_failed": run.ai_failed, "error": run.error[:400]}, indent=2))
     for i in db.scalars(select(m.Insight).where(m.Insight.run_id == run.id)).all():
@@ -105,6 +112,8 @@ def main() -> None:
     sub = ap.add_subparsers(dest="cmd", required=True)
     r = sub.add_parser("reset")
     r.add_argument("--grade", action="store_true")
+    r.add_argument("--replay", action="store_true", help="grade with recorded AI readings of the demo class (no key, no cost)")
+    sub.add_parser("export-recording", help="write the latest live AI readings to athar/seed/recorded_readings.json")
     sub.add_parser("grade")
     sub.add_parser("reset-interventions", help="clear intervention work, keep grading (no model calls)")
     sub.add_parser("eval")
@@ -114,8 +123,8 @@ def main() -> None:
         reset_db()
         with SessionLocal() as db:
             print(json.dumps(seed_demo(db), indent=2))
-            if args.grade:
-                _grade(db)
+            if args.grade or args.replay:
+                _grade(db, replay=args.replay)
     elif args.cmd == "grade":
         init_db()
         with SessionLocal() as db:
@@ -123,6 +132,11 @@ def main() -> None:
     elif args.cmd == "reset-interventions":
         with SessionLocal() as db:
             print(json.dumps(reset_interventions(db), indent=2))
+    elif args.cmd == "export-recording":
+        from .ai.replay import export_recording
+        with SessionLocal() as db:
+            assignment = db.scalar(select(m.Assignment).order_by(m.Assignment.id))
+            print(json.dumps(export_recording(db, assignment.id), indent=2))
     elif args.cmd == "eval":
         with SessionLocal() as db:
             print(json.dumps(evaluate(db), indent=2))

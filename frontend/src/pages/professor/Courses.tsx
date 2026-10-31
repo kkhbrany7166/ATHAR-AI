@@ -46,7 +46,7 @@ export function CourseOverview() {
   const actionable = (plan.data?.groups ?? []).filter((g) => (g.draftable || g.category === "conflicting_evidence") && g.students.some((s) => !s.in_intervention));
   const waiting = (ivs.data ?? []).filter((iv) => iv.status === "draft");
   const results = (ivs.data ?? []).filter((iv) => iv.status === "active");
-  const ai = plan.data?.reader_status === "used";
+  const ai = plan.data?.reader_status === "used" || plan.data?.reader_status === "replayed";
 
   return (
     <>
