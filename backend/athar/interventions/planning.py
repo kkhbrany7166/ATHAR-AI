@@ -44,11 +44,11 @@ ACTIONS = {
 }
 
 CATEGORY_TEXT = {
-    "concept_gap": "Misunderstood base case (seen in tests)",
-    "execution_error": "Code didn't run: syntax or unrelated errors",
-    "reasoning_gap": "Working code, confused reasoning",
+    "concept_gap": "Tests point to a base-case gap",
+    "execution_error": "Code didn't run",
+    "reasoning_gap": "Working code, reasoning flagged by AI",
     "reasoning_unconfirmed": "Working code, reasoning not confirmed",
-    "demonstrated": "Demonstrated on this assignment",
+    "demonstrated": "Tests pass and reasoning reads as sound",
     "no_submission": "No submission",
 }
 CATEGORY_ACTION = {"concept_gap": "concept_practice", "execution_error": "debugging", "reasoning_gap": "explain_reasoning",

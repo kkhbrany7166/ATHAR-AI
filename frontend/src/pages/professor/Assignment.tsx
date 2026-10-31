@@ -2,24 +2,25 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
-import { PlanTab } from "./Plan";
-import type { AssignmentDetail, GradingRun, Insight, InsightEvidence, SubmissionRow, SupportEvidence } from "../../lib/types";
+import { OverviewTab } from "./Overview";
+import { criterionLabel, misconceptionLabel } from "../../lib/labels";
+import type { AssignmentDetail, GradingRun, SubmissionRow } from "../../lib/types";
 import {
-  Button, CONDITIONS, Callout, CodeBlock, Crumb, Empty, ErrorState, JudgmentMark, KIND, Loading, Meter, PageHeader,
+  Button, CONDITIONS, Callout, CodeBlock, Crumb, ErrorState, JudgmentMark, KIND, Loading, Meter, PageHeader,
   Section, Tag, cx, fmtDate,
 } from "../../components/ui";
 
 const TABS = [
-  { id: "insights", label: "Insights" },
-  { id: "plan", label: "Who needs what" },
-  { id: "submissions", label: "Submissions" },
+  { id: "overview", label: "Who needs attention" },
+  { id: "submissions", label: "All submissions" },
   { id: "rubric", label: "Rubric & tests" },
 ] as const;
 
 export function AssignmentPage() {
   const { assignmentId } = useParams();
   const [params, setParams] = useSearchParams();
-  const tab = params.get("tab") ?? "insights";
+  const raw = params.get("tab") ?? "overview";
+  const tab = raw === "insights" || raw === "plan" ? "overview" : raw;
   const q = useQuery({ queryKey: ["assignment", assignmentId], queryFn: () => api<AssignmentDetail>(`/api/professor/assignments/${assignmentId}`) });
   if (q.isLoading) return <Loading />;
   if (q.error) return <ErrorState error={q.error} />;
@@ -57,8 +58,7 @@ export function AssignmentPage() {
           </button>
         ))}
       </div>
-      {tab === "insights" && <InsightsTab a={a} />}
-      {tab === "plan" && <PlanTab assignmentId={a.id} />}
+      {tab === "overview" && <OverviewTab a={a} />}
       {tab === "submissions" && <SubmissionsTab a={a} />}
       {tab === "rubric" && <RubricTab a={a} />}
     </>
@@ -164,93 +164,6 @@ function GradingPanel({ a }: { a: AssignmentDetail }) {
   );
 }
 
-// ---------------------------------------------------------------- insights
-
-function InsightsTab({ a }: { a: AssignmentDetail }) {
-  const q = useQuery({
-    queryKey: ["insights", String(a.id)],
-    queryFn: () => api<{ run: GradingRun | null; insights: Insight[] }>(`/api/professor/assignments/${a.id}/insights`),
-  });
-  if (q.isLoading) return <Loading />;
-  if (q.error) return <ErrorState error={q.error} />;
-  const { run, insights } = q.data!;
-  if (!run) return <Empty title="No evidence prepared yet">Prepare grading evidence to see which learning objectives this class has and hasn't demonstrated.</Empty>;
-  const mis = insights.filter((i) => i.kind === "misconception");
-  const support = insights.find((i) => i.kind === "needs_support");
-
-  return (
-    <div className="pt-2">
-      <Section title="Possible misconceptions" aside={`Patterns found in at least ${(mis[0]?.evidence as InsightEvidence | undefined)?.threshold ?? 3} students`}>
-        {mis.length === 0 ? (
-          <Empty title="No shared misconception patterns found">
-            None of the misconceptions authored with this rubric showed up in enough submissions to report.
-          </Empty>
-        ) : (
-          <ul className="divide-y divide-line">
-            {mis.map((i) => {
-              const e = i.evidence as InsightEvidence;
-              return (
-                <li key={i.id}>
-                  <Link to={`/p/insights/${i.id}`} className="grid grid-cols-[72px_1fr_auto] gap-5 py-5 group">
-                    <div>
-                      <div className="font-serif text-[32px] leading-none num">{i.student_count}</div>
-                      <div className="text-2xs text-faint mt-1">students</div>
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        {i.objective && <span className="font-mono text-[11px] text-accent-ink">{i.objective.code}</span>}
-                        <span className="text-[15px] text-ink">{i.title}</span>
-                      </div>
-                      <p className="text-[14px] text-muted max-w-prose">{i.summary}</p>
-                      <div className="flex flex-wrap gap-x-5 gap-y-1 mt-2 text-[13px] text-faint num">
-                        <span>Tests only {e.counts.tests_only}</span>
-                        <span>Explanation only {e.counts.explanation_only}</span>
-                        <span>Both {e.counts.both}</span>
-                        {e.counts.working_code_confused_reasoning > 0 && (
-                          <span className="text-amber">Working code, confused reasoning {e.counts.working_code_confused_reasoning}</span>
-                        )}
-                      </div>
-                    </div>
-                    <span className="text-[14px] text-faint group-hover:text-accent-ink self-center">Evidence →</span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </Section>
-      {support && <SupportBlock insight={support} />}
-    </div>
-  );
-}
-
-function SupportBlock({ insight }: { insight: Insight }) {
-  const e = insight.evidence as SupportEvidence;
-  return (
-    <Section title="Students who may need direct support" aside={insight.summary}>
-      <div className="grid md:grid-cols-2 gap-x-12 gap-y-4 text-[14px]">
-        <div>
-          <div className="eyebrow mb-2">Two or more criteria not met</div>
-          {e.struggling.length === 0 ? <div className="text-faint">None</div> : (
-            <ul className="space-y-1.5">
-              {e.struggling.map((s) => (
-                <li key={s.submission_id} className="flex justify-between gap-3">
-                  <Link className="link" to={`/p/submissions/${s.submission_id}`}>{s.student_name}</Link>
-                  <span className="text-faint">{s.criteria_not_met.join(", ")}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-        <div>
-          <div className="eyebrow mb-2">No submission</div>
-          <div className="text-muted">{e.not_submitted.map((s) => s.student_name).join(", ") || "None"}</div>
-        </div>
-      </div>
-    </Section>
-  );
-}
-
 // ---------------------------------------------------------------- submissions
 
 type Filter = "all" | "review" | "misconception" | "ready";
@@ -285,7 +198,7 @@ function SubmissionsTab({ a }: { a: AssignmentDetail }) {
     <div className="pt-5">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div className="flex flex-wrap gap-1">
-          {([["all", "All"], ["review", "Needs review"], ["misconception", "Misconception evidence"], ["ready", "Reviewed"]] as [Filter, string][]).map(([f, l]) => (
+          {([["all", "All"], ["review", "Needs your review"], ["misconception", "Flagged"], ["ready", "Reviewed"]] as [Filter, string][]).map(([f, l]) => (
             <button key={f} onClick={() => setFilter(f)}
               className={cx("h-7 px-2.5 rounded text-[13.5px]", filter === f ? "bg-raised text-ink" : "text-muted hover:text-ink")}>
               {l}
@@ -309,7 +222,7 @@ function SubmissionsTab({ a }: { a: AssignmentDetail }) {
           <thead>
             <tr className="text-left text-faint text-2xs uppercase tracking-[0.1em] border-b border-line">
               <th className="font-medium py-2">Student</th>
-              {crits.map((c) => <th key={c.id} className="font-medium py-2 px-2" title={c.title}>{c.code}</th>)}
+              {crits.map((c) => <th key={c.id} className="font-medium py-2 px-2 normal-case tracking-normal text-[12.5px] leading-4 max-w-[96px]" title={`${c.code}: ${c.title}`}>{criterionLabel(c.code)}</th>)}
               <th className="font-medium py-2 text-right pr-4">Total</th>
               <th className="font-medium py-2">Flags</th>
               <th className="font-medium py-2">Status</th>
@@ -341,7 +254,7 @@ function SubmissionsTab({ a }: { a: AssignmentDetail }) {
                 <td className="py-2.5">
                   <span className="flex flex-wrap gap-1">
                     {r.needs_review && <Tag tone="amber">Review</Tag>}
-                    {r.misconceptions.map((m) => <Tag key={m} tone="brick">{m.replace("MC-", "")}</Tag>)}
+                    {[...new Set(r.misconceptions)].map((m) => <Tag key={m} tone="amber" title={`${m}: flagged, not confirmed`}>{misconceptionLabel(m)}</Tag>)}
                   </span>
                 </td>
                 <td className="py-2.5 text-muted text-[13.5px]">{r.grade_status}</td>

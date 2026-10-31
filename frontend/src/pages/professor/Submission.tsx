@@ -2,9 +2,11 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
+import { criterionLabel, misconceptionLabel, objectiveLabel } from "../../lib/labels";
+import { EvidenceLegend, EvidenceTag, sourceKind } from "../../components/Evidence";
 import type { Evidence, SubmissionDetail } from "../../lib/types";
 import {
-  Button, CONDITIONS, Callout, CodeBlock, Crumb, ErrorState, Highlighted, JudgmentMark, Loading, Section, SourceTag, SynthTag, Tag, cx,
+  Button, CONDITIONS, Callout, CodeBlock, Crumb, ErrorState, Highlighted, JudgmentMark, Loading, Section, SynthTag, Tag, cx,
 } from "../../components/ui";
 
 const REASON: Record<string, string> = {
@@ -75,44 +77,28 @@ export function SubmissionPage() {
         </div>
       </header>
 
-      <div className="grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] gap-x-10">
-        <div>
-          <Section title="Written explanation" aside={quotes.length ? "Highlighted: spans cited as evidence" : undefined}>
+      <div className="mb-2"><EvidenceLegend kinds={["test", d.reading?.source === "baseline" ? "rules" : "ai", "professor"]} /></div>
+
+      <div className="grid lg:grid-cols-2 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_360px] gap-x-10">
+        {/* 1. What the student wrote, and how it was read */}
+        <div className="min-w-0">
+          <Section title="Their reasoning" aside={quotes.length ? "Highlighted: words quoted as evidence" : undefined}>
             {d.explanation ? (
-              <p className="font-serif text-[16.5px] leading-[1.7] text-ink max-w-prose"><Highlighted text={d.explanation} quotes={quotes} /></p>
+              <p className="font-serif text-[17px] leading-[1.75] text-ink max-w-prose"><Highlighted text={d.explanation} quotes={quotes} /></p>
             ) : <p className="text-faint">No explanation submitted.</p>}
             {d.ai_use_disclosure && (
-              <p className="text-[13.5px] text-muted mt-4"><span className="text-faint">AI use disclosed by student: </span>{d.ai_use_disclosure}</p>
+              <p className="text-[14px] text-muted mt-4"><span className="text-faint">Outside help the student disclosed: </span>{d.ai_use_disclosure}</p>
             )}
           </Section>
           {d.reading && <ReadingPanel r={d.reading} />}
-          <Section title="Code">
-            <CodeBlock code={d.code} />
-          </Section>
-          <Section title="Test results" aside={`${d.tests.filter((t) => t.status === "pass").length} of ${d.tests.length} passed`}>
-            <table className="w-full text-[13.5px]">
-              <tbody className="divide-y divide-line">
-                {d.tests.map((t) => (
-                  <tr key={t.id}>
-                    <td className="py-2 pr-3 w-14">
-                      <span className={cx("text-2xs font-medium", t.status === "pass" ? "text-accent-ink" : "text-brick")}>{t.status.toUpperCase()}</span>
-                    </td>
-                    <td className="py-2 pr-3 font-mono">{t.name}{t.hidden && <span className="text-faint font-sans"> · hidden</span>}</td>
-                    <td className="py-2 font-mono text-muted text-right">
-                      {t.status === "pass" ? "" : t.error_type ? <span title={t.error_message}>{t.error_type}</span> : <>got {t.actual}</>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </Section>
-          {d.misconceptions.length > 0 && (
-            <Section title="Misconception evidence">
+          {d.misconceptions.some((m) => m.source !== "tests") && (
+            <Section title="Possible misconceptions in the writing">
               <ul className="space-y-3 text-[14px]">
-                {d.misconceptions.map((m) => (
-                  <li key={m.id}>
-                    <div className="flex items-center gap-2"><span className="font-mono text-[11.5px] text-brick">{m.code}</span><SourceTag source={m.source} /></div>
-                    <div className="text-muted mt-0.5">{m.source === "ai" ? <>“{m.quote}”. {m.detail}</> : m.detail}</div>
+                {d.misconceptions.filter((m) => m.source !== "tests").map((m) => (
+                  <li key={m.id} className="border-l-2 border-dashed border-amber/60 pl-3">
+                    <div className="flex flex-wrap items-center gap-2"><span className="text-ink" title={m.code}>{misconceptionLabel(m.code)}</span><EvidenceTag kind={sourceKind(m.source)} /></div>
+                    <div className="text-muted mt-1">“{m.quote}”</div>
+                    {m.detail && <div className="text-faint mt-0.5 text-[13.5px]">{m.detail}</div>}
                   </li>
                 ))}
               </ul>
@@ -120,29 +106,61 @@ export function SubmissionPage() {
           )}
         </div>
 
-        <div>
-          <Section title="Rubric review" aside={hasAiSuggestions && !published ? (
-            <button className="link" disabled={confirm.isPending} onClick={() => confirm.mutate()}>Accept all machine suggestions</button>
-          ) : undefined}>
-            {confirm.data && confirm.data.skipped.length > 0 && (
-              <div className="mb-4"><Callout tone="amber">Not accepted: {confirm.data.skipped.map((s) => `${s.code} (${s.reason})`).join(", ")}. Decide these yourself.</Callout></div>
-            )}
-            <div className="space-y-6">
-              {d.criteria.map((c) => <CriterionReview key={c.id} sub={d} c={c} onSaved={refresh} />)}
-            </div>
+        {/* 2. What the code does when it runs */}
+        <div className="min-w-0">
+          <Section title="Their code">
+            <CodeBlock code={d.code} />
           </Section>
-          <Section title="Publish">
-            {published ? <Callout tone="accent">Published. The student can see this feedback.</Callout> : d.publish_blockers.length ? (
-              <Callout tone="amber" title="Not ready to publish">
-                <ul className="list-disc ml-4">{d.publish_blockers.map((b) => <li key={b}>{b}</li>)}</ul>
-              </Callout>
-            ) : (
-              <div className="flex items-center justify-between gap-4">
-                <p className="text-muted text-[14px]">Every criterion rests on tests or your decision.</p>
-                <Button variant="primary" disabled={publish.isPending} onClick={() => publish.mutate(d)}>Publish feedback</Button>
+          <Section title="What happened when it ran" aside={`${d.tests.filter((t) => t.status === "pass").length} of ${d.tests.length} tests passed`}>
+            <ul className="divide-y divide-line text-[14px]">
+              {d.tests.map((t) => (
+                <li key={t.id} className="py-2 grid grid-cols-[20px_minmax(0,1fr)_auto] gap-x-3 items-baseline">
+                  <span aria-label={t.status} className={t.status === "pass" ? "text-accent-ink" : "text-brick"}>{t.status === "pass" ? "✓" : "✗"}</span>
+                  <span className="font-mono text-[13px] break-words">{t.name}{t.hidden && <span className="text-faint font-sans"> · hidden from students</span>}</span>
+                  <span className="font-mono text-[13px] text-muted text-right">
+                    {t.status === "pass" ? "" : t.error_type ? <span title={t.error_message}>{t.error_type}</span> : <>got {t.actual}</>}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {d.misconceptions.some((m) => m.source === "tests") && (
+              <div className="mt-4 space-y-2">
+                {[...new Set(d.misconceptions.filter((m) => m.source === "tests").map((m) => m.code))].map((code) => (
+                  <div key={code} className="flex flex-wrap items-center gap-2 text-[14px]">
+                    <EvidenceTag kind="test" /><span className="text-ink" title={code}>Fails the way “{misconceptionLabel(code).toLowerCase()}” predicts</span>
+                  </div>
+                ))}
               </div>
             )}
           </Section>
+        </div>
+
+        {/* 3. Your decisions */}
+        <div className="min-w-0 lg:col-span-2 xl:col-span-1">
+          <div className="xl:sticky xl:top-6">
+            <Section title="Your decisions" aside={hasAiSuggestions && !published ? (
+              <button className="link" disabled={confirm.isPending} onClick={() => confirm.mutate()}>Accept the suggestions</button>
+            ) : undefined}>
+              {confirm.data && confirm.data.skipped.length > 0 && (
+                <div className="mb-4"><Callout tone="amber">Not accepted: {confirm.data.skipped.map((s) => `${criterionLabel(s.code)} (${s.reason})`).join(", ")}. Decide these yourself.</Callout></div>
+              )}
+              <div className="space-y-6">
+                {d.criteria.map((c) => <CriterionReview key={c.id} sub={d} c={c} onSaved={refresh} />)}
+              </div>
+            </Section>
+            <Section title="Release feedback to the student">
+              {published ? <Callout tone="accent">Released. The student can see this feedback.</Callout> : d.publish_blockers.length ? (
+                <Callout tone="amber" title="Not ready yet">
+                  <ul className="list-disc ml-4">{d.publish_blockers.map((b) => <li key={b}>{b.replace(/^(C\d):/, (_, c) => `${criterionLabel(c)}:`)}</li>)}</ul>
+                </Callout>
+              ) : (
+                <div className="flex items-center justify-between gap-4">
+                  <p className="text-muted text-[14px]">Every criterion rests on tests or your decision.</p>
+                  <Button variant="primary" disabled={publish.isPending} onClick={() => publish.mutate(d)}>Release</Button>
+                </div>
+              )}
+            </Section>
+          </div>
         </div>
       </div>
     </>
@@ -168,8 +186,8 @@ function CriterionReview({ sub, c, onSaved }: { sub: Detail; c: Detail["criteria
     <div className="border-b border-line pb-5 last:border-0">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-ink"><span className="font-mono text-[13px] text-accent-ink mr-2">{c.code}</span>{c.title}</div>
-          <div className="text-[13px] text-faint mt-0.5">{c.method === "tests" ? "Scored by tests" : "AI suggests, you decide"} · {c.max_points} pts</div>
+          <div className="text-ink" title={`${c.code}: ${c.description}`}>{c.title}</div>
+          <div className="text-[13px] text-faint mt-0.5">{c.method === "tests" ? "Scored by tests" : "AI or rules suggest, you decide"} · {c.max_points} pts</div>
         </div>
         <div className="text-right shrink-0">
           <JudgmentMark judgment={c.state.judgment} />
@@ -180,7 +198,7 @@ function CriterionReview({ sub, c, onSaved }: { sub: Detail; c: Detail["criteria
         {shown.map((e) => (
           <li key={e.id} className={cx("text-[14px]", e.source !== c.state.source && "opacity-60")}>
             <div className="flex flex-wrap items-center gap-1.5 mb-1">
-              {!["ai_unavailable", "ai_failed"].includes(e.judgment) && <SourceTag source={e.source} />}
+              {!["ai_unavailable", "ai_failed"].includes(e.judgment) && <EvidenceTag kind={sourceKind(e.source)} />}
               {(e.source === "ai" || e.source === "baseline") && e.confidence && <span className="text-2xs text-faint">confidence {e.confidence}</span>}
               {e.review_reasons.map((r) => <Tag key={r} tone={r.startsWith("ai_") || r === "quote_not_found" ? "brick" : "amber"}>{REASON[r] ?? r}</Tag>)}
               {e.source !== c.state.source && <span className="text-2xs text-faint">superseded</span>}
@@ -226,14 +244,14 @@ function CriterionReview({ sub, c, onSaved }: { sub: Detail; c: Detail["criteria
 function ReadingPanel({ r }: { r: NonNullable<SubmissionDetail["reading"]> }) {
   const ai = r.source === "ai";
   return (
-    <Section title="How the explanation was read" aside={<Tag tone="amber">{ai ? `AI · ${r.reader} · ${r.prompt_version}` : `Rule-based reading (not AI) · ${r.reader}`}</Tag>}>
+    <Section title="How the AI read it" aside={<span title={`${r.reader} · ${r.prompt_version}`}><EvidenceTag kind={ai ? "ai" : "rules"}>{ai ? "AI reading · a suggestion" : "Rule reading · not AI"}</EvidenceTag></span>}>
       {r.abstained && <div className="mb-3"><Callout tone="amber" title="The reader abstained">{r.abstain_reason || "Not enough evidence for a confident judgment."} This needs your judgment.</Callout></div>}
       {r.summary && <p className="text-ink max-w-prose">{r.summary}</p>}
       <dl className="grid sm:grid-cols-2 gap-x-8 gap-y-3 mt-3 text-[13.5px]">
         {r.code_issue && <div><dt className="text-faint">What the failing tests suggest</dt><dd className="text-muted">{r.code_issue.replaceAll("_", " ")}</dd></div>}
-        {r.objectives.length > 0 && <div><dt className="text-faint">Objectives</dt><dd className="text-muted">{r.objectives.map((o) => `${o.objective_code}: ${o.status.replace("_", " ")}`).join(" · ")}</dd></div>}
+        {r.objectives.length > 0 && <div><dt className="text-faint">Learning goals</dt><dd className="text-muted">{r.objectives.map((o) => `${objectiveLabel(o.objective_code)}: ${o.status.replace("_", " ")}`).join(" · ")}</dd></div>}
         {r.rejected_ideas.length > 0 && <div className="sm:col-span-2"><dt className="text-faint">Ideas the student explicitly rejects (not counted against them)</dt>
-          <dd className="text-muted">{r.rejected_ideas.map((x) => `${x.code}: “${x.quote}”`).join(" · ")}</dd></div>}
+          <dd className="text-muted">{r.rejected_ideas.map((x) => `${misconceptionLabel(x.code)}: “${x.quote}”`).join(" · ")}</dd></div>}
         {r.contradictions.length > 0 && <div className="sm:col-span-2"><dt className="text-faint">Contradictions</dt><dd className="text-muted">{r.contradictions.join(" · ")}</dd></div>}
         {r.missing_evidence.length > 0 && <div className="sm:col-span-2"><dt className="text-faint">Missing evidence</dt><dd className="text-muted">{r.missing_evidence.join(" · ")}</dd></div>}
         {r.validation_notes.length > 0 && <div className="sm:col-span-2"><dt className="text-faint">Removed by validation</dt><dd className="text-brick/90">{r.validation_notes.join(" · ")}</dd></div>}

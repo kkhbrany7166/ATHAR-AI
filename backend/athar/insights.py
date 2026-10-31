@@ -155,7 +155,7 @@ def compute_insights(db: Session, assignment: m.Assignment, run: m.GradingRun) -
             parts.append(f"{len(expl_only)} from written explanations only")
         if both:
             parts.append(f"{len(both)} from both")
-        summary = f"{n} of {len(subs)} submitting students show evidence consistent with this misconception ({', '.join(parts)})."
+        summary = f"{n} of {len(subs)} submissions flagged ({', '.join(parts)}). Flags from explanations are AI suggestions until you review them."
 
         insight = m.Insight(
             assignment_id=assignment.id, run_id=run.id, kind="misconception", objective_id=mc.objective_id,

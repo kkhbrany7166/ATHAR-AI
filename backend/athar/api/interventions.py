@@ -127,6 +127,8 @@ def list_interventions(course_id: int, user: m.User = Depends(require_professor)
         raise HTTPException(404, "Course not found")
     ivs = db.scalars(select(m.Intervention).where(m.Intervention.course_id == course_id).order_by(m.Intervention.id.desc())).all()
     return [{"id": iv.id, "title": iv.title, "status": iv.status, "kind": iv.kind, "targets": len(iv.target_student_ids),
+             "misconception_code": iv.misconception_code, "assignment_id": iv.assignment_id, "delivered": len(iv.tasks),
+             "verified": sum(1 for t in iv.tasks if t.status == "verified"),
              "insight_id": iv.insight_id, "created_at": ser.iso(iv.created_at)} for iv in ivs]
 
 

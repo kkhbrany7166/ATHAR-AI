@@ -87,7 +87,7 @@ export function AppShell() {
         </div>
       </aside>
       <main className="flex-1 min-w-0">
-        <div className="max-w-[1120px] mx-auto px-4 sm:px-8 lg:px-12 py-8 lg:py-10">
+        <div className="max-w-[1320px] mx-auto px-4 sm:px-8 lg:px-12 py-8 lg:py-10">
           <PageBoundary key={location.pathname}><Outlet /></PageBoundary>
         </div>
       </main>

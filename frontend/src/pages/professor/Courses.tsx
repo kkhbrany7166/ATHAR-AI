@@ -51,7 +51,7 @@ export function CourseOverview() {
         {c.description} <span className="num">{c.student_count} students enrolled.</span>
       </PageHeader>
 
-      <Section title="What needs your attention" aside="From the latest prepared grading evidence">
+      <Section title="What needs your attention" aside="Flags combine test results and AI readings. Review before acting">
         {attention.length === 0 ? (
           <Empty title="No insights yet">
             Prepare grading evidence for an assignment and ATHAR will connect the results to your learning objectives.
@@ -63,9 +63,9 @@ export function CourseOverview() {
                 <Link to={`/p/insights/${i.id}`} className="grid grid-cols-[64px_1fr_auto] items-center gap-4 py-3.5 group">
                   <span className="font-serif text-[26px] text-ink num leading-none">{i.student_count}</span>
                   <span className="min-w-0">
-                    <span className="block text-ink">{i.title}</span>
+                    <span className="block text-ink">{i.kind === "misconception" ? `Possible: ${i.title.charAt(0).toLowerCase()}${i.title.slice(1)}` : i.title}</span>
                     <span className="block text-[13.5px] text-muted truncate">
-                      {i.kind === "misconception" ? "Possible misconception" : "Support"} · {i.assignment.title}
+                      {i.kind === "misconception" ? "Flagged for review" : "Support"} · {i.assignment.title.split("—")[0].trim()}
                     </span>
                   </span>
                   <span className="text-[14px] text-faint group-hover:text-accent-ink">Review evidence →</span>

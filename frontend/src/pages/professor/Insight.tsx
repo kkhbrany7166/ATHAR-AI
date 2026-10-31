@@ -1,8 +1,10 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api";
+import { objectiveLabel } from "../../lib/labels";
+import { EvidenceTag, sourceKind } from "../../components/Evidence";
 import type { InsightDetail, InsightEvidence } from "../../lib/types";
-import { Button, CONDITIONS, Callout, Crumb, ErrorState, KIND, Loading, Meter, Section, SynthTag, Tag } from "../../components/ui";
+import { Button, CONDITIONS, Callout, Crumb, ErrorState, KIND, Loading, Meter, Section, SynthTag } from "../../components/ui";
 
 function pct(n: number, d: number) {
   return d ? `${Math.round((100 * n) / d)}%` : "—";
@@ -32,7 +34,7 @@ export function InsightPage() {
 
       <header className="pb-6">
         <div className="eyebrow mb-2 flex items-center gap-2">
-          Possible misconception {i.objective && <span className="font-mono normal-case tracking-normal text-accent-ink">{i.objective.code}</span>}
+          Possible misconception{i.objective && <span title={i.objective.code}> · {objectiveLabel(i.objective.code)}</span>}
         </div>
         <h1 className="font-serif text-[32px] leading-[1.15] tracking-[-0.01em] max-w-3xl">{i.title}</h1>
         <p className="text-muted mt-3 max-w-prose">{e.misconception.description}</p>
@@ -40,12 +42,16 @@ export function InsightPage() {
 
       {/* The numbers, all derived from stored evidence */}
       <div className="grid grid-cols-2 md:grid-cols-4 border-y border-line divide-x divide-line">
-        <Figure value={c.students} label={`of ${c.submitted} submitting students`} />
-        <Figure value={c.tests_only + c.both} label="with failing probe tests" />
-        <Figure value={c.explanation_only + c.both} label="with supporting quotes in their explanation" />
-        <Figure value={c.working_code_confused_reasoning} label="passed every test but explained it this way" tone={c.working_code_confused_reasoning ? "amber" : undefined} />
+        <Figure value={c.students} label={`submissions flagged, of ${c.submitted}`} />
+        <Figure value={c.tests_only + c.both} label="flagged by a failing test" kind="test" />
+        <Figure value={c.explanation_only + c.both} label="flagged by the AI reading of the explanation" kind="ai" />
+        <Figure value={c.working_code_confused_reasoning} label="pass every test, flagged only by the AI reading" tone={c.working_code_confused_reasoning ? "amber" : undefined} />
       </div>
-      <p className="text-[13.5px] text-faint mt-3 max-w-prose">{i.summary}</p>
+      <p className="text-[14px] text-muted mt-3 max-w-prose">
+        {c.tests_only + c.both > 0 && <>Test flags are deterministic: the code failed in the way this misconception predicts. </>}
+        {c.explanation_only + c.both > 0 && <>Explanation flags are AI suggestions, quoted word for word below. They are not diagnoses until you review them, and on
+          this synthetic class the AI reader over-flags (see Evaluation).</>}
+      </p>
 
       <div className="grid lg:grid-cols-[minmax(0,1fr)_300px] gap-x-12">
         <div>
@@ -65,7 +71,7 @@ export function InsightPage() {
                       <div className="flex flex-wrap items-center gap-2 mt-2 text-[13.5px] text-muted">
                         <span>{x.student_name}</span>
                         {x.is_synthetic && <SynthTag />}
-                        {x.sources.map((s) => <Tag key={s} tone={s === "tests" ? "neutral" : "amber"}>{s === "ai" ? "AI-read explanation" : s === "baseline" ? "Rule-read explanation" : "Tests"}</Tag>)}
+                        {x.sources.map((s) => <EvidenceTag key={s} kind={sourceKind(s)} />)}
                         <Link to={`/p/submissions/${x.submission_id}`} className="link ml-auto">Open submission</Link>
                       </div>
                     </div>
@@ -113,7 +119,6 @@ export function InsightPage() {
               <tbody className="divide-y divide-line">
                 {[...linked, ...unlinked].map((x) => (
                   <tr key={x.criterion_id} className={x.linked ? "" : "text-faint"}>
-                    <td className="py-2.5 pr-3 font-mono text-[13px] w-10">{x.code}</td>
                     <td className="py-2.5 pr-4">{x.title}{x.linked && <span className="text-2xs text-accent-ink ml-2">same objective</span>}</td>
                     <td className="py-2.5 pr-4 num text-right whitespace-nowrap">
                       {x.group_judged ? `${pct(x.group_met, x.group_judged)}` : <span className="text-faint" title="No usable judgments">no evidence</span>}
@@ -180,11 +185,12 @@ export function InsightPage() {
   );
 }
 
-function Figure({ value, label, tone }: { value: number; label: string; tone?: "amber" }) {
+function Figure({ value, label, tone, kind }: { value: number; label: string; tone?: "amber"; kind?: "test" | "ai" }) {
   return (
     <div className="py-4 px-4 first:pl-0">
       <div className={`font-serif text-[30px] leading-none num ${tone === "amber" ? "text-amber" : ""}`}>{value}</div>
-      <div className="text-[13px] text-muted mt-1.5 leading-4">{label}</div>
+      <div className="text-[13.5px] text-muted mt-1.5 leading-5">{label}</div>
+      {kind && <div className="mt-2"><EvidenceTag kind={kind} /></div>}
     </div>
   );
 }

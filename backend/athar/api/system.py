@@ -69,19 +69,19 @@ def highlight(db: Session = Depends(get_db)):
     if n_confused >= 3:
         return {"available": True, "course_code": course.code, "students": n_confused,
                 "submitted": confused.evidence["counts"]["submitted"],
-                "headline": f"{n_confused} students wrote working code. Their explanations tell a different story.",
-                "detail": f"Every test passed, yet their reasoning points to the same gap: {confused.title.lower()}.",
+                "headline": f"{n_confused} students wrote code that passes every test. The AI flagged their explanations for a closer look.",
+                "detail": f"Possible gap: {confused.title.lower()}. Flags are suggestions for the professor to review, not diagnoses.",
                 "source": run.ai_status}
     top = max(insights, key=lambda i: i.student_count)
     c = top.evidence["counts"]
     return {"available": True, "course_code": course.code, "students": top.student_count, "submitted": c["submitted"],
-            "headline": f"{top.student_count} of {c['submitted']} students share the same gap.",
+            "headline": f"{top.student_count} of {c['submitted']} submissions are flagged for the same possible gap.",
             "detail": f"{top.title}. Most of their code still passes the typical tests, so the grade alone would hide it.",
             "source": run.ai_status}
 
 
 @router.get("/evaluation")
-def evaluation(user: m.User = Depends(current_user)):
+def evaluation(user: m.User = Depends(current_user), db: Session = Depends(get_db)):
     """Latest results written by `python -m evals.run`. Read-only; nothing is computed here."""
     import json
     from pathlib import Path
@@ -93,5 +93,9 @@ def evaluation(user: m.User = Depends(current_user)):
         return json.loads(p.read_text()) if p.exists() else None
     ledger = results / "spend.jsonl"
     spend = [json.loads(x) for x in ledger.read_text().splitlines() if x.strip()] if ledger.exists() else []
+    from ..cli import evaluate as planted_recovery
+
+    run = db.scalar(select(m.GradingRun).where(m.GradingRun.status == "done").order_by(m.GradingRun.id.desc()).limit(1))
+    classroom = {"reader": run.ai_provider if run else "", "recovery": planted_recovery(db)} if run else None
     return {"dev": load("dev"), "heldout": load("heldout"), "final": load("final"), "final2": load("final2"), "system": load("system"),
-            "spend": [r for r in spend if r.get("calls")]}
+            "spend": [r for r in spend if r.get("calls")], "classroom": classroom}
