@@ -1,0 +1,16 @@
+{
+  "meta": {
+    "commit": "05f1070",
+    "ran_at": "2026-10-31 08:37:10 +0300",
+    "llm": {
+      "provider": "none",
+      "model": "",
+      "configured": false
+    },
+    "baseline_version": "rules-v1"
+  },
+  "command": "pytest -q tests/test_interventions.py tests/test_api_gates.py tests/test_pipeline_and_insights.py",
+  "summary": "24 passed in 24.74s",
+  "ok": true,
+  "failed": []
+}

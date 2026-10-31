@@ -1,0 +1,216 @@
+{
+  "meta": {
+    "commit": "05f1070",
+    "ran_at": "2026-10-31 08:37:01 +0300",
+    "llm": {
+      "provider": "none",
+      "model": "",
+      "configured": false
+    },
+    "baseline_version": "rules-v1"
+  },
+  "split": "dev",
+  "provenance": "Generated from athar/seed/synthetic.py (seed 201) and the authored item bank. The rule baseline was written from these templates.",
+  "code": {
+    "n": 113,
+    "misconceptions": {
+      "MC-BASE-SMALLEST": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 15,
+        "fp": 0,
+        "fn": 0
+      },
+      "MC-BASE-VALUE": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 6,
+        "fp": 0,
+        "fn": 0
+      },
+      "MC-NO-PROGRESS": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 3,
+        "fp": 0,
+        "fn": 0
+      },
+      "micro": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 24,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    "exact_set_accuracy": 1.0,
+    "c2_judgment_accuracy": 1.0,
+    "stopping_condition_flag_accuracy": {
+      "probes": 1.0,
+      "baseline_any_failing_test": 0.956
+    },
+    "failures": []
+  },
+  "variants": {
+    "n": 9,
+    "accuracy": 1.0,
+    "failures": []
+  },
+  "explanations": {
+    "baseline": {
+      "n": 114,
+      "reader": "baseline",
+      "errors": 0,
+      "misconceptions": {
+        "MC-STOP-IMPLICIT": {
+          "precision": 0.714,
+          "recall": 1.0,
+          "f1": 0.833,
+          "tp": 20,
+          "fp": 8,
+          "fn": 0
+        },
+        "MC-BASE-SMALLEST": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "tp": 16,
+          "fp": 0,
+          "fn": 0
+        },
+        "micro": {
+          "precision": 0.818,
+          "recall": 1.0,
+          "f1": 0.9,
+          "tp": 36,
+          "fp": 8,
+          "fn": 0
+        }
+      },
+      "c3_accuracy": 0.93,
+      "abstains_when_evidence_is_insufficient": 0.385,
+      "wrongly_abstains_when_decidable": 0.0,
+      "trivial_baseline_always_met_no_misconception": {
+        "c3_accuracy": 0.57,
+        "micro_f1": 0.0
+      },
+      "failures": [
+        {
+          "id": "dx006",
+          "text": "it calls itself until it's done and then returns the answer.",
+          "expected": [],
+          "found": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "c3_expected": "unclear",
+          "c3_got": "not_met"
+        },
+        {
+          "id": "dx010",
+          "text": "It calls itself until it's done and then returns the answer.",
+          "expected": [],
+          "found": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "c3_expected": "unclear",
+          "c3_got": "not_met"
+        },
+        {
+          "id": "dx057",
+          "text": "it calls itself until it's done and then returns the answer.",
+          "expected": [],
+          "found": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "c3_expected": "unclear",
+          "c3_got": "not_met"
+        },
+        {
+          "id": "dx065",
+          "text": "It calls itself until it's done and then returns the answer.",
+          "expected": [],
+          "found": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "c3_expected": "unclear",
+          "c3_got": "not_met"
+        },
+        {
+          "id": "dx066",
+          "text": "It calls itself until it's done and then returns the answer.",
+          "expected": [],
+          "found": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "c3_expected": "unclear",
+          "c3_got": "not_met"
+        },
+        {
+          "id": "dx074",
+          "text": "It calls itself until it's done and then returns the answer.",
+          "expected": [],
+          "found": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "c3_expected": "unclear",
+          "c3_got": "not_met"
+        },
+        {
+          "id": "dx099",
+          "text": "It calls itself until it's done and then returns the answer.",
+          "expected": [],
+          "found": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "c3_expected": "unclear",
+          "c3_got": "not_met"
+        },
+        {
+          "id": "dx105",
+          "text": "It calls itself until it's done and then returns the answer.",
+          "expected": [],
+          "found": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "c3_expected": "unclear",
+          "c3_got": "not_met"
+        }
+      ]
+    },
+    "llm": {
+      "not_run": "No model credentials configured. Nothing was simulated in its place."
+    }
+  },
+  "verifier": {
+    "baseline": {
+      "n": 11,
+      "reader": "baseline",
+      "accuracy": 1.0,
+      "confusion": [
+        {
+          "expected": "demonstrated",
+          "got": "demonstrated",
+          "count": 4
+        },
+        {
+          "expected": "insufficient_evidence",
+          "got": "insufficient_evidence",
+          "count": 2
+        },
+        {
+          "expected": "still_developing",
+          "got": "still_developing",
+          "count": 5
+        }
+      ],
+      "failures": []
+    },
+    "llm": {
+      "not_run": "No model credentials configured. Nothing was simulated in its place."
+    }
+  }
+}

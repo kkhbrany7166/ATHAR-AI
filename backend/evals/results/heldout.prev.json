@@ -1,0 +1,320 @@
+{
+  "meta": {
+    "commit": "05f1070",
+    "ran_at": "2026-10-31 08:37:01 +0300",
+    "llm": {
+      "provider": "none",
+      "model": "",
+      "configured": false
+    },
+    "baseline_version": "rules-v1"
+  },
+  "split": "heldout",
+  "provenance": "Hand-written in evals/datasets/heldout/ after the components were frozen.",
+  "code": {
+    "n": 20,
+    "misconceptions": {
+      "MC-BASE-SMALLEST": {
+        "precision": 0.667,
+        "recall": 0.667,
+        "f1": 0.667,
+        "tp": 2,
+        "fp": 1,
+        "fn": 1
+      },
+      "MC-BASE-VALUE": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 4,
+        "fp": 0,
+        "fn": 0
+      },
+      "MC-NO-PROGRESS": {
+        "precision": 0.5,
+        "recall": 1.0,
+        "f1": 0.667,
+        "tp": 1,
+        "fp": 1,
+        "fn": 0
+      },
+      "micro": {
+        "precision": 0.778,
+        "recall": 0.875,
+        "f1": 0.824,
+        "tp": 7,
+        "fp": 2,
+        "fn": 1
+      }
+    },
+    "exact_set_accuracy": 0.9,
+    "c2_judgment_accuracy": 1.0,
+    "stopping_condition_flag_accuracy": {
+      "probes": 0.9,
+      "baseline_any_failing_test": 0.8
+    },
+    "failures": [
+      {
+        "id": "hc09",
+        "expected": [
+          "MC-BASE-SMALLEST"
+        ],
+        "found": [],
+        "c2_expected": "partial",
+        "c2_got": "partial"
+      },
+      {
+        "id": "hc11",
+        "expected": [],
+        "found": [
+          "MC-BASE-SMALLEST",
+          "MC-NO-PROGRESS"
+        ],
+        "c2_expected": "partial",
+        "c2_got": "partial"
+      }
+    ]
+  },
+  "variants": {
+    "n": 8,
+    "accuracy": 1.0,
+    "failures": []
+  },
+  "explanations": {
+    "baseline": {
+      "n": 32,
+      "reader": "baseline",
+      "errors": 0,
+      "misconceptions": {
+        "MC-STOP-IMPLICIT": {
+          "precision": 0.5,
+          "recall": 0.286,
+          "f1": 0.364,
+          "tp": 2,
+          "fp": 2,
+          "fn": 5
+        },
+        "MC-BASE-SMALLEST": {
+          "precision": 1.0,
+          "recall": 0.429,
+          "f1": 0.6,
+          "tp": 3,
+          "fp": 0,
+          "fn": 4
+        },
+        "micro": {
+          "precision": 0.714,
+          "recall": 0.357,
+          "f1": 0.476,
+          "tp": 5,
+          "fp": 2,
+          "fn": 9
+        }
+      },
+      "c3_accuracy": 0.5,
+      "abstains_when_evidence_is_insufficient": 1.0,
+      "wrongly_abstains_when_decidable": 0.464,
+      "trivial_baseline_always_met_no_misconception": {
+        "c3_accuracy": 0.438,
+        "micro_f1": 0.0
+      },
+      "failures": [
+        {
+          "id": "hx02",
+          "text": "Each call peels one off the exponent. When nothing is left the function quits by itself and the results bubble",
+          "expected": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "found": [],
+          "c3_expected": "not_met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "hx03",
+          "text": "power keeps going until the exponent equals one, because b to the first is b, so that's where I return.",
+          "expected": [
+            "MC-BASE-SMALLEST"
+          ],
+          "found": [],
+          "c3_expected": "not_met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "hx04",
+          "text": "It doesn't just stop on its own: it stops because the if checks exp == 0 before calling again, and returns 1.",
+          "expected": [],
+          "found": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "c3_expected": "met",
+          "c3_got": "not_met"
+        },
+        {
+          "id": "hx07",
+          "text": "the function stops when the return is reached, return ends everything",
+          "expected": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "found": [],
+          "c3_expected": "not_met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "hx08",
+          "text": "sum_list stops at a single element and returns it. calling it with [] wouldn't make sense.",
+          "expected": [
+            "MC-BASE-SMALLEST"
+          ],
+          "found": [],
+          "c3_expected": "not_met",
+          "c3_got": "met"
+        },
+        {
+          "id": "hx10",
+          "text": "Recursion runs until the computer decides it is finished.",
+          "expected": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "found": [],
+          "c3_expected": "not_met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "hx11",
+          "text": "It stops at exp = 0. Returns 1.",
+          "expected": [],
+          "found": [],
+          "c3_expected": "met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "hx13",
+          "text": "The program stops because Python has a recursion limit, so eventually it has to stop.",
+          "expected": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "found": [],
+          "c3_expected": "not_met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "hx14",
+          "text": "power(2,3) -> 2*power(2,2) -> ... -> power(2,0)=1, then 2, 4, 8 on the way back. It stops at exponent zero.",
+          "expected": [],
+          "found": [],
+          "c3_expected": "met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "hx15",
+          "text": "لما exp يصير صفر the function returns 1 and stops.",
+          "expected": [],
+          "found": [],
+          "c3_expected": "met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "hx16",
+          "text": "It stops when there is only one number left in the list, because one number is its own sum, and for power when",
+          "expected": [
+            "MC-BASE-SMALLEST"
+          ],
+          "found": [],
+          "c3_expected": "not_met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "hx18",
+          "text": "Recursion stops eventually because the numbers get smaller and smaller until they are done.",
+          "expected": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "found": [],
+          "c3_expected": "not_met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "hx26",
+          "text": "When the list is empty there's nothing to add so it returns 0, that's the base case. Without it, xs[0] would r",
+          "expected": [],
+          "found": [],
+          "c3_expected": "met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "hx29",
+          "text": "Once exp gets down to 1 we already have the answer base, so we return it; zero never comes up in real use.",
+          "expected": [
+            "MC-BASE-SMALLEST"
+          ],
+          "found": [],
+          "c3_expected": "not_met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "hx30",
+          "text": "It terminates when the exponent argument is zero. That call returns 1 without recursing, and since we subtract",
+          "expected": [],
+          "found": [],
+          "c3_expected": "met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "hx31",
+          "text": "The return statement only gives a value back; what actually stops the recursion is the exp == 0 check.",
+          "expected": [],
+          "found": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "c3_expected": "met",
+          "c3_got": "not_met"
+        }
+      ]
+    },
+    "llm": {
+      "not_run": "No model credentials configured. Nothing was simulated in its place."
+    }
+  },
+  "verifier": {
+    "baseline": {
+      "n": 12,
+      "reader": "baseline",
+      "accuracy": 0.917,
+      "confusion": [
+        {
+          "expected": "demonstrated",
+          "got": "demonstrated",
+          "count": 3
+        },
+        {
+          "expected": "demonstrated",
+          "got": "still_developing",
+          "count": 1
+        },
+        {
+          "expected": "insufficient_evidence",
+          "got": "insufficient_evidence",
+          "count": 4
+        },
+        {
+          "expected": "still_developing",
+          "got": "still_developing",
+          "count": 4
+        }
+      ],
+      "failures": [
+        {
+          "id": "hv11",
+          "expected": "demonstrated",
+          "got": "still_developing",
+          "reasons": [
+            "Every test passes, but the written reasoning still describes the misconception."
+          ]
+        }
+      ]
+    },
+    "llm": {
+      "not_run": "No model credentials configured. Nothing was simulated in its place."
+    }
+  }
+}
