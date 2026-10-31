@@ -9,6 +9,12 @@ makes every consequential decision. Students do the learning.
 - Architecture and decisions: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - Measured results (dev vs held-out, with baselines): [docs/EVALUATION.md](docs/EVALUATION.md)
 - Three-minute demo path: [docs/DEMO.md](docs/DEMO.md)
+- Evidence for each judging criterion: [docs/JUDGING.md](docs/JUDGING.md)
+
+### Enabling live AI
+Put one line in `backend/.env` (git-ignored), then run `chmod 600 backend/.env` and restart the API:
+`ANTHROPIC_API_KEY=...` (model `claude-opus-5-5` by default; override with `ATHAR_ANTHROPIC_MODEL`) **or** `OPENAI_API_KEY=...`.
+Optional: `ATHAR_LLM_TIMEOUT` (default 45 s) and `ATHAR_LLM_MAX_CALLS` (default 400 per process). Re-run `python -m evals.run` to measure the AI reader.
 
 ## The journey that works end to end
 
@@ -34,13 +40,15 @@ makes every consequential decision. Students do the learning.
 | Test execution, rubric scoring from tests, probe-based misconception evidence | **Deterministic, live** |
 | Insights, intervention state machine, approval gates, task delivery, verification outcomes | **Deterministic, live**, persisted in SQLite |
 | Follow-up item validation (reference vs misconception implementation) | **Deterministic, live** |
-| Reading written explanations | **LLM** (Anthropic or OpenAI) when a key is set. Otherwise the **rule-based reader `rules-v1`**, labelled "Rule-based reading (not AI)" everywhere it appears |
+| Reading written explanations | **LLM reader-v2** (Anthropic or OpenAI) when a key is set: stance-aware, can abstain, quotes verified. Otherwise the **rule-based reader `rules-v1`**, labelled "Rule-based reading (not AI)" everywhere it appears. `ATHAR_ANALYZER=llm` refuses the rule fallback |
+| Deciding who needs what (concept practice / debugging / explain reasoning / no action) | **Deterministic rules** over tests and the reading (`interventions/planning.py`) |
+| Proposing new follow-up checks | **LLM** when a key is set, released only after structural checks and sandbox validation |
 | Drafting the intervention explanation | **LLM** with citations checked against course notes when a key is set. Otherwise a **template**, labelled "Template draft (no AI)" |
 | Student assistant chat | **LLM** when a key is set. Otherwise it says plainly that it isn't connected. Hints still work |
 | Students, courses, submissions | **Synthetic**, labelled in the database and the UI |
 | Classmates' follow-up attempts | **Simulated** on demand ("Simulate synthetic classmates"), sent through the real submission and verification path, and labelled *Simulated attempt* |
 | LLM evaluation numbers | **Not run in this repository's committed results.** No credentials were available, and nothing was simulated or replayed in their place |
-| Not built yet | AI-generated follow-up variants, material upload and retrieval, voice, LMS integration, real authentication |
+| Not built yet | Material upload and retrieval, voice, LMS integration, real authentication. Live LLM accuracy has **not** been measured: no credentials were available |
 
 Machine readings (AI or rules) never publish a grade. A professor must confirm them.
 

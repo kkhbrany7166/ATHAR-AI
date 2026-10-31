@@ -118,3 +118,51 @@ on the stopping-condition judgment. Showing that gap is the argument for the LLM
 Whether a student has demonstrated something decides what the professor does next, so it can't rest on a model's opinion. The
 verifier combines sandboxed test outcomes with the reasoning reading, and it only says *demonstrated* when both agree. Its errors
 therefore lean towards *insufficient evidence*. In the held-out set, its one miss comes from the rule reader misreading a negation.
+
+## Milestone 3 additions (Oct 31): AI reading, adaptive planning, gated generation
+
+```
+submission ─► sandbox tests ─► probe evidence ─┐
+explanation ─► reader (LLM reader-v2 │ rules-v1 │ none) ─► validated reading ─┤
+                                                                            ▼
+                                     planning.py: fixed diagnosis rules ─► proposed action per group
+                                                                            ▼
+                                  professor drafts / edits / approves (LLM may draft text, propose checks)
+                                                                            ▼
+                         deterministic, idempotent executor ─► tasks ─► student work ─► verifier rules
+```
+
+- **`ai/explanations.py` (reader-v2)** gets the question, objectives, rubric, conditions, code and test outcomes. It returns per-criterion judgments, misconception findings with a *stance* (holds or rejects), per-objective evidence, the code issue (conceptual or an unrelated syntax/runtime error), contradictions, missing evidence, an abstain flag and a short summary for the professor. Validation then:
+  - drops unknown codes
+  - removes every quote that isn't verbatim in the student's text
+  - turns "rejects" findings into notes
+  - forces abstained readings to *unclear*
+  - downgrades readings that contradict themselves
+- **`ai/provider.py`** sets a 45 s timeout and one retry. Malformed, truncated or refused output raises `LLMError`. A per-process call budget (`ATHAR_LLM_MAX_CALLS`) caps spend.
+- **`interventions/planning.py`** places each student in exactly one category from stored evidence. Each category maps to one action:
+
+  | Category | Action |
+  |---|---|
+  | concept gap | concept practice |
+  | execution error | debugging |
+  | reasoning gap / reasoning unconfirmed | explain your reasoning |
+  | demonstrated | no action |
+  | no submission | personal follow-up |
+
+- **`interventions/generation.py`** lets the LLM propose a new follow-up check. Structural checks run first, then the same sandbox validation as authored items. Rejected proposals are kept with their reasons.
+
+## Design decisions
+
+**Why an LLM for reading explanations.** Students write about recursion in endlessly varied ways: synonyms, negation, other languages, terse notation. On the untouched final set, the phrase-matching reader judged the stopping condition correctly in 14 of 36 cases, no better than always answering "met", and caught 1 of 14 held misconceptions. This is a language-understanding task, so it is the one place an LLM is justified.
+
+**Why code execution stays deterministic.** Whether `power(2, 0)` raises `RecursionError` is a fact, and a sandbox establishes it exactly and repeatably. Asking a model would only add uncertainty and cost.
+
+**Why consequential actions need approval.** Interventions change what a student is asked to do and how their work is read. The LLM may draft text and propose checks. Only the professor approves, and only deterministic code changes records. A machine reading never publishes a grade.
+
+**Why an independent verifier.** Assistance and evidence must stay separate. The verifier ignores practice, hints and assistant chats. It looks only at a new attempt on a validated check, under stated conditions, and says *demonstrated* only when tests and reasoning agree. Its errors therefore lean towards *insufficient evidence*: on the final set, all 4 of its misses are cautious, and none is a false *demonstrated*.
+
+**Why assisted practice isn't demonstrated understanding.** In practice a student can get hints and ask the assistant. That is learning, and it is never penalised. It also says nothing about what they can do alone, so outcomes come only from the unsupervised check, and even those carry the caveat that unsupervised work can't rule out outside help.
+
+**Why some cases are escalated rather than classified.** An explanation like "it works" or "Recursion." supports no judgment. The reader is allowed, and asked, to abstain. The diagnosis then reports *reasoning unconfirmed*, and the verifier reports *insufficient evidence*, both marked for professor review. A confident wrong label would send a student the wrong help.
+
+**Why no multi-agent framework.** The workflow is a state machine with a few focused model calls. Extra agents would add failure modes without adding evidence, and the evaluation gives no reason to add them.
