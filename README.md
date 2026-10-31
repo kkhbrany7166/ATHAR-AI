@@ -74,28 +74,11 @@ Three design principles came from that framing, and each one maps onto code:
 
 ## 3. What ATHAR does
 
-```mermaid
-flowchart LR
-    subgraph A["1 · Assess"]
-        S["Student submits<br/>code + explanation"] --> T["Sandboxed tests<br/><i>deterministic</i>"]
-        S --> R["AI reads the explanation<br/><i>gpt-4.1-mini, quotes verified</i>"]
-    end
-    subgraph U["2 · Understand"]
-        T --> P["Evidence per student<br/>and per class<br/><i>fixed rules</i>"]
-        R --> P
-    end
-    subgraph I["3 · Intervene"]
-        P --> D["Proposed support:<br/>note, practice, new check<br/><i>AI draft + sandbox validation</i>"]
-        D --> AP{"Professor<br/>approves?"}
-        AP -- yes --> DL["Delivered to each<br/>targeted student"]
-    end
-    subgraph V["4 · Verify"]
-        DL --> PR["Assisted practice<br/><i>hints, AI assistant</i>"]
-        PR --> CK["Independent check<br/><i>no hints, no assistant</i>"]
-        CK --> O["Outcome by fixed rules:<br/>demonstrated · still developing ·<br/>insufficient evidence"]
-    end
-    O -. new evidence .-> P
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/diagrams/loop-dark.svg">
+  <img src="docs/assets/diagrams/loop-light.svg" width="820" alt="The ATHAR loop. Assess: the student submits code and an explanation; sandboxed tests run (deterministic) and the AI reads the explanation (gpt-4.1-mini, quotes verified). Understand: evidence per student and per class by fixed rules, then who needs what, with conflicts sent to the professor. Intervene: proposed support (AI draft plus sandbox validation), the professor approves, and it is delivered once to each targeted student. Verify: assisted practice, an independent check with no hints, and an outcome by fixed rules. New evidence feeds back into Understand.">
+</picture>
+<sub>Diagram source: <a href="docs/assets/diagrams/loop.mmd">docs/assets/diagrams/loop.mmd</a></sub>
 
 | Step | What happens | Who or what decides |
 |---|---|---|
@@ -201,44 +184,11 @@ ATHAR isn't a chatbot, and it isn't a grading dashboard. It observes evidence, d
 
 ## 7. Architecture
 
-```mermaid
-flowchart TB
-    subgraph FE["Frontend · React 18 + TypeScript + Vite + Tailwind"]
-        PW["Professor workspace<br/>queue · evidence review · approval · outcomes · evaluation"]
-        SW["Student studio<br/>why this · think first · practise · look back · show it"]
-    end
-    subgraph BE["Backend · FastAPI + SQLAlchemy 2 + Pydantic"]
-        API["REST API<br/>role checks on every route"]
-        GR["Grading pipeline<br/>sandbox · rubric scoring · probe evidence"]
-        RD["Explanation reader<br/>reader-v3 · quote validation · abstention"]
-        CF["Conflict check<br/>disputed AI claims → review"]
-        IN["Class insights"]
-        PL["Planner<br/>who needs what"]
-        VA["Item validator<br/>correct passes · misconception caught"]
-        NC["Note check<br/>≤ 90 words · no greeting/lists"]
-        EX["Approval-gated executor<br/>state machine · idempotent"]
-        VF["Verifier verify-v1"]
-    end
-    DB[("SQLite<br/>submissions · evidence · readings ·<br/>interventions · tasks · audit events")]
-    LLM["LLM provider<br/>OpenAI gpt-4.1-mini<br/>(Anthropic supported)<br/>timeout · call budget · cost ceiling · spend ledger"]
-    EV["Evaluation suite<br/>dev · held-out · final · final-2<br/>frozen hashes · rule baseline"]
-    PW <--> API
-    SW <--> API
-    API --> GR --> IN --> PL
-    GR --> RD
-    RD --> CF --> PL
-    PL --> EX
-    VA --> EX
-    NC --> EX
-    EX --> VF
-    RD <--> LLM
-    API --> DB
-    GR --> DB
-    EX --> DB
-    EV -.-> RD
-    EV -.-> VF
-    EV -.-> PL
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/diagrams/architecture-dark.svg">
+  <img src="docs/assets/diagrams/architecture-light.svg" width="820" alt="Architecture. The React frontend talks to a FastAPI API with role checks, backed by SQLite. Assess: sandbox tests and the explanation reader, which calls the LLM provider (OpenAI gpt-4.1-mini, with timeout, call budget, cost ceiling and spend ledger). Understand, by fixed rules: conflict check, class insights, planner. Intervene, requiring professor approval: item validator, note check, executor. Then the verifier judges a new unassisted attempt. An evaluation suite with frozen sets measures the reader and verifier.">
+</picture>
+<sub>Diagram source: <a href="docs/assets/diagrams/architecture.mmd">docs/assets/diagrams/architecture.mmd</a></sub>
 
 **Model configuration.** `gpt-4.1-mini` through `chat.completions.parse` (structured output into Pydantic schemas). Reader prompt `reader-v3`. A 45 s timeout, a per-process call budget, a per-process cost ceiling (`ATHAR_LLM_MAX_COST_USD`) and an append-only spend ledger. An Anthropic provider is implemented behind the same two-method interface. Without a key, a rule-based reader (`rules-v1`) is used and labelled *Rule-based reading (not AI)* everywhere it appears.
 

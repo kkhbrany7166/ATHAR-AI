@@ -1,0 +1,22 @@
+flowchart TB
+    subgraph A["1 · Assess"]
+        direction LR
+        S["Student submits<br/>code + explanation"] --> T["Sandboxed tests<br/>(deterministic)"]
+        S --> R["AI reads the explanation<br/>(gpt-4.1-mini, quotes verified)"]
+    end
+    subgraph U["2 · Understand"]
+        direction LR
+        P["Evidence per student and per class<br/>(fixed rules)"] --> G["Who needs what:<br/>seven groups, conflicts to the professor"]
+    end
+    subgraph I["3 · Intervene"]
+        direction LR
+        D["Proposed support: note, practice, new check<br/>(AI draft + sandbox validation)"] --> AP{"Professor<br/>approves?"}
+        AP -- yes --> DL["Delivered once to<br/>each targeted student"]
+    end
+    subgraph V["4 · Verify"]
+        direction LR
+        PR["Assisted practice<br/>(hints, AI assistant)"] --> CK["Independent check<br/>(no hints, no assistant)"]
+        CK --> O["Outcome by fixed rules:<br/>demonstrated / still developing /<br/>insufficient evidence"]
+    end
+    A --> U --> I --> V
+    V -. new evidence .-> U

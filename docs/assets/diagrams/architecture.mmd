@@ -1,0 +1,30 @@
+flowchart TB
+    FE["Frontend (React 18 + TypeScript + Vite)<br/>professor workspace · student studio"]
+    API["FastAPI REST API<br/>role and ownership checks on every route"]
+    subgraph AS["Assess"]
+        direction LR
+        SB["Sandbox<br/>tests · rubric scoring · probe evidence"]
+        RD["Explanation reader (reader-v3)<br/>schema validation · verbatim quotes · abstention"]
+    end
+    subgraph UN["Understand (fixed rules)"]
+        direction LR
+        CF["Conflict check<br/>disputed AI claims to review"]
+        IN["Class insights"]
+        PL["Planner<br/>who needs what"]
+    end
+    subgraph IV["Intervene (professor approval required)"]
+        direction LR
+        VA["Item validator<br/>correct passes · misconception caught"]
+        NC["Note check<br/>max 90 words"]
+        EX["Executor<br/>state machine · idempotent delivery"]
+    end
+    VF["Verifier (verify-v1)<br/>outcome from a new, unassisted attempt"]
+    LLM["LLM provider<br/>OpenAI gpt-4.1-mini (Anthropic supported)<br/>timeout · call budget · cost ceiling · spend ledger"]
+    DB[("SQLite<br/>submissions · evidence · readings ·<br/>interventions · tasks · audit events")]
+    EV["Evaluation suite<br/>dev · held-out · final · final-2<br/>frozen hashes · rule baseline"]
+    FE <--> API
+    API --> AS --> UN --> IV --> VF
+    RD <--> LLM
+    API --- DB
+    EV -. measures .-> AS
+    EV -. measures .-> VF
