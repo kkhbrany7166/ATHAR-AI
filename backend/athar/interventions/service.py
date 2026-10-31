@@ -359,7 +359,11 @@ def submit_followup(db: Session, t: m.InterventionTask, *, code: str, explanatio
         try:
             result = reader.read(explanation=explanation, criteria=[{"code": c.code, "title": c.title, "description": c.description} for c in expl_criteria],
                                  misconceptions=[{"code": x.code, "title": x.title, "description": x.description} for x in mcs],
-                                 assignment_prompt=a.prompt, explanation_prompt=a.explanation_prompt, code=code, test_summary="")
+                                 assignment_prompt=a.prompt, explanation_prompt=a.explanation_prompt, code=code,
+                                 test_summary="\n".join(f"- {x.name}: {o.status}{' (' + o.error_type + ')' if o.error_type else ''}"
+                                                        for x, o in zip(tests, report.outcomes)),
+                                 objectives=[{"code": o.code, "title": o.title} for o in a.course.objectives],
+                                 conditions=f"{a.kind}, {a.conditions}. {a.ai_policy}")
         except Exception as e:  # noqa: BLE001 - recorded, and the verifier treats it as "not read"
             err = f"{e.__class__.__name__}: {e}"[:400]
     elif explanation.strip():

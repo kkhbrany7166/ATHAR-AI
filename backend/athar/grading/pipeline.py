@@ -108,6 +108,7 @@ def _execute(db: Session, run: m.GradingRun, reader: Reader) -> None:
     run.stage = "explanations"
     db.commit()
     crit_payload = [{"code": c.code, "title": c.title, "description": c.description} for c in expl_criteria]
+    obj_payload = [{"code": o.code, "title": o.title} for o in assignment.course.objectives]
     mc_payload = [{"code": mc.code, "title": mc.title, "description": mc.description} for mc in misconceptions]
     crit_by_code = {c.code: c for c in expl_criteria}
 
@@ -121,7 +122,8 @@ def _execute(db: Session, run: m.GradingRun, reader: Reader) -> None:
             result = reader.read(
                 explanation=sub.explanation, criteria=crit_payload, misconceptions=mc_payload,
                 assignment_prompt=assignment.prompt, explanation_prompt=assignment.explanation_prompt,
-                code=sub.code, test_summary=_test_summary(tests, report),
+                code=sub.code, test_summary=_test_summary(tests, report), objectives=obj_payload,
+                conditions=f"{assignment.kind}, {assignment.conditions}. {assignment.ai_policy}",
             )
             return sub, result, None
         except Exception as e:  # noqa: BLE001 - every failure is recorded per submission
@@ -170,6 +172,7 @@ def record_test_evidence(db: Session, sub: m.Submission, report: RunReport, test
     """
     tests_by_id = {t.id: t for t in tests}
     db.execute(delete(m.MisconceptionEvidence).where(m.MisconceptionEvidence.submission_id == sub.id))
+    db.execute(delete(m.ExplanationReadingRecord).where(m.ExplanationReadingRecord.submission_id == sub.id))
     db.execute(delete(m.TestResult).where(m.TestResult.submission_id == sub.id))
     db.execute(delete(m.CriterionEvidence).where(m.CriterionEvidence.submission_id == sub.id,
                                                  m.CriterionEvidence.source.in_(("tests", "rules", "ai", "baseline"))))
@@ -233,3 +236,9 @@ def store_explanation_evidence(db, run_id, sub, expl_criteria, crit_by_code, res
     for s in result.signals:
         db.add(m.MisconceptionEvidence(submission_id=sub.id, misconception_code=s.code, run_id=run_id, source=source,
                                        detail=s.reasoning, quote=s.quote, confidence=s.confidence))
+    db.add(m.ExplanationReadingRecord(
+        submission_id=sub.id, reader=model, source=source, prompt_version=result.prompt_version or ("rules-v1" if source == "baseline" else ""),
+        abstained=result.abstained, abstain_reason=result.abstain_reason, answer_type=result.answer_type, code_issue=result.code_issue,
+        summary=result.summary, objectives=result.objectives, contradictions=result.contradictions, missing_evidence=result.missing_evidence,
+        rejected_ideas=[{"code": r.code, "quote": r.quote, "reasoning": r.reasoning} for r in result.rejected_ideas],
+        validation_notes=result.rejected))

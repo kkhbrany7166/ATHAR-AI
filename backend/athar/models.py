@@ -399,3 +399,25 @@ class Verification(Base):
     explanation_reader: Mapped[str] = mapped_column(String(80), default="")
     rule_version: Mapped[str] = mapped_column(String(20))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class ExplanationReadingRecord(Base):
+    """The full machine reading of one explanation (AI or rules), kept for inspection and planning."""
+
+    __tablename__ = "explanation_readings"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    submission_id: Mapped[int] = mapped_column(ForeignKey("submissions.id"))
+    reader: Mapped[str] = mapped_column(String(80))  # e.g. anthropic:claude-opus-5-5 | rules-v1
+    source: Mapped[str] = mapped_column(String(20))  # ai | baseline
+    prompt_version: Mapped[str] = mapped_column(String(20), default="")
+    abstained: Mapped[bool] = mapped_column(Boolean, default=False)
+    abstain_reason: Mapped[str] = mapped_column(Text, default="")
+    answer_type: Mapped[str] = mapped_column(String(40), default="")
+    code_issue: Mapped[str] = mapped_column(String(40), default="")
+    summary: Mapped[str] = mapped_column(Text, default="")
+    objectives: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    contradictions: Mapped[list[str]] = mapped_column(JSON, default=list)
+    missing_evidence: Mapped[list[str]] = mapped_column(JSON, default=list)
+    rejected_ideas: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    validation_notes: Mapped[list[str]] = mapped_column(JSON, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
