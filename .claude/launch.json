@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "athar-api",
+      "runtimeExecutable": "/Users/khalidkh/Documents/athar/backend/.venv/bin/uvicorn",
+      "runtimeArgs": ["athar.main:app", "--app-dir", "/Users/khalidkh/Documents/athar/backend", "--host", "127.0.0.1", "--port", "8710"],
+      "port": 8710
+    },
+    {
+      "name": "athar-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "/Users/khalidkh/Documents/athar/frontend", "run", "dev"],
+      "port": 5710
+    }
+  ]
+}

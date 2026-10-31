@@ -24,7 +24,7 @@ def health():
 @router.get("/auth/personas")
 def personas(db: Session = Depends(get_db)):
     """Demo personas, plus a few other synthetic students for exploring the student view."""
-    main = db.scalars(select(m.User).where(m.User.is_demo_persona.is_(True)).order_by(m.User.role.desc())).all()
+    main = db.scalars(select(m.User).where(m.User.is_demo_persona.is_(True)).order_by(m.User.role)).all()
     others = db.scalars(select(m.User).where(m.User.role == "student", m.User.is_demo_persona.is_(False)).order_by(m.User.name)).all()
     return {"personas": [ser.user_brief(u) for u in main], "other_students": [ser.user_brief(u) for u in others]}
 

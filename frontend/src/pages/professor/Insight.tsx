@@ -1,0 +1,214 @@
+import { Link, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "../../lib/api";
+import type { InsightDetail, InsightEvidence } from "../../lib/types";
+import { CONDITIONS, Callout, Crumb, ErrorState, KIND, Loading, Meter, Section, SynthTag, Tag } from "../../components/ui";
+
+function pct(n: number, d: number) {
+  return d ? `${Math.round((100 * n) / d)}%` : "—";
+}
+
+export function InsightPage() {
+  const { insightId } = useParams();
+  const q = useQuery({ queryKey: ["insight", insightId], queryFn: () => api<InsightDetail>(`/api/professor/insights/${insightId}`) });
+  if (q.isLoading) return <Loading />;
+  if (q.error) return <ErrorState error={q.error} />;
+  const i = q.data!;
+  if (i.kind !== "misconception") {
+    return <Callout title={i.title}>{i.summary} <Link className="link" to={`/p/assignments/${i.assignment.id}`}>Back to the assignment</Link></Callout>;
+  }
+  const e = i.evidence as InsightEvidence;
+  const c = e.counts;
+  const others = c.submitted - c.students;
+  const linked = e.criteria.filter((x) => x.linked);
+  const unlinked = e.criteria.filter((x) => !x.linked);
+
+  return (
+    <>
+      <div className="text-[12px] text-faint mb-5">
+        <Crumb to="/p">Courses</Crumb> / <Crumb to={`/p/courses/${i.assignment.course_id}`}>{i.assignment.course_code}</Crumb> /{" "}
+        <Crumb to={`/p/assignments/${i.assignment.id}`}>{i.assignment.title.split("—")[0].trim()}</Crumb> / Insight
+      </div>
+
+      <header className="pb-6">
+        <div className="eyebrow mb-2 flex items-center gap-2">
+          Possible misconception {i.objective && <span className="font-mono normal-case tracking-normal text-accent-ink">{i.objective.code}</span>}
+        </div>
+        <h1 className="font-serif text-[32px] leading-[1.15] tracking-[-0.01em] max-w-3xl">{i.title}</h1>
+        <p className="text-muted mt-3 max-w-prose">{e.misconception.description}</p>
+      </header>
+
+      {/* The numbers, all derived from stored evidence */}
+      <div className="grid grid-cols-2 md:grid-cols-4 border-y border-line divide-x divide-line">
+        <Figure value={c.students} label={`of ${c.submitted} submitting students`} />
+        <Figure value={c.tests_only + c.both} label="with failing probe tests" />
+        <Figure value={c.explanation_only + c.both} label="with supporting quotes in their explanation" />
+        <Figure value={c.working_code_confused_reasoning} label="passed every test but explained it this way" tone={c.working_code_confused_reasoning ? "amber" : undefined} />
+      </div>
+      <p className="text-[12.5px] text-faint mt-3 max-w-prose">{i.summary}</p>
+
+      <div className="grid lg:grid-cols-[minmax(0,1fr)_300px] gap-x-12">
+        <div>
+          {e.examples.length > 0 && (
+            <Section title="From student work" aside={`${e.examples.length} of ${c.students} shown`}>
+              <ul className="space-y-6">
+                {e.examples.map((x) => (
+                  <li key={x.submission_id} className="grid grid-cols-[3px_1fr] gap-4">
+                    <span className="bg-line-strong rounded-full" />
+                    <div>
+                      {x.quote ? (
+                        <blockquote className="font-serif text-[17px] leading-[1.55] text-ink">“{x.quote}”</blockquote>
+                      ) : (
+                        <div className="text-muted text-[13px] italic">No explanation quote. Evidence comes from tests.</div>
+                      )}
+                      {x.test_evidence && <div className="font-mono text-[12px] text-brick mt-2">{x.test_evidence}</div>}
+                      <div className="flex flex-wrap items-center gap-2 mt-2 text-[12.5px] text-muted">
+                        <span>{x.student_name}</span>
+                        {x.is_synthetic && <SynthTag />}
+                        {x.sources.map((s) => <Tag key={s} tone={s === "ai" ? "amber" : "neutral"}>{s === "ai" ? "AI-read explanation" : "Tests"}</Tag>)}
+                        <Link to={`/p/submissions/${x.submission_id}`} className="link ml-auto">Open submission</Link>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </Section>
+          )}
+
+          {e.tests.length > 0 && (
+            <Section title="Test outcomes" aside="This group compared with the rest of the class">
+              <table className="w-full text-[13px]">
+                <thead>
+                  <tr className="text-left text-faint text-2xs uppercase tracking-[0.1em]">
+                    <th className="font-medium pb-2">Probe test</th>
+                    <th className="font-medium pb-2 w-[150px]">This group passed</th>
+                    <th className="font-medium pb-2 w-[150px]">Others passed</th>
+                    <th className="font-medium pb-2">Most common failure here</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line border-t border-line">
+                  {e.tests.map((t) => (
+                    <tr key={t.test_case_id}>
+                      <td className="py-3 pr-4 font-mono text-[12px]">{t.name} {t.hidden && <span className="text-faint font-sans">(hidden)</span>}</td>
+                      <td className="py-3 pr-4">
+                        <div className="num text-[12.5px] mb-1">{t.group_passed}/{t.group_total}</div>
+                        <Meter value={t.group_passed} total={t.group_total} tone="brick" />
+                      </td>
+                      <td className="py-3 pr-4">
+                        <div className="num text-[12.5px] mb-1">{t.others_passed}/{t.others_total}</div>
+                        <Meter value={t.others_passed} total={t.others_total} />
+                      </td>
+                      <td className="py-3 text-muted text-[12.5px]">
+                        {t.common_failures.map((f) => `${f.kind} (${f.count})`).join(", ") || "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </Section>
+          )}
+
+          <Section title="Rubric criteria" aside="Share judged “met”: this group / everyone else">
+            <table className="w-full text-[13px]">
+              <tbody className="divide-y divide-line">
+                {[...linked, ...unlinked].map((x) => (
+                  <tr key={x.criterion_id} className={x.linked ? "" : "text-faint"}>
+                    <td className="py-2.5 pr-3 font-mono text-[12px] w-10">{x.code}</td>
+                    <td className="py-2.5 pr-4">{x.title}{x.linked && <span className="text-2xs text-accent-ink ml-2">same objective</span>}</td>
+                    <td className="py-2.5 pr-4 num text-right whitespace-nowrap">
+                      {x.group_judged ? `${pct(x.group_met, x.group_judged)}` : <span className="text-faint" title="No usable judgments">no evidence</span>}
+                    </td>
+                    <td className="py-2.5 num text-right whitespace-nowrap text-muted">
+                      {x.others_judged ? pct(x.others_met, x.others_judged) : "no evidence"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Section>
+
+          <Section title="Why it matters">
+            <p className="max-w-prose text-muted">{e.why_it_matters}</p>
+          </Section>
+
+          <Section title="Next step">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <p className="text-muted text-[13px] max-w-prose">
+                Review the examples above. When you're ready, ATHAR will draft a targeted intervention for these {c.students} students
+                for you to edit and approve: an explanation, practice with progressive hints, and a follow-up check on a new problem.
+              </p>
+              <span className="text-[12.5px] text-faint border border-line rounded px-3 py-2" title="Coming in milestone 2">
+                Draft intervention · milestone 2
+              </span>
+            </div>
+          </Section>
+        </div>
+
+        <aside className="lg:pt-6 space-y-8 text-[13px]">
+          <div>
+            <div className="eyebrow mb-2">Assessment conditions</div>
+            <div className="text-ink">{KIND[e.conditions.kind] ?? e.conditions.kind} · {CONDITIONS[e.conditions.conditions]?.label}</div>
+            <p className="text-muted mt-1">{CONDITIONS[e.conditions.conditions]?.help}</p>
+            <p className="text-faint mt-2 text-[12.5px]">{e.conditions.ai_policy}</p>
+          </div>
+
+          {e.contradictions.length > 0 && (
+            <div>
+              <div className="eyebrow mb-2">Evidence that disagrees</div>
+              <ul className="space-y-2">
+                {e.contradictions.map((x) => <li key={x.kind} className="text-muted">{x.text}</li>)}
+              </ul>
+            </div>
+          )}
+
+          <div>
+            <div className="eyebrow mb-2">Missing or weak evidence</div>
+            {e.missing.length === 0 ? <p className="text-faint">None recorded.</p> : (
+              <ul className="space-y-2">{e.missing.map((x) => <li key={x.kind} className="text-muted">{x.text}</li>)}</ul>
+            )}
+          </div>
+
+          <div>
+            <div className="eyebrow mb-2">How this was found</div>
+            <p className="text-faint leading-5">
+              Probe tests are run in a sandbox. A failure counts as evidence only when it fails the way the rubric describes.
+              Explanation evidence counts only when an AI-quoted span appears word for word in the student's text.
+              Patterns are reported once at least {e.threshold} students show them. This is a lead for your judgment, not a diagnosis.
+            </p>
+          </div>
+
+          <div>
+            <div className="eyebrow mb-2">Students in this group ({c.students})</div>
+            <StudentList ids={e.submission_ids} examples={e.examples} assignmentId={i.assignment.id} />
+          </div>
+        </aside>
+      </div>
+      <p className="text-2xs text-faint mt-10">Students who didn't submit: {c.enrolled - c.submitted}. Everyone else who submitted: {others}.</p>
+    </>
+  );
+}
+
+function Figure({ value, label, tone }: { value: number; label: string; tone?: "amber" }) {
+  return (
+    <div className="py-4 px-4 first:pl-0">
+      <div className={`font-serif text-[30px] leading-none num ${tone === "amber" ? "text-amber" : ""}`}>{value}</div>
+      <div className="text-[12px] text-muted mt-1.5 leading-4">{label}</div>
+    </div>
+  );
+}
+
+function StudentList({ ids, assignmentId }: { ids: number[]; examples: InsightEvidence["examples"]; assignmentId: number }) {
+  const q = useQuery({
+    queryKey: ["submissions", String(assignmentId)],
+    queryFn: () => api<{ id: number; student: { name: string } }[]>(`/api/professor/assignments/${assignmentId}/submissions`),
+  });
+  if (!q.data) return <div className="text-faint">…</div>;
+  const set = new Set(ids);
+  return (
+    <ul className="space-y-1 max-h-72 overflow-y-auto pr-2">
+      {q.data.filter((s) => set.has(s.id)).map((s) => (
+        <li key={s.id}><Link to={`/p/submissions/${s.id}`} className="text-muted hover:text-accent-ink">{s.student.name}</Link></li>
+      ))}
+    </ul>
+  );
+}
