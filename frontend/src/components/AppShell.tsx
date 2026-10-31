@@ -3,7 +3,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import { useSession } from "../lib/session";
-import type { CourseSummary, Health } from "../lib/types";
+import type { CourseSummary, Health, UserBrief } from "../lib/types";
 import { Wordmark } from "./Logo";
 import { cx } from "./ui";
 
@@ -68,6 +68,7 @@ export function AppShell() {
           )}
         </nav>
         <div className="px-5 py-4 md:border-t border-line space-y-3">
+          <DemoSwitch />
           <AiStatus />
           {user && (
             <div className="flex items-center justify-between gap-2">
@@ -113,4 +114,22 @@ class PageBoundary extends Component<{ children: ReactNode }, { error: Error | n
       </div>
     );
   }
+}
+
+/** Demo only: jump between the two personas in one click. Every person in this demo is fictional. */
+function DemoSwitch() {
+  const { user, signIn } = useSession();
+  const navigate = useNavigate();
+  const q = useQuery({ queryKey: ["personas"], queryFn: () => api<{ personas: UserBrief[] }>("/api/auth/personas"), staleTime: 300_000 });
+  const other = q.data?.personas.find((p) => p.id !== user?.id && (user?.role === "professor" ? p.role === "student" : p.role === "professor"));
+  if (!other) return null;
+  return (
+    <button
+      onClick={async () => { const u = await signIn(other.id); navigate(u.role === "professor" ? "/p" : "/s"); }}
+      className="w-full text-left rounded border border-line-strong px-3 py-2 hover:border-accent-strong hover:bg-raised/60 transition-colors"
+    >
+      <span className="block text-2xs uppercase tracking-[0.1em] text-faint">Demo · switch view</span>
+      <span className="block text-[13.5px] text-ink">{other.role === "student" ? `See as ${other.name.split(" ")[0]} (student)` : `See as ${other.name.replace("Dr. ", "")} (professor)`} →</span>
+    </button>
+  );
 }

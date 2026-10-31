@@ -14,6 +14,12 @@ from ..auth import current_user, issue_token
 from ..db import get_db
 
 router = APIRouter(prefix="/api", tags=["system"])
+root_router = APIRouter()
+
+
+@root_router.get("/", include_in_schema=False)
+def api_root():
+    return {"service": "ATHAR API", "app": "Open http://localhost:5710 for the ATHAR app. This port (8710) only serves data."}
 
 
 @router.get("/health")

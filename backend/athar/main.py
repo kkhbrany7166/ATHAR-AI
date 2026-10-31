@@ -21,6 +21,7 @@ def create_app() -> FastAPI:
     app = FastAPI(title="ATHAR API", version="0.1.0", lifespan=lifespan)
     app.add_middleware(CORSMiddleware, allow_origins=list(get_settings().cors_origins), allow_methods=["*"],
                        allow_headers=["*"])
+    app.include_router(system.root_router)
     app.include_router(system.router)
     app.include_router(professor.router)
     app.include_router(student.router)

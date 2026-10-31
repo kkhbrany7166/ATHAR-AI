@@ -37,7 +37,8 @@ export function InterventionPage() {
     <>
       <div className="text-[13px] text-faint mb-5">
         <Crumb to="/p">Courses</Crumb> / <Crumb to={`/p/courses/${iv.course_id}`}>{iv.course_code}</Crumb> /{" "}
-        {iv.insight_id ? <Crumb to={`/p/insights/${iv.insight_id}`}>Insight</Crumb> : "Insight"} / Intervention
+        <Crumb to={`/p/assignments/${iv.assignment.id}?tab=plan`}>{iv.assignment.title.split("—")[0].trim()}</Crumb> /{" "}
+        {iv.insight_id ? <><Crumb to={`/p/insights/${iv.insight_id}`}>Insight</Crumb> / </> : null}Intervention
       </div>
       <header className="pb-6">
         <div className="eyebrow mb-2">{KIND_LABEL[iv.kind]}{iv.misconception_code ? ` · ${iv.misconception_code}` : ""}</div>
