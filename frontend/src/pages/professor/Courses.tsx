@@ -32,6 +32,10 @@ export function Courses() {
 export function CourseOverview() {
   const { courseId } = useParams();
   const q = useQuery({ queryKey: ["course", courseId], queryFn: () => api<CourseDetail>(`/api/professor/courses/${courseId}`) });
+  const ivs = useQuery({
+    queryKey: ["course", courseId, "interventions"],
+    queryFn: () => api<{ id: number; title: string; status: string; targets: number; created_at: string }[]>(`/api/professor/courses/${courseId}/interventions`),
+  });
   if (q.isLoading) return <Loading />;
   if (q.error) return <ErrorState error={q.error} />;
   const c = q.data!;
@@ -71,6 +75,23 @@ export function CourseOverview() {
           </ul>
         )}
       </Section>
+
+      {ivs.data && ivs.data.length > 0 && (
+        <Section title="Interventions" aside="Targeted help you have drafted or approved">
+          <ul className="divide-y divide-line">
+            {ivs.data.map((iv) => (
+              <li key={iv.id}>
+                <Link to={`/p/interventions/${iv.id}`} className="flex items-center justify-between gap-4 py-3 group">
+                  <span><span className="text-ink">{iv.title}</span><span className="text-muted text-[13.5px] ml-2">· {iv.targets} students</span></span>
+                  <Tag tone={iv.status === "active" ? "accent" : iv.status === "draft" ? "amber" : "neutral"}>
+                    {{ draft: "Awaiting your approval", approved: "Approved", active: "With students", completed: "Closed", rejected: "Rejected" }[iv.status] ?? iv.status}
+                  </Tag>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
 
       <Section title="Assignments">
         <table className="w-full text-[14px]">

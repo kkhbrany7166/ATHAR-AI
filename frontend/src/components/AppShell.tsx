@@ -1,5 +1,5 @@
-import { type ReactNode } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { Component, type ErrorInfo, type ReactNode } from "react";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import { useSession } from "../lib/session";
@@ -36,6 +36,7 @@ function AiStatus() {
 export function AppShell() {
   const { user, signOut } = useSession();
   const navigate = useNavigate();
+  const location = useLocation();
   const isProf = user?.role === "professor";
   const courses = useQuery({
     queryKey: ["prof-courses"],
@@ -84,9 +85,30 @@ export function AppShell() {
       </aside>
       <main className="flex-1 min-w-0">
         <div className="max-w-[1120px] mx-auto px-4 sm:px-8 lg:px-12 py-8 lg:py-10">
-          <Outlet />
+          <PageBoundary key={location.pathname}><Outlet /></PageBoundary>
         </div>
       </main>
     </div>
   );
+}
+
+class PageBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state = { error: null as Error | null };
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error("ATHAR page error", error, info.componentStack);
+  }
+  render() {
+    if (!this.state.error) return this.props.children;
+    return (
+      <div className="py-12 max-w-prose">
+        <div className="border-l-2 border-brick/70 pl-4">
+          <div className="text-ink font-medium">This page hit an error</div>
+          <p className="text-muted text-[14px] mt-1">{this.state.error.message}. Your saved work is safe on the server. Reload to try again.</p>
+        </div>
+      </div>
+    );
+  }
 }

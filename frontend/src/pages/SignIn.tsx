@@ -78,6 +78,10 @@ export function SignIn() {
                 <>
                   <p className="font-serif text-[24px] leading-[1.35] text-ink">{moment.data.headline}</p>
                   <p className="text-[14px] text-muted mt-3">{moment.data.detail}</p>
+                  <p className="text-[12.5px] text-faint mt-4">
+                    Synthetic class of {moment.data.submitted} submissions · explanations read by{" "}
+                    {moment.data.source === "used" ? "an AI model" : moment.data.source === "baseline" ? "ATHAR's rule-based reader (no AI)" : "tests only"}
+                  </p>
                 </>
               ) : (
                 <p className="text-muted text-[15px]">

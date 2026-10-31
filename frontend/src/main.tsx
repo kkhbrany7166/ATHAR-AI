@@ -18,8 +18,10 @@ import { SignIn } from "./pages/SignIn";
 import { AssignmentPage } from "./pages/professor/Assignment";
 import { CourseOverview, Courses } from "./pages/professor/Courses";
 import { InsightPage } from "./pages/professor/Insight";
+import { InterventionPage } from "./pages/professor/Intervention";
 import { SubmissionPage } from "./pages/professor/Submission";
 import { StudentAssignmentPage, StudentHomePage } from "./pages/student/Student";
+import { TaskPage } from "./pages/student/Task";
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } } });
 
@@ -51,10 +53,12 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               <Route path="assignments/:assignmentId" element={<AssignmentPage />} />
               <Route path="insights/:insightId" element={<InsightPage />} />
               <Route path="submissions/:submissionId" element={<SubmissionPage />} />
+              <Route path="interventions/:interventionId" element={<InterventionPage />} />
             </Route>
             <Route path="/s" element={<RequireRole role="student" />}>
               <Route index element={<StudentHomePage />} />
               <Route path="assignments/:assignmentId" element={<StudentAssignmentPage />} />
+              <Route path="tasks/:taskId" element={<TaskPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

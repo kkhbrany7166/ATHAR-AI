@@ -4,14 +4,14 @@ export type Role = "professor" | "student";
 export interface UserBrief { id: number; name: string; role: Role; is_synthetic: boolean }
 
 export type Judgment = "met" | "partial" | "not_met" | "unclear" | "ai_unavailable" | "ai_failed";
-export type Source = "tests" | "ai" | "professor" | "rules";
+export type Source = "tests" | "ai" | "professor" | "rules" | "baseline";
 
 export interface Health { status: string; llm: { provider: string; model: string; configured: boolean } }
 
 export interface GradingRun {
   id: number; status: "queued" | "running" | "done" | "failed"; stage: string; total: number;
   tests_done: number; ai_done: number; ai_failed: number;
-  ai_status: "" | "used" | "unavailable" | "partial" | "failed" | "not_needed"; ai_provider: string;
+  ai_status: "" | "used" | "baseline" | "unavailable" | "partial" | "failed" | "not_needed"; ai_provider: string;
   error: string; started_at: string | null; finished_at: string | null;
 }
 
@@ -95,6 +95,7 @@ export interface InsightDetail extends Insight {
 // Student
 export interface StudentHome {
   student: UserBrief;
+  tasks: { id: number; title: string; status: string; course_id: number; outcome: Outcome | null; assigned_at: string }[];
   courses: { id: number; code: string; title: string; term: string; professor: string;
     assignments: { id: number; title: string; kind: string; conditions: string; status: string; due_at: string | null; my_status: string }[] }[];
 }
@@ -107,4 +108,41 @@ export interface StudentAssignment {
     feedback: null | { total: number | null; max_total: number;
       criteria: { code: string; title: string; max_points: number; judgment?: string; points?: number | null; comment?: string }[];
       tests: { name: string; passed: boolean }[] } }[];
+}
+
+// Interventions
+export interface ItemValidation { valid: boolean; problems: string[]; reference_passed: number; total: number; misconception_caught_by: string[]; method: string }
+export interface ItemTest { name: string; function: string; args: unknown[]; expected: unknown; criterion: string; hidden: boolean; probes: { misconception: string }[] }
+export interface Item {
+  id: number; key: string; role: string; title: string; prompt: string; explanation_prompt: string; starter_code: string; hint_count: number;
+  source: string; tests: ItemTest[]; validation: ItemValidation; misconception_code: string; reference_solution: string; misconception_solution: string; hints: string[];
+}
+export type Outcome = "demonstrated" | "still_developing" | "insufficient_evidence";
+export interface InterventionStudent {
+  student_id: number; name: string; is_synthetic: boolean; is_demo_persona: boolean;
+  before: { source: string; detail: string; quote: string }[];
+  task: null | { id: number; status: string; is_simulated: boolean; hints_revealed: number; practice_attempts: number; has_initial: boolean; has_revised: boolean; has_reflection: boolean };
+  verification: null | { outcome: Outcome; reasons: string[]; tests_passed: number; tests_total: number; submission_id: number; explanation_judgment: string; explanation_reader: string; rule_version: string; at: string };
+}
+export interface Intervention {
+  id: number; status: "draft" | "approved" | "active" | "completed" | "rejected"; title: string; misconception_code: string;
+  course_id: number; course_code: string; assignment: { id: number; title: string }; insight_id: number | null;
+  explanation: string; explanation_source: string; professor_note: string;
+  practice_item: Item | null; followup_item: Item | null; followup_options: Item[]; followup_assignment_id: number | null;
+  target_student_ids: number[]; students: InterventionStudent[]; execution_error: string;
+  created_at: string; approved_at: string | null; executed_at: string | null; closed_at: string | null;
+  progress: { targets: number; delivered: number; started: number; verified: number; simulated: number } & Record<Outcome, number>;
+  recommendations: string[];
+}
+
+export interface StudentTask {
+  id: number; status: string; title: string; course_code: string; from_assignment: string; my_earlier_evidence: string[];
+  explanation: string; explanation_source: string; initial_reasoning: string; revised_reasoning: string; reflection: string;
+  practice: null | { id: number; title: string; prompt: string; explanation_prompt: string; starter_code: string; hint_count: number; tests: string[] };
+  hints: string[];
+  practice_attempts: { id: number; passed: number; total: number; code: string; at: string; results: { name: string; status: string; actual: string; error_type: string; error_message: string }[] }[];
+  messages: { id: number; role: string; content: string; source: string }[];
+  check: null | { assignment_id: number; title: string; prompt: string; explanation_prompt: string; starter_code: string; conditions: string; ai_policy: string; visible_tests: string[] };
+  results: { outcome: Outcome; label: string; reasons: string[]; tests_passed: number; tests_total: number; at: string }[];
+  intervention_status: string;
 }

@@ -70,10 +70,10 @@ export function Tag({ tone = "neutral", children, title }: { tone?: Tone; childr
 
 export const SynthTag = () => <Tag tone="slate" title="Fictional data generated for the demo">Synthetic</Tag>;
 
-const SOURCE_LABEL: Record<Source, string> = { tests: "Tests", ai: "AI suggestion", professor: "Professor", rules: "Rule" };
+const SOURCE_LABEL: Record<Source, string> = { tests: "Tests", ai: "AI suggestion", professor: "Professor", rules: "Rule", baseline: "Rule-based reading (not AI)" };
 export function SourceTag({ source }: { source: Source | null }) {
   if (!source) return null;
-  return <Tag tone={source === "ai" ? "amber" : source === "professor" ? "accent" : "neutral"}>{SOURCE_LABEL[source]}</Tag>;
+  return <Tag tone={source === "ai" || source === "baseline" ? "amber" : source === "professor" ? "accent" : "neutral"}>{SOURCE_LABEL[source]}</Tag>;
 }
 
 const JUDGMENT: Record<Judgment, { label: string; dot: string }> = {

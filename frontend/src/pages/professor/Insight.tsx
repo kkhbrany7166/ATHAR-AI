@@ -1,8 +1,8 @@
-import { Link, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api";
 import type { InsightDetail, InsightEvidence } from "../../lib/types";
-import { CONDITIONS, Callout, Crumb, ErrorState, KIND, Loading, Meter, Section, SynthTag, Tag } from "../../components/ui";
+import { Button, CONDITIONS, Callout, Crumb, ErrorState, KIND, Loading, Meter, Section, SynthTag, Tag } from "../../components/ui";
 
 function pct(n: number, d: number) {
   return d ? `${Math.round((100 * n) / d)}%` : "—";
@@ -65,7 +65,7 @@ export function InsightPage() {
                       <div className="flex flex-wrap items-center gap-2 mt-2 text-[13.5px] text-muted">
                         <span>{x.student_name}</span>
                         {x.is_synthetic && <SynthTag />}
-                        {x.sources.map((s) => <Tag key={s} tone={s === "ai" ? "amber" : "neutral"}>{s === "ai" ? "AI-read explanation" : "Tests"}</Tag>)}
+                        {x.sources.map((s) => <Tag key={s} tone={s === "tests" ? "neutral" : "amber"}>{s === "ai" ? "AI-read explanation" : s === "baseline" ? "Rule-read explanation" : "Tests"}</Tag>)}
                         <Link to={`/p/submissions/${x.submission_id}`} className="link ml-auto">Open submission</Link>
                       </div>
                     </div>
@@ -132,15 +132,7 @@ export function InsightPage() {
           </Section>
 
           <Section title="Next step">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <p className="text-muted text-[14px] max-w-prose">
-                Review the examples above. When you're ready, ATHAR will draft a targeted intervention for these {c.students} students
-                for you to edit and approve: an explanation, practice with progressive hints, and a follow-up check on a new problem.
-              </p>
-              <span className="text-[13.5px] text-faint border border-line rounded px-3 py-2" title="Coming in milestone 2">
-                Draft intervention · milestone 2
-              </span>
-            </div>
+            <NextStep insightId={i.id} count={c.students} drafted={i.status === "intervention_drafted"} />
           </Section>
         </div>
 
@@ -210,5 +202,28 @@ function StudentList({ ids, assignmentId }: { ids: number[]; examples: InsightEv
         <li key={s.id}><Link to={`/p/submissions/${s.id}`} className="text-muted hover:text-accent-ink">{s.student.name}</Link></li>
       ))}
     </ul>
+  );
+}
+
+function NextStep({ insightId, count, drafted }: { insightId: number; count: number; drafted: boolean }) {
+  const navigate = useNavigate();
+  const draft = useMutation({
+    mutationFn: () => api<{ id: number }>(`/api/professor/insights/${insightId}/intervention`, { method: "POST" }),
+    onSuccess: (iv) => navigate(`/p/interventions/${iv.id}`),
+  });
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-4">
+      <p className="text-muted text-[14px] max-w-prose">
+        {drafted
+          ? "An intervention for this group already exists. Open it to review or follow progress."
+          : `ATHAR will draft a targeted intervention for these ${count} students: a short explanation, practice with progressive hints, and a follow-up check on a new problem. You edit and approve it. Nothing reaches students before you do.`}
+      </p>
+      <div className="text-right">
+        <Button variant="primary" disabled={draft.isPending} onClick={() => draft.mutate()}>
+          {draft.isPending ? "Drafting…" : drafted ? "Open intervention" : "Draft an intervention"}
+        </Button>
+        {draft.error && <p className="text-brick text-[13px] mt-2">{(draft.error as Error).message}</p>}
+      </div>
+    </div>
   );
 }

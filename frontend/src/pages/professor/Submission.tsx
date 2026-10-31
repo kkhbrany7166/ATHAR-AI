@@ -17,6 +17,7 @@ const REASON: Record<string, string> = {
   code_did_not_load: "Code did not load",
   ai_output_partially_rejected: "Part of the AI output was rejected",
   missing_from_ai_output: "AI skipped this criterion",
+  rule_baseline: "Rule-based reading: confirm it yourself",
 };
 
 type Detail = SubmissionDetail;
@@ -46,7 +47,7 @@ export function SubmissionPage() {
   if (q.error) return <ErrorState error={q.error} />;
   const d = q.data!;
   const quotes = [...d.criteria.flatMap((c) => c.evidence.flatMap((e) => e.quotes)), ...d.misconceptions.map((m) => m.quote).filter(Boolean)];
-  const hasAiSuggestions = d.criteria.some((c) => c.state.source === "ai" && ["met", "partial", "not_met"].includes(c.state.judgment ?? ""));
+  const hasAiSuggestions = d.criteria.some((c) => (c.state.source === "ai" || c.state.source === "baseline") && ["met", "partial", "not_met"].includes(c.state.judgment ?? ""));
   const published = d.grade_status === "published";
 
   return (
@@ -120,7 +121,7 @@ export function SubmissionPage() {
 
         <div>
           <Section title="Rubric review" aside={hasAiSuggestions && !published ? (
-            <button className="link" disabled={confirm.isPending} onClick={() => confirm.mutate()}>Accept all AI suggestions</button>
+            <button className="link" disabled={confirm.isPending} onClick={() => confirm.mutate()}>Accept all machine suggestions</button>
           ) : undefined}>
             {confirm.data && confirm.data.skipped.length > 0 && (
               <div className="mb-4"><Callout tone="amber">Not accepted: {confirm.data.skipped.map((s) => `${s.code} (${s.reason})`).join(", ")}. Decide these yourself.</Callout></div>
@@ -179,7 +180,7 @@ function CriterionReview({ sub, c, onSaved }: { sub: Detail; c: Detail["criteria
           <li key={e.id} className={cx("text-[14px]", e.source !== c.state.source && "opacity-60")}>
             <div className="flex flex-wrap items-center gap-1.5 mb-1">
               {!["ai_unavailable", "ai_failed"].includes(e.judgment) && <SourceTag source={e.source} />}
-              {e.source === "ai" && e.confidence && <span className="text-2xs text-faint">confidence {e.confidence}</span>}
+              {(e.source === "ai" || e.source === "baseline") && e.confidence && <span className="text-2xs text-faint">confidence {e.confidence}</span>}
               {e.review_reasons.map((r) => <Tag key={r} tone={r.startsWith("ai_") || r === "quote_not_found" ? "brick" : "amber"}>{REASON[r] ?? r}</Tag>)}
               {e.source !== c.state.source && <span className="text-2xs text-faint">superseded</span>}
             </div>

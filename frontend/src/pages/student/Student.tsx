@@ -5,6 +5,10 @@ import { useSession } from "../../lib/session";
 import type { StudentAssignment, StudentHome } from "../../lib/types";
 import { CONDITIONS, Callout, CodeBlock, Crumb, ErrorState, JudgmentMark, KIND, Loading, PageHeader, Section, Tag, fmtDate } from "../../components/ui";
 
+const TASK_OUTCOME: Record<string, string> = {
+  demonstrated: "Shown on the check", still_developing: "Still developing", insufficient_evidence: "With your professor",
+};
+
 const MY_STATUS: Record<string, { label: string; tone: "neutral" | "accent" | "amber" }> = {
   not_submitted: { label: "Not submitted", tone: "amber" },
   submitted: { label: "Submitted, awaiting feedback", tone: "neutral" },
@@ -21,9 +25,35 @@ export function StudentHomePage() {
   return (
     <>
       <PageHeader eyebrow="My learning" title={`Welcome back, ${first}.`}>
-        Here is what's on your plate. Some activities are practice, where working with the AI assistant is the point.
-        Others are checks, where you show what you can do on your own. Each one says which it is.
+        Some activities are practice, where asking for help is the point. Others are checks, where you show what you can do on your own.
+        Each one tells you which it is.
       </PageHeader>
+      {q.data!.tasks.length > 0 && (
+        <Section title="Picked for you" aside="From your professor">
+          <ul className="space-y-3">
+            {q.data!.tasks.map((t) => (
+              <li key={t.id}>
+                <Link to={`/s/tasks/${t.id}`} className="group block border border-line-strong rounded-lg px-6 py-5 hover:border-accent-strong hover:bg-surface transition-colors">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <div className="font-serif text-[21px] text-ink">{t.title}</div>
+                      <p className="text-muted text-[14.5px] mt-1 max-w-prose">
+                        A short explanation, some practice with hints, and a new problem to try on your own. About twenty minutes.
+                      </p>
+                    </div>
+                    <Tag tone={t.outcome === "demonstrated" ? "accent" : t.status === "assigned" ? "amber" : "neutral"}>
+                      {t.outcome ? TASK_OUTCOME[t.outcome] : t.status === "assigned" ? "New" : "In progress"}
+                    </Tag>
+                  </div>
+                  <div className="text-[14px] text-accent-ink mt-3 group-hover:underline underline-offset-4">
+                    {t.status === "assigned" ? "Start" : t.outcome ? "Review" : "Continue"} →
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
       {q.data!.courses.map((c) => (
         <Section key={c.id} title={<><span className="text-faint mr-2">{c.code}</span>{c.title}</>} aside={c.professor}>
           <ul className="divide-y divide-line">
@@ -43,12 +73,6 @@ export function StudentHomePage() {
           </ul>
         </Section>
       ))}
-      <Section title="Coming next">
-        <p className="text-muted text-[14px] max-w-prose">
-          When your professor approves follow-up practice for a concept, it will appear here, with a guided workspace to
-          think, work with the assistant, and then show what you've learned.
-        </p>
-      </Section>
     </>
   );
 }

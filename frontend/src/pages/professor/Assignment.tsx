@@ -138,6 +138,13 @@ function GradingPanel({ a }: { a: AssignmentDetail }) {
           {live.ai_status === "used" && ` Written explanations read by ${live.ai_provider.split(":")[1] ?? live.ai_provider}; every quoted span was checked against the student's text.`}
         </div>
       )}
+      {!running && live?.status === "done" && live.ai_status === "baseline" && (
+        <Callout tone="amber" title="Explanations were read by rules, not by AI">
+          No model credentials are configured, so ATHAR's rule-based reader ({live.ai_provider}) read the written explanations.
+          It is fast and transparent but brittle with unfamiliar phrasing: on held-out explanations it gets about half of the
+          stopping-condition judgments right (see docs/EVALUATION.md). Treat these readings as leads. They never publish a grade.
+        </Callout>
+      )}
       {!running && live?.status === "done" && live.ai_status === "unavailable" && (
         <Callout tone="amber" title="Written explanations were not analysed">
           No AI provider is configured, so {explanationCodes} have no suggestions and need your review. Test evidence is complete.
@@ -315,6 +322,7 @@ function SubmissionsTab({ a }: { a: AssignmentDetail }) {
                     <span className="inline-flex items-center gap-1">
                       <JudgmentMark judgment={c.judgment} compact />
                       {c.source === "ai" && c.judgment !== "ai_unavailable" && <span className="text-2xs text-amber">AI</span>}
+                      {c.source === "baseline" && <span className="text-2xs text-amber">Rule</span>}
                       {c.source === "professor" && <span className="text-2xs text-accent-ink">You</span>}
                     </span>
                   </td>
@@ -342,7 +350,7 @@ function SubmissionsTab({ a }: { a: AssignmentDetail }) {
         <span>{rows.length} shown</span><span>·</span>
         <span><JudgmentMark judgment="met" /></span><span><JudgmentMark judgment="partial" /></span>
         <span><JudgmentMark judgment="not_met" /></span><span><JudgmentMark judgment="ai_unavailable" /></span>
-        <span className="text-amber">AI</span><span>= unconfirmed suggestion</span>
+        <span className="text-amber">AI / Rule</span><span>= unconfirmed machine reading</span>
       </div>
     </div>
   );
