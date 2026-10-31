@@ -85,6 +85,7 @@ export function SubmissionPage() {
               <p className="text-[13.5px] text-muted mt-4"><span className="text-faint">AI use disclosed by student: </span>{d.ai_use_disclosure}</p>
             )}
           </Section>
+          {d.reading && <ReadingPanel r={d.reading} />}
           <Section title="Code">
             <CodeBlock code={d.code} />
           </Section>
@@ -219,5 +220,25 @@ function CriterionReview({ sub, c, onSaved }: { sub: Detail; c: Detail["criteria
         )
       )}
     </div>
+  );
+}
+
+function ReadingPanel({ r }: { r: NonNullable<SubmissionDetail["reading"]> }) {
+  const ai = r.source === "ai";
+  return (
+    <Section title="How the explanation was read" aside={<Tag tone="amber">{ai ? `AI · ${r.reader} · ${r.prompt_version}` : `Rule-based reading (not AI) · ${r.reader}`}</Tag>}>
+      {r.abstained && <div className="mb-3"><Callout tone="amber" title="The reader abstained">{r.abstain_reason || "Not enough evidence for a confident judgment."} This needs your judgment.</Callout></div>}
+      {r.summary && <p className="text-ink max-w-prose">{r.summary}</p>}
+      <dl className="grid sm:grid-cols-2 gap-x-8 gap-y-3 mt-3 text-[13.5px]">
+        {r.code_issue && <div><dt className="text-faint">What the failing tests suggest</dt><dd className="text-muted">{r.code_issue.replaceAll("_", " ")}</dd></div>}
+        {r.objectives.length > 0 && <div><dt className="text-faint">Objectives</dt><dd className="text-muted">{r.objectives.map((o) => `${o.objective_code}: ${o.status.replace("_", " ")}`).join(" · ")}</dd></div>}
+        {r.rejected_ideas.length > 0 && <div className="sm:col-span-2"><dt className="text-faint">Ideas the student explicitly rejects (not counted against them)</dt>
+          <dd className="text-muted">{r.rejected_ideas.map((x) => `${x.code}: “${x.quote}”`).join(" · ")}</dd></div>}
+        {r.contradictions.length > 0 && <div className="sm:col-span-2"><dt className="text-faint">Contradictions</dt><dd className="text-muted">{r.contradictions.join(" · ")}</dd></div>}
+        {r.missing_evidence.length > 0 && <div className="sm:col-span-2"><dt className="text-faint">Missing evidence</dt><dd className="text-muted">{r.missing_evidence.join(" · ")}</dd></div>}
+        {r.validation_notes.length > 0 && <div className="sm:col-span-2"><dt className="text-faint">Removed by validation</dt><dd className="text-brick/90">{r.validation_notes.join(" · ")}</dd></div>}
+      </dl>
+      {!ai && <p className="text-[12.5px] text-faint mt-3">The rule reader only matches phrases. It cannot abstain thoughtfully or recognise paraphrase; treat it as a lead.</p>}
+    </Section>
   );
 }

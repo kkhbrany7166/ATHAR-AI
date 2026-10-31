@@ -1,7 +1,7 @@
 {
   "meta": {
-    "commit": "88bbc0a",
-    "ran_at": "2026-10-31 09:04:42 +0300",
+    "commit": "cc7085f",
+    "ran_at": "2026-10-31 09:11:22 +0300",
     "llm": {
       "provider": "none",
       "model": "",
@@ -15,8 +15,8 @@
     "verifier_version": "verify-v1",
     "python": "3.12.2"
   },
-  "command": "pytest -q tests/test_interventions.py tests/test_api_gates.py tests/test_pipeline_and_insights.py",
-  "summary": "24 passed in 28.52s",
+  "command": "pytest -q tests/test_interventions.py tests/test_api_gates.py tests/test_pipeline_and_insights.py tests/test_llm_reader.py tests/test_planning.py tests/test_generation.py",
+  "summary": "44 passed in 49.17s",
   "ok": true,
   "failed": []
 }

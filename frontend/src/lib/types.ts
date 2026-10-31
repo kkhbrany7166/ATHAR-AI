@@ -59,6 +59,11 @@ export interface SubmissionDetail {
   criteria: (Criterion & { state: CriterionState; evidence: Evidence[] })[];
   tests: { id: number; test_case_id: number; name: string; hidden: boolean; criterion_id: number; status: string; actual: string; expected: string; error_type: string; error_message: string }[];
   misconceptions: { id: number; code: string; source: Source; detail: string; quote: string; confidence: string; test_result_id: number | null }[];
+  reading: null | {
+    reader: string; source: string; prompt_version: string; abstained: boolean; abstain_reason: string; answer_type: string; code_issue: string;
+    summary: string; objectives: { objective_code: string; status: string; quote: string }[]; contradictions: string[]; missing_evidence: string[];
+    rejected_ideas: { code: string; quote: string; reasoning: string }[]; validation_notes: string[];
+  };
 }
 
 export interface InsightEvidence {
@@ -124,7 +129,9 @@ export interface InterventionStudent {
   task: null | { id: number; status: string; is_simulated: boolean; hints_revealed: number; practice_attempts: number; has_initial: boolean; has_revised: boolean; has_reflection: boolean };
   verification: null | { outcome: Outcome; reasons: string[]; tests_passed: number; tests_total: number; submission_id: number; explanation_judgment: string; explanation_reader: string; rule_version: string; at: string };
 }
+export type InterventionKind = "concept_practice" | "debugging" | "explain_reasoning";
 export interface Intervention {
+  kind: InterventionKind;
   id: number; status: "draft" | "approved" | "active" | "completed" | "rejected"; title: string; misconception_code: string;
   course_id: number; course_code: string; assignment: { id: number; title: string }; insight_id: number | null;
   explanation: string; explanation_source: string; professor_note: string;
@@ -136,6 +143,7 @@ export interface Intervention {
 }
 
 export interface StudentTask {
+  kind: InterventionKind; my_original_code: string;
   id: number; status: string; title: string; course_code: string; from_assignment: string; my_earlier_evidence: string[];
   explanation: string; explanation_source: string; initial_reasoning: string; revised_reasoning: string; reflection: string;
   practice: null | { id: number; title: string; prompt: string; explanation_prompt: string; starter_code: string; hint_count: number; tests: string[] };
@@ -146,3 +154,9 @@ export interface StudentTask {
   results: { outcome: Outcome; label: string; reasons: string[]; tests_passed: number; tests_total: number; at: string }[];
   intervention_status: string;
 }
+
+export interface PlanGroup {
+  category: string; misconception_code: string; label: string; action: string; action_label: string; action_why: string; draftable: boolean;
+  students: { student_id: number; name: string; is_synthetic: boolean; submission_id: number | null; evidence: string[]; in_intervention: number | null }[];
+}
+export interface Plan { assignment_id: number; reader: string; reader_status: string; groups: PlanGroup[]; rules: string }

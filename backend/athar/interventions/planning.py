@@ -34,7 +34,7 @@ READING_SOURCES = ("ai", "baseline")
 
 ACTIONS = {
     "concept_practice": {"label": "Targeted explanation, practice and a new check",
-                         "why": "Their code fails on the smallest input the way this misconception predicts."},
+                         "why": "Their code fails tests in a way that points to a misunderstanding of base cases."},
     "debugging": {"label": "A short debugging exercise",
                   "why": "The code did not run for reasons unrelated to recursion, so the concept itself hasn't been tested yet."},
     "explain_reasoning": {"label": "A short explain-your-reasoning task",
@@ -145,7 +145,8 @@ def plan_for_assignment(db: Session, assignment: m.Assignment) -> dict:
         action = CATEGORY_ACTION[cat]
         out.append({
             "category": cat, "misconception_code": code, "label": CATEGORY_TEXT[cat] + (f" · {code}" if code else ""),
-            "action": action, "action_label": ACTIONS[action]["label"], "action_why": ACTIONS[action]["why"],
+            "action": action, "action_label": ACTIONS[action]["label"],
+            "action_why": (f"Their code fails the probe tests in the way {code} predicts." if cat == "concept_gap" and code else ACTIONS[action]["why"]),
             "draftable": action in ("concept_practice", "debugging", "explain_reasoning"),
             "students": [{"student_id": d.student_id, "name": users[d.student_id].name if d.student_id in users else "?",
                           "is_synthetic": users[d.student_id].is_synthetic if d.student_id in users else True,

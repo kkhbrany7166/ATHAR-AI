@@ -127,7 +127,14 @@ def list_submissions(assignment_id: int, user: m.User = Depends(require_professo
 def submission_detail(submission_id: int, user: m.User = Depends(require_professor), db: Session = Depends(get_db)):
     sub = _owned_submission(db, user, submission_id)
     mevs = db.scalars(select(m.MisconceptionEvidence).where(m.MisconceptionEvidence.submission_id == sub.id)).all()
-    return ser.submission_detail(sub, list(mevs))
+    r = db.scalar(select(m.ExplanationReadingRecord).where(m.ExplanationReadingRecord.submission_id == sub.id)
+                  .order_by(m.ExplanationReadingRecord.id.desc()).limit(1))
+    reading = None if r is None else {
+        "reader": r.reader, "source": r.source, "prompt_version": r.prompt_version, "abstained": r.abstained,
+        "abstain_reason": r.abstain_reason, "answer_type": r.answer_type, "code_issue": r.code_issue, "summary": r.summary,
+        "objectives": r.objectives, "contradictions": r.contradictions, "missing_evidence": r.missing_evidence,
+        "rejected_ideas": r.rejected_ideas, "validation_notes": r.validation_notes}
+    return {**ser.submission_detail(sub, list(mevs)), "reading": reading}
 
 
 class Decision(BaseModel):

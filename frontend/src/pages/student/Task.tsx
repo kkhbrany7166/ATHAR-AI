@@ -5,13 +5,19 @@ import { api } from "../../lib/api";
 import type { StudentTask } from "../../lib/types";
 import { Button, CONDITIONS, Crumb, ErrorState, Loading, Tag, cx } from "../../components/ui";
 
-const STEPS = [
-  { id: "why", label: "Why this, why now" },
-  { id: "think", label: "Think first" },
-  { id: "practice", label: "Practise with support" },
-  { id: "reflect", label: "Look back" },
-  { id: "check", label: "Show what you can do" },
-];
+const STEPS_BY_KIND: Record<string, { id: string; label: string }[]> = {
+  concept_practice: [
+    { id: "why", label: "Why this, why now" }, { id: "think", label: "Think first" }, { id: "practice", label: "Practise with support" },
+    { id: "reflect", label: "Look back" }, { id: "check", label: "Show what you can do" },
+  ],
+  debugging: [{ id: "why", label: "Why this, why now" }, { id: "check", label: "Fix the program" }],
+  explain_reasoning: [{ id: "why", label: "Why this, why now" }, { id: "check", label: "Explain your own code" }],
+};
+const INTRO: Record<string, string> = {
+  concept_practice: "A short path in five steps, about twenty minutes. Practice is where help is welcome; the last step is where you show what you can do on your own.",
+  debugging: "A short exercise, about ten minutes. Your code didn't run last time, so the tests never got to show what you understand. Let's fix that first.",
+  explain_reasoning: "One short written task, about ten minutes. Your code already works. This is about putting into words why it stops.",
+};
 
 export function TaskPage() {
   const { taskId } = useParams();
@@ -24,6 +30,8 @@ export function TaskPage() {
   if (q.isLoading) return <Loading />;
   if (q.error) return <ErrorState error={q.error} />;
   const t = q.data!;
+  const STEPS = STEPS_BY_KIND[t.kind] ?? STEPS_BY_KIND.concept_practice;
+  const concept = t.kind === "concept_practice";
   const done = {
     why: true, think: !!t.initial_reasoning, practice: t.practice_attempts.some((a) => a.passed === a.total),
     reflect: !!t.revised_reasoning && !!t.reflection, check: t.results.length > 0,
@@ -35,9 +43,7 @@ export function TaskPage() {
       <header className="pb-8 max-w-3xl">
         <div className="eyebrow mb-2">From your professor</div>
         <h1 className="font-serif text-[34px] leading-[1.12] tracking-[-0.01em]">{t.title}</h1>
-        <p className="text-muted mt-3 text-[16px]">
-          A short path in five steps, about twenty minutes. Practice is where help is welcome; the last step is where you show what you can do on your own.
-        </p>
+        <p className="text-muted mt-3 text-[16px]">{INTRO[t.kind] ?? INTRO.concept_practice}</p>
       </header>
 
       <div className="grid lg:grid-cols-[200px_minmax(0,1fr)] gap-x-12">
@@ -59,7 +65,7 @@ export function TaskPage() {
           <Step id="why" n={1} title="Why this, why now">
             {t.my_earlier_evidence.length > 0 && (
               <p className="text-[16px] text-ink">
-                In {t.from_assignment.split("—")[0].trim()}, your code ran into this:{" "}
+                In {t.from_assignment.split("—")[0].trim()}, {t.kind === "explain_reasoning" ? "your code worked, and you wrote:" : "your code ran into this:"}{" "}
                 {t.my_earlier_evidence.map((e) => <code key={e} className="font-mono text-[13.5px] text-amber bg-amber-wash px-1.5 py-0.5 rounded mr-1">{e}</code>)}
                 It's one of the most common places to get stuck with recursion, and a good one to understand properly.
               </p>
@@ -69,18 +75,18 @@ export function TaskPage() {
             </div>
           </Step>
 
-          <Step id="think" n={2} title="Think first" badge={<Tag>Just your thinking. Not graded</Tag>}>
+          {concept && <Step id="think" n={2} title="Think first" badge={<Tag>Just your thinking. Not graded</Tag>}>
             <p className="text-muted mb-4">{t.practice?.explanation_prompt} Write what you think now, before any help. You'll look back at it later.</p>
             <Checkpoint value={t.initial_reasoning} placeholder="I think it should return…" onSave={(text) => post("checkpoint", { kind: "initial", text }).then(onOk)} />
-          </Step>
+          </Step>}
 
-          {t.practice && (
+          {concept && t.practice && (
             <Step id="practice" n={3} title="Practise with support" badge={<Tag tone="accent">Assisted practice</Tag>}>
               <Practice t={t} post={post} onOk={onOk} />
             </Step>
           )}
 
-          <Step id="reflect" n={4} title="Look back">
+          {concept && <Step id="reflect" n={4} title="Look back">
             <div className="space-y-6">
               <div>
                 <p className="text-muted mb-3">Answer the same question again: {t.practice?.explanation_prompt}</p>
@@ -92,10 +98,10 @@ export function TaskPage() {
                 <Checkpoint value={t.reflection} placeholder="What I understand differently now is…" onSave={(text) => post("checkpoint", { kind: "reflection", text }).then(onOk)} />
               </div>
             </div>
-          </Step>
+          </Step>}
 
           {t.check && (
-            <Step id="check" n={5} title="Show what you can do" badge={<Tag>{CONDITIONS[t.check.conditions]?.label}</Tag>}>
+            <Step id="check" n={STEPS.length} title={STEPS[STEPS.length - 1].label} badge={<Tag>{CONDITIONS[t.check.conditions]?.label}</Tag>}>
               <FollowUp t={t} post={post} onOk={onOk} />
             </Step>
           )}
@@ -251,7 +257,8 @@ const RESULT_NEXT: Record<string, string> = {
 
 function FollowUp({ t, post, onOk }: { t: StudentTask; post: Post; onOk: (t: StudentTask) => void }) {
   const c = t.check!;
-  const [code, setCode] = useState(c.starter_code);
+  const [code, setCode] = useState(t.kind === "explain_reasoning" ? t.my_original_code : c.starter_code);
+  const explainOnly = t.kind === "explain_reasoning";
   const [explanation, setExplanation] = useState("");
   const [disclosure, setDisclosure] = useState("");
   const submit = useMutation({ mutationFn: () => post("followup", { code, explanation, ai_use_disclosure: disclosure }), onSuccess: onOk });
@@ -264,16 +271,21 @@ function FollowUp({ t, post, onOk }: { t: StudentTask; post: Post; onOk: (t: Stu
       {last && (
         <div className={cx("rounded-md border px-5 py-4", RESULT_TONE[last.outcome])}>
           <div className="font-serif text-[20px] text-ink">{last.label}</div>
-          <p className="text-muted mt-1">{RESULT_NEXT[last.outcome]}</p>
+          <p className="text-muted mt-1">{last.outcome === "demonstrated" && t.kind !== "concept_practice"
+            ? (t.kind === "debugging" ? "Your program runs and passes every test, so your recursion can now be checked properly. Your professor can see this."
+               : "Your explanation names where and why the recursion stops. Your professor can see this.")
+            : RESULT_NEXT[last.outcome]}</p>
           <ul className="mt-3 space-y-1 text-[14px] text-muted list-disc ml-4">{last.reasons.map((r) => <li key={r}>{r}</li>)}</ul>
           <div className="text-[12.5px] text-faint mt-2 num">{last.tests_passed}/{last.tests_total} tests passed · attempt {t.results.length}</div>
         </div>
       )}
       {!closed && (
         <>
-          <CodeEditor value={code} onChange={setCode} rows={8} />
+          {explainOnly ? (
+            <div><div className="eyebrow mb-2">Your Assignment 3 code</div><pre className="font-mono text-[13px] bg-canvas border border-line rounded-md p-4 overflow-x-auto">{t.my_original_code}</pre></div>
+          ) : <CodeEditor value={code} onChange={setCode} rows={8} />}
           <div>
-            <label className="block text-muted mb-2" htmlFor="fx">{c.explanation_prompt}</label>
+            <label className="block text-muted mb-2" htmlFor="fx">{explainOnly ? "Your explanation" : t.kind === "debugging" ? `${c.explanation_prompt} (optional)` : c.explanation_prompt}</label>
             <textarea id="fx" value={explanation} onChange={(e) => setExplanation(e.target.value)} rows={4}
               className="w-full bg-surface border border-line-strong rounded-md px-4 py-3 text-[15px]" />
           </div>
@@ -283,8 +295,9 @@ function FollowUp({ t, post, onOk }: { t: StudentTask; post: Post; onOk: (t: Stu
               className="w-full h-9 bg-surface border border-line rounded px-3 text-[14px]" />
           </div>
           <div className="flex items-center justify-between gap-3">
-            <span className="text-[13px] text-faint">Checked with tests you can't see yet, plus your explanation.</span>
-            <Button variant="primary" disabled={submit.isPending || !code.trim()} onClick={() => submit.mutate()}>
+            <span className="text-[13px] text-faint">{explainOnly ? "Your explanation is read and checked against the stopping condition. Your code is not re-graded." :
+              t.kind === "debugging" ? "Runs your fixed program against the tests." : "Checked with tests you can't see yet, plus your explanation."}</span>
+            <Button variant="primary" disabled={submit.isPending || (explainOnly ? !explanation.trim() : !code.trim())} onClick={() => submit.mutate()}>
               {submit.isPending ? "Checking…" : last ? "Submit another attempt" : "Submit"}
             </Button>
           </div>

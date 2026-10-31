@@ -85,4 +85,4 @@ def evaluation(user: m.User = Depends(current_user)):
     def load(name: str):
         p = results / f"{name}.json"
         return json.loads(p.read_text()) if p.exists() else None
-    return {"dev": load("dev"), "heldout": load("heldout"), "system": load("system")}
+    return {"dev": load("dev"), "heldout": load("heldout"), "final": load("final"), "system": load("system")}

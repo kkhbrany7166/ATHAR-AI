@@ -12,6 +12,9 @@ export const OUTCOME: Record<Outcome, { label: string; tone: "accent" | "amber" 
 };
 
 const STEPS = ["draft", "approved", "active", "completed"] as const;
+const KIND_LABEL: Record<string, string> = {
+  concept_practice: "Concept practice", debugging: "Debugging exercise", explain_reasoning: "Explain-your-reasoning task",
+};
 const STEP_LABEL: Record<string, string> = { draft: "Drafted", approved: "Approved", active: "Delivered to students", completed: "Closed" };
 
 export function InterventionPage() {
@@ -37,7 +40,7 @@ export function InterventionPage() {
         {iv.insight_id ? <Crumb to={`/p/insights/${iv.insight_id}`}>Insight</Crumb> : "Insight"} / Intervention
       </div>
       <header className="pb-6">
-        <div className="eyebrow mb-2">Targeted intervention · {iv.misconception_code}</div>
+        <div className="eyebrow mb-2">{KIND_LABEL[iv.kind]}{iv.misconception_code ? ` · ${iv.misconception_code}` : ""}</div>
         <h1 className="font-serif text-[32px] leading-[1.15] tracking-[-0.01em]">{iv.title}</h1>
         <p className="text-muted mt-2">For {iv.target_student_ids.length} students, from {iv.assignment.title}.</p>
       </header>
@@ -70,7 +73,7 @@ function DraftView({ iv, onSaved, act }: { iv: Intervention; onSaved: (iv: Inter
   const [targets, setTargets] = useState<Set<number>>(new Set(iv.target_student_ids));
   const [followup, setFollowup] = useState(iv.followup_item?.id ?? null);
   useEffect(() => { setText(iv.explanation); }, [iv.explanation]);
-  const dirty = text !== iv.explanation || targets.size !== iv.target_student_ids.length || followup !== iv.followup_item?.id;
+  const dirty = text !== iv.explanation || targets.size !== iv.target_student_ids.length || followup !== (iv.followup_item?.id ?? null);
   const save = useMutation({
     mutationFn: () => api<Intervention>(`/api/professor/interventions/${iv.id}`, {
       method: "PATCH", json: { explanation: text, target_student_ids: [...targets], followup_item_id: followup },
@@ -78,7 +81,7 @@ function DraftView({ iv, onSaved, act }: { iv: Intervention; onSaved: (iv: Inter
     onSuccess: onSaved,
   });
   const chosen = iv.followup_options.find((o) => o.id === followup) ?? iv.followup_item;
-  const canApprove = !dirty && targets.size > 0 && !!chosen?.validation.valid;
+  const canApprove = !dirty && targets.size > 0 && (iv.kind === "explain_reasoning" || !!chosen?.validation.valid);
 
   return (
     <div className="grid lg:grid-cols-[minmax(0,1fr)_320px] gap-x-12">
@@ -99,7 +102,21 @@ function DraftView({ iv, onSaved, act }: { iv: Intervention; onSaved: (iv: Inter
           </Section>
         )}
 
+        {iv.kind === "explain_reasoning" ? (
+          <Section title="2 · What students will do" aside="Unsupervised">
+            <p className="text-muted max-w-prose">
+              Each student sees their own Assignment 3 code and explains, in writing, exactly when and why it stops and what power(5, 0) returns.
+              Their code is not re-run or re-graded. The explanation is read by the configured reader, and fixed rules decide the outcome:
+              a clear stopping condition means demonstrated, a stated misconception means still developing, and anything vague means insufficient evidence.
+            </p>
+          </Section>
+        ) : iv.kind === "debugging" ? (
+          <Section title="2 · Debugging exercise" aside="Checked by tests">
+            {iv.followup_item && <ItemSummary item={iv.followup_item} brokenLabel="Broken starting code" />}
+          </Section>
+        ) : (
         <Section title="3 · Follow-up check (unsupervised)" aside="A different problem that tests the same idea">
+          <GenerateCheck ivId={iv.id} onDone={onSaved} />
           <div className="space-y-3">
             {iv.followup_options.map((o) => (
               <label key={o.id} className={cx("block border rounded-md p-4 cursor-pointer transition-colors",
@@ -113,6 +130,7 @@ function DraftView({ iv, onSaved, act }: { iv: Intervention; onSaved: (iv: Inter
             ))}
           </div>
         </Section>
+        )}
       </div>
 
       <aside className="lg:pt-6 space-y-8">
@@ -139,7 +157,7 @@ function DraftView({ iv, onSaved, act }: { iv: Intervention; onSaved: (iv: Inter
             </Button>
             <p className="text-[13px] text-faint leading-5">
               Approving creates the follow-up check and one activity per student, right away. Nothing reaches students before you approve.
-              {!chosen?.validation.valid && " The selected check hasn't passed validation."}{dirty && " Save your changes first."}
+              {iv.kind !== "explain_reasoning" && !chosen?.validation.valid && " The selected check hasn't passed validation."}{dirty && " Save your changes first."}
             </p>
             <button className="text-[13px] text-faint hover:text-brick" onClick={() => act.mutate("reject")}>Reject this draft</button>
           </div>
@@ -155,14 +173,34 @@ function SourceLabel({ source }: { source: string }) {
   return <Tag>{source}</Tag>;
 }
 
-function ItemSummary({ item }: { item: Item }) {
+function GenerateCheck({ ivId, onDone }: { ivId: number; onDone: (iv: Intervention) => void }) {
+  const gen = useMutation({
+    mutationFn: () => api<{ item: Item; intervention: Intervention }>(`/api/professor/interventions/${ivId}/generate-check`, { method: "POST" }),
+    onSuccess: (r) => onDone(r.intervention),
+  });
+  return (
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <p className="text-[13.5px] text-faint max-w-prose">
+        Options come from your validated item bank. You can also ask the AI for a new problem; it only becomes selectable if the sandbox confirms
+        correct code passes and code with the misconception fails.
+      </p>
+      <Button onClick={() => gen.mutate()} disabled={gen.isPending}>{gen.isPending ? "Generating and validating…" : "Generate a new check with AI"}</Button>
+      {gen.error && <p className="w-full text-[13px] text-amber">{(gen.error as Error).message}</p>}
+      {gen.data && !gen.data.item.validation.valid && (
+        <p className="w-full text-[13px] text-brick">The AI's proposal was rejected: {gen.data.item.validation.problems.join(" ")}</p>
+      )}
+    </div>
+  );
+}
+
+function ItemSummary({ item, brokenLabel }: { item: Item; brokenLabel?: string }) {
   const [open, setOpen] = useState(false);
   const v = item.validation;
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-ink">{item.title}</span>
-        <Tag>{item.source === "item_bank" ? "From your item bank" : item.source}</Tag>
+        <Tag tone={item.source.startsWith("ai:") ? "amber" : "neutral"}>{item.source === "item_bank" ? "From your item bank" : `AI-generated · ${item.source.slice(3)}`}</Tag>
         {v.valid ? <Tag tone="accent">Validated</Tag> : <Tag tone="brick">Failed validation</Tag>}
       </div>
       <p className="text-muted text-[14px] mt-1.5 max-w-prose">{item.prompt}</p>
@@ -179,7 +217,7 @@ function ItemSummary({ item }: { item: Item }) {
       {open && (
         <div className="grid md:grid-cols-2 gap-3 mt-3">
           <div><div className="eyebrow mb-1">Reference</div><CodeBlock code={item.reference_solution} /></div>
-          <div><div className="eyebrow mb-1">With the misconception</div><CodeBlock code={item.misconception_solution} /></div>
+          <div><div className="eyebrow mb-1">{brokenLabel ?? "With the misconception"}</div><CodeBlock code={item.misconception_solution} /></div>
           <ul className="md:col-span-2 font-mono text-[12px] text-muted space-y-0.5">
             {item.tests.map((t) => <li key={t.name}>{t.name}{t.hidden ? " · hidden" : ""}{t.probes.length ? " · probe" : ""}</li>)}
           </ul>
@@ -246,15 +284,23 @@ function LiveView({ iv, act }: { iv: Intervention; act: ReturnType<typeof useMut
           )}
           <div>
             <div className="eyebrow mb-2">How outcomes are decided</div>
-            <p className="text-faint leading-5">
+            {iv.kind !== "concept_practice" ? (
+              <p className="text-faint leading-5">
+                {iv.kind === "debugging"
+                  ? "Demonstrated means the fixed program runs and passes every test. Anything less is still developing."
+                  : "Only the explanation is assessed. A clear, explicit stopping condition is demonstrated; a stated misconception is still developing; vague or unread reasoning is insufficient evidence."}
+              </p>
+            ) : <p className="text-faint leading-5">
               <span className="text-muted">Demonstrated</span> needs both: every test passes, including the smallest input, and the written reasoning names the stopping condition.
               Failing a probe the way the misconception predicts means <span className="text-muted">still developing</span>.
               Working code with missing or vague reasoning is <span className="text-muted">insufficient evidence</span>. One task never proves lasting mastery.
-            </p>
+            </p>}
           </div>
           <div>
             <div className="eyebrow mb-2">What students received</div>
-            <p className="text-muted">{iv.practice_item?.title} with {iv.practice_item?.hints.length} hints, then {iv.followup_item?.title}.</p>
+            <p className="text-muted">{iv.kind === "explain_reasoning" ? "A written explanation of their own Assignment 3 code." :
+              iv.kind === "debugging" ? `${iv.followup_item?.title}: fix the program until every test passes.` :
+              `${iv.practice_item?.title} with ${iv.practice_item?.hints.length} hints, then ${iv.followup_item?.title}.`}</p>
             {iv.followup_assignment_id && <p className="text-faint text-[13px] mt-1">Follow-up assignment #{iv.followup_assignment_id} · unsupervised</p>}
           </div>
           {iv.status === "active" && (

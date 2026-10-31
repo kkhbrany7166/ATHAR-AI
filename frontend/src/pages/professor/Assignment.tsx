@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
+import { PlanTab } from "./Plan";
 import type { AssignmentDetail, GradingRun, Insight, InsightEvidence, SubmissionRow, SupportEvidence } from "../../lib/types";
 import {
   Button, CONDITIONS, Callout, CodeBlock, Crumb, Empty, ErrorState, JudgmentMark, KIND, Loading, Meter, PageHeader,
@@ -10,6 +11,7 @@ import {
 
 const TABS = [
   { id: "insights", label: "Insights" },
+  { id: "plan", label: "Who needs what" },
   { id: "submissions", label: "Submissions" },
   { id: "rubric", label: "Rubric & tests" },
 ] as const;
@@ -56,6 +58,7 @@ export function AssignmentPage() {
         ))}
       </div>
       {tab === "insights" && <InsightsTab a={a} />}
+      {tab === "plan" && <PlanTab assignmentId={a.id} />}
       {tab === "submissions" && <SubmissionsTab a={a} />}
       {tab === "rubric" && <RubricTab a={a} />}
     </>
@@ -84,6 +87,7 @@ function GradingPanel({ a }: { a: AssignmentDetail }) {
       qc.invalidateQueries({ queryKey: ["assignment", String(a.id)] });
       qc.invalidateQueries({ queryKey: ["insights", String(a.id)] });
       qc.invalidateQueries({ queryKey: ["submissions", String(a.id)] });
+      qc.invalidateQueries({ queryKey: ["plan", a.id] });
       qc.invalidateQueries({ queryKey: ["course"] });
     }
   }, [poll.data, a.id, qc]);

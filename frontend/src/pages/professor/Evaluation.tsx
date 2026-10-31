@@ -1,87 +1,176 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api";
-import { Callout, ErrorState, Loading, PageHeader, Section } from "../../components/ui";
+import { Callout, ErrorState, Loading, PageHeader, Section, Tag, cx } from "../../components/ui";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type R = any;
+const SPLITS = ["dev", "heldout", "final"] as const;
+const SPLIT_LABEL: Record<string, string> = { dev: "Development", heldout: "Held-out", final: "Final (untouched)" };
 
-const pct = (x: number | null | undefined) => (x === null || x === undefined ? "—" : `${Math.round(x * 100)}%`);
+function Frac({ n, d, strong }: { n: number | null | undefined; d: number | null | undefined; strong?: boolean }) {
+  if (n === null || n === undefined || !d) return <span className="text-faint">—</span>;
+  return (
+    <span className="num whitespace-nowrap">
+      <span className={strong ? "text-ink font-medium" : "text-muted"}>{Math.round((n / d) * 100)}%</span>
+      <span className="text-faint text-[12px] ml-1.5">{n}/{d}</span>
+    </span>
+  );
+}
+
+const CAPABILITIES: [string, string, string][] = [
+  ["Running code and scoring tests", "Deterministic", "Sandboxed subprocess per submission"],
+  ["Linking failing tests to misconceptions", "Deterministic", "Probe tags authored with the rubric"],
+  ["Reading written explanations", "AI when a key is set", "Otherwise the rule reader rules-v1, always labelled"],
+  ["Deciding who needs what", "Deterministic rules", "Over test results and the explanation reading"],
+  ["Drafting the explanation students read", "AI when a key is set", "Otherwise a labelled template. You always edit and approve"],
+  ["Proposing new follow-up checks", "AI when a key is set", "Released only if the sandbox validator accepts them"],
+  ["Approving and delivering interventions", "You, then deterministic", "Approval gate, idempotent executor"],
+  ["Deciding outcomes", "Deterministic", "Verifier rules verify-v1"],
+  ["Classmates' follow-up attempts", "Simulated", "Demo only, through the real path, labelled"],
+];
 
 export function EvaluationPage() {
-  const q = useQuery({ queryKey: ["evaluation"], queryFn: () => api<{ dev: R; heldout: R; system: R }>("/api/evaluation") });
+  const q = useQuery({ queryKey: ["evaluation"], queryFn: () => api<Record<string, R>>("/api/evaluation") });
   if (q.isLoading) return <Loading />;
   if (q.error) return <ErrorState error={q.error} />;
-  const { dev, heldout: h, system } = q.data!;
-  if (!h) return <Callout title="No evaluation results yet">Run <code className="font-mono">python -m evals.run</code> in backend/.</Callout>;
-  const llm = h.meta.llm.configured;
-
-  const rows: [string, string, number | null, number | null, string?][] = [
-    ["Code grading", "Base-case criterion judged correctly", dev?.code.c2_judgment_accuracy, h.code.c2_judgment_accuracy],
-    ["Code grading", "Misconception set matches the instructor's label", dev?.code.exact_set_accuracy, h.code.exact_set_accuracy],
-    ["Code grading", "Stopping-condition flag: ATHAR probe tests", dev?.code.stopping_condition_flag_accuracy.probes, h.code.stopping_condition_flag_accuracy.probes],
-    ["Code grading", "Stopping-condition flag: baseline (any failing test)", dev?.code.stopping_condition_flag_accuracy.baseline_any_failing_test, h.code.stopping_condition_flag_accuracy.baseline_any_failing_test, "baseline"],
-    ["Explanation reading", "Misconception micro-F1: rule reader", dev?.explanations.baseline.misconceptions.micro.f1, h.explanations.baseline.misconceptions.micro.f1],
-    ["Explanation reading", "Stopping-condition judgment: rule reader", dev?.explanations.baseline.c3_accuracy, h.explanations.baseline.c3_accuracy],
-    ["Explanation reading", "Stopping-condition judgment: always 'met'", dev?.explanations.baseline.trivial_baseline_always_met_no_misconception.c3_accuracy, h.explanations.baseline.trivial_baseline_always_met_no_misconception.c3_accuracy, "baseline"],
-    ["Verification", "Outcome matches the instructor's call", dev?.verifier.baseline.accuracy, h.verifier.baseline.accuracy],
-    ["Validation", "Follow-up items accepted/rejected correctly", dev?.variants.accuracy, h.variants.accuracy],
-  ];
-  if (llm) {
-    rows.splice(6, 0,
-      ["Explanation reading", "Misconception micro-F1: LLM reader", dev?.explanations.llm.misconceptions?.micro.f1, h.explanations.llm.misconceptions?.micro.f1],
-      ["Explanation reading", "Stopping-condition judgment: LLM reader", dev?.explanations.llm.c3_accuracy, h.explanations.llm.c3_accuracy]);
-  }
+  const data = q.data!;
+  const f = data.final;
+  if (!f) return <Callout title="No evaluation results yet">Run <code className="font-mono">python -m evals.run</code> in backend/.</Callout>;
+  const meta = f.meta;
+  const llm = meta.llm.configured;
+  const readers = ["baseline", ...(llm ? ["llm"] : [])];
+  const splits = SPLITS.filter((s) => data[s]);
+  const ex = (s: string, r: string) => data[s]?.explanations?.[r];
 
   return (
     <>
       <PageHeader eyebrow="How well does ATHAR work?" title="Evaluation">
-        Measured on hand-written held-out cases that no component was tuned on, next to the development set and simple baselines.
-        Run {h.meta.ran_at} at commit <span className="font-mono text-[13px]">{h.meta.commit}</span>.
+        Measured, not claimed. The final set was written and committed before anything ran on it. Every percentage shows its count.
       </PageHeader>
+
       {!llm && (
-        <Callout tone="amber" title="No LLM results in this run">
-          No model credentials were configured, so only deterministic components and the rule-based reader were measured.
-          Nothing was simulated or replayed in their place. The same cases run through the LLM reader automatically once a key is set.
+        <Callout tone="amber" title="No live AI results in this run">
+          No model credentials were configured, so the AI reader was not measured. Its behaviour is unit-tested with mocked responses
+          (negation, abstention, fabricated quotes, timeouts, malformed output), but no accuracy is claimed for it. Nothing was simulated or replayed in its place.
         </Callout>
       )}
-      <Section title="Results" aside={`Held-out: ${h.code.n} programs · ${h.explanations.baseline.n} explanations · ${h.verifier.baseline.n} attempts · ${h.variants.n} items`}>
-        <table className="w-full text-[14px]">
-          <thead>
-            <tr className="text-left text-faint text-2xs uppercase tracking-[0.1em] border-b border-line">
-              <th className="font-medium py-2 w-[150px]">Suite</th><th className="font-medium py-2">Measure</th>
-              <th className="font-medium py-2 text-right w-[90px]">Dev</th><th className="font-medium py-2 text-right w-[110px]">Held-out</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-line">
-            {rows.map(([suite, label, d, v, kind]) => (
-              <tr key={label} className={kind === "baseline" ? "text-faint" : ""}>
-                <td className="py-2.5 text-muted">{suite}</td>
-                <td className="py-2.5">{label}</td>
-                <td className="py-2.5 text-right num text-muted">{pct(d)}</td>
-                <td className="py-2.5 text-right num font-medium">{pct(v)}</td>
+
+      <Section title="Reading written explanations" aside="Correct / total">
+        <div className="overflow-x-auto">
+          <table className="w-full text-[14px] min-w-[640px]">
+            <thead>
+              <tr className="text-left text-faint text-2xs uppercase tracking-[0.1em] border-b border-line">
+                <th className="font-medium py-2">Measure</th>
+                {splits.map((s) => readers.map((r) => <th key={s + r} className="font-medium py-2 text-right">{SPLIT_LABEL[s]}<br />{r === "llm" ? "AI reader" : "rule reader"}</th>))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-        {system && <p className="text-[13.5px] text-muted mt-4">System checks (approval gates, permissions, idempotent delivery, persistence, outage handling): <span className="text-ink">{system.summary}</span></p>}
+            </thead>
+            <tbody className="divide-y divide-line">
+              <tr>
+                <td className="py-2.5">Stopping-condition judgment (C3)</td>
+                {splits.map((s) => readers.map((r) => <td key={s + r} className="py-2.5 text-right"><Frac n={ex(s, r)?.c3_correct} d={ex(s, r)?.n} strong={s === "final"} /></td>))}
+              </tr>
+              <tr>
+                <td className="py-2.5">Misconception F1 <span className="text-faint text-[12.5px]">(tp / fp / fn)</span></td>
+                {splits.map((s) => readers.map((r) => {
+                  const mi = ex(s, r)?.misconceptions?.micro;
+                  return <td key={s + r} className="py-2.5 text-right num">{mi ? <><span className={s === "final" ? "text-ink font-medium" : "text-muted"}>{Math.round((mi.f1 ?? 0) * 100)}%</span><span className="text-faint text-[12px] ml-1.5">{mi.tp}/{mi.fp}/{mi.fn}</span></> : "—"}</td>;
+                }))}
+              </tr>
+              <tr className="text-faint">
+                <td className="py-2.5">Trivial baseline: always “met”</td>
+                {splits.map((s) => readers.map((r) => {
+                  const e = ex(s, "baseline");
+                  return <td key={s + r} className="py-2.5 text-right">{e ? <Frac n={Math.round(e.trivial_baseline_always_met_no_misconception.c3_accuracy * e.n)} d={e.n} /> : "—"}</td>;
+                }))}
+              </tr>
+              <tr>
+                <td className="py-2.5">Says “unclear” when evidence is thin</td>
+                {splits.map((s) => readers.map((r) => <td key={s + r} className="py-2.5 text-right num text-muted">{ex(s, r)?.abstains_when_evidence_is_insufficient != null ? `${Math.round(ex(s, r).abstains_when_evidence_is_insufficient * 100)}%` : "—"}</td>))}
+              </tr>
+              <tr>
+                <td className="py-2.5">Says “unclear” when it shouldn't</td>
+                {splits.map((s) => readers.map((r) => <td key={s + r} className="py-2.5 text-right num text-muted">{ex(s, r)?.wrongly_abstains_when_decidable != null ? `${Math.round(ex(s, r).wrongly_abstains_when_decidable * 100)}%` : "—"}</td>))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p className="text-[13px] text-faint mt-3 max-w-prose">
+          The development set is optimistic for the rule reader (its phrases were written from it). The held-out set informed the AI prompt design, so it is
+          not unseen for the AI reader. The final set is unseen for every component.
+        </p>
       </Section>
-      <div className="grid md:grid-cols-2 gap-x-12">
-        <Section title="What this shows">
-          <ul className="space-y-2.5 text-[14px] text-muted list-disc ml-4">
-            <li>Deterministic parts (sandboxed tests, probes, the validator) hold up on unseen code styles.</li>
-            <li>The rule-based reader falls apart on unfamiliar phrasing. That gap is why reading explanations is the job the LLM is meant to do, and why every reading needs your confirmation.</li>
-            <li>The verifier only says <em>demonstrated</em> when tests and reasoning agree, so its mistakes lean cautious.</li>
-          </ul>
+
+      <div className="grid lg:grid-cols-2 gap-x-12">
+        <Section title="Final set, by kind of answer" aside="Fully correct / total">
+          <table className="w-full text-[14px]">
+            <tbody className="divide-y divide-line">
+              {Object.entries(f.explanations.baseline.by_category as Record<string, { n: number; fully_correct: number }>).map(([cat, v]) => (
+                <tr key={cat}>
+                  <td className="py-2 capitalize">{cat.replaceAll("_", " ")}</td>
+                  {readers.map((r) => <td key={r} className="py-2 text-right"><Frac n={f.explanations[r]?.by_category?.[cat]?.fully_correct} d={v.n} /></td>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="text-[13px] text-faint mt-2">Columns: {readers.map((r) => (r === "llm" ? "AI reader" : "rule reader")).join(", ")}.</p>
         </Section>
-        <Section title={`Held-out misses (${h.code.failures.length + h.explanations.baseline.failures.length + h.verifier.baseline.failures.length + h.variants.failures.length})`}>
-          <ul className="space-y-1.5 text-[13px] text-muted max-h-72 overflow-y-auto pr-2">
-            {h.verifier.baseline.failures.map((f: R) => <li key={f.id}><span className="font-mono text-faint">{f.id}</span> verifier: expected {f.expected}, got {f.got}</li>)}
-            {h.code.failures.map((f: R) => <li key={f.id}><span className="font-mono text-faint">{f.id}</span> grading: expected {f.expected.join(", ") || "none"}, found {f.found.join(", ") || "none"}</li>)}
-            {h.explanations.baseline.failures.map((f: R) => <li key={f.id}><span className="font-mono text-faint">{f.id}</span> “{f.text}”</li>)}
-          </ul>
-          <p className="text-[12.5px] text-faint mt-3">Full case-by-case report: docs/EVALUATION.md</p>
+        <Section title="Does each student get the right help?" aside="Final set · correct action / total">
+          <table className="w-full text-[14px]">
+            <tbody className="divide-y divide-line">
+              {["none", ...readers].map((k) => (
+                <tr key={k}>
+                  <td className="py-2">{k === "none" ? "Tests only (no reading)" : k === "llm" ? "Tests + AI reading" : "Tests + rule reading"}</td>
+                  <td className="py-2 text-right"><Frac n={f.diagnosis?.[k]?.correct} d={f.diagnosis?.[k]?.n} strong /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="text-[13px] text-faint mt-2">An ablation: the same diagnosis rules with and without reading the explanation.</p>
         </Section>
       </div>
+
+      <Section title="Deterministic components" aside="Correct / total">
+        <table className="w-full text-[14px]">
+          <thead><tr className="text-left text-faint text-2xs uppercase tracking-[0.1em] border-b border-line"><th className="font-medium py-2">Measure</th>
+            {splits.map((s) => <th key={s} className="font-medium py-2 text-right">{SPLIT_LABEL[s]}</th>)}</tr></thead>
+          <tbody className="divide-y divide-line">
+            <tr><td className="py-2.5">Follow-up item validator</td>{splits.map((s) => <td key={s} className="py-2.5 text-right"><Frac n={data[s].variants.correct} d={data[s].variants.n} strong={s === "final"} /></td>)}</tr>
+            <tr><td className="py-2.5">Verifier outcome (rule reading)</td>{splits.map((s) => <td key={s} className="py-2.5 text-right"><Frac n={data[s].verifier.baseline.correct} d={data[s].verifier.baseline.n} strong={s === "final"} /></td>)}</tr>
+            <tr><td className="py-2.5">Code grading: base-case criterion</td>{splits.map((s) => <td key={s} className="py-2.5 text-right">{data[s].code ? <Frac n={Math.round(data[s].code.c2_judgment_accuracy * data[s].code.n)} d={data[s].code.n} /> : <span className="text-faint">—</span>}</td>)}</tr>
+            <tr><td className="py-2.5">Misconception flag: ATHAR probes</td>{splits.map((s) => <td key={s} className="py-2.5 text-right">{data[s].code ? <Frac n={Math.round(data[s].code.stopping_condition_flag_accuracy.probes * data[s].code.n)} d={data[s].code.n} /> : <span className="text-faint">—</span>}</td>)}</tr>
+            <tr className="text-faint"><td className="py-2.5">Misconception flag: “any failing test” baseline</td>{splits.map((s) => <td key={s} className="py-2.5 text-right">{data[s].code ? <Frac n={Math.round(data[s].code.stopping_condition_flag_accuracy.baseline_any_failing_test * data[s].code.n)} d={data[s].code.n} /> : "—"}</td>)}</tr>
+          </tbody>
+        </table>
+        {data.system && <p className="text-[14px] text-muted mt-4">Workflow safety checks (approval gates, permissions, idempotent delivery, outages, malformed and fabricated output, gated generation): <span className="text-ink">{data.system.summary}</span></p>}
+      </Section>
+
+      <div className="grid lg:grid-cols-[1.2fr_1fr] gap-x-12">
+        <Section title={`Final-set misses (${f.explanations.baseline.failures.length + f.verifier.baseline.failures.length + f.variants.failures.length})`} aside="Rule reader">
+          <ul className="space-y-1.5 text-[13px] text-muted max-h-80 overflow-y-auto pr-2">
+            {f.verifier.baseline.failures.map((x: R) => <li key={x.id}><span className="font-mono text-faint">{x.id}</span> verifier: expected {x.expected.replaceAll("_", " ")}, got {x.got.replaceAll("_", " ")}</li>)}
+            {f.explanations.baseline.failures.map((x: R) => <li key={x.id}><span className="font-mono text-faint">{x.id}</span> “{x.text}” <span className="text-faint">→ {x.c3_got}</span></li>)}
+          </ul>
+        </Section>
+        <Section title="What is AI, what is not">
+          <ul className="space-y-2 text-[13.5px]">
+            {CAPABILITIES.map(([what, who, how]) => (
+              <li key={what} className="grid grid-cols-[1fr_auto] gap-x-3">
+                <span className="text-ink">{what}<span className="block text-faint text-[12.5px]">{how}</span></span>
+                <Tag tone={who.startsWith("AI") ? "amber" : who === "Simulated" ? "slate" : "neutral"}>{who}</Tag>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      </div>
+
+      <Section title="Reproduce">
+        <div className={cx("grid sm:grid-cols-2 gap-x-10 gap-y-1 text-[13.5px] text-muted")}>
+          <span>Commit <span className="font-mono text-ink">{meta.commit}</span> · {meta.ran_at}</span>
+          <span>Reader prompt <span className="font-mono">{meta.reader_prompt_version}</span> · rules <span className="font-mono">{meta.baseline_version}</span> · verifier <span className="font-mono">{meta.verifier_version}</span></span>
+          <span>LLM: {llm ? `${meta.llm.provider}:${meta.llm.model}` : "not configured"} · timeout {meta.llm.timeout_seconds}s · max {meta.llm.max_calls} calls</span>
+          <span><span className="font-mono">cd backend && .venv/bin/python -m evals.run</span> → docs/EVALUATION.md</span>
+        </div>
+      </Section>
     </>
   );
 }

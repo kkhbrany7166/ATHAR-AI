@@ -240,9 +240,16 @@ def task_out(db: Session, t: m.InterventionTask) -> dict:
                          .order_by(m.Submission.attempt.desc()).limit(1))
     mine = []
     if orig_sub:
-        mine = [e.detail for e in db.scalars(select(m.MisconceptionEvidence).where(
-            m.MisconceptionEvidence.submission_id == orig_sub.id, m.MisconceptionEvidence.source == "tests",
-            m.MisconceptionEvidence.misconception_code == iv.misconception_code)).all()]
+        if iv.kind == "explain_reasoning":
+            mine = [f"“{e.quote}”" for e in db.scalars(select(m.MisconceptionEvidence).where(
+                m.MisconceptionEvidence.submission_id == orig_sub.id, m.MisconceptionEvidence.source.in_(("ai", "baseline")))).all()][:2]
+        elif iv.kind == "debugging":
+            mine = [f"{r.error_type}: {r.error_message[:80]}" for r in db.scalars(select(m.TestResult).where(
+                m.TestResult.submission_id == orig_sub.id, m.TestResult.status == "error")).all()][:1]
+        else:
+            mine = [e.detail for e in db.scalars(select(m.MisconceptionEvidence).where(
+                m.MisconceptionEvidence.submission_id == orig_sub.id, m.MisconceptionEvidence.source == "tests",
+                m.MisconceptionEvidence.misconception_code == iv.misconception_code)).all()]
     practice = db.scalars(select(m.PracticeAttempt).where(m.PracticeAttempt.task_id == t.id).order_by(m.PracticeAttempt.id)).all()
     msgs = db.scalars(select(m.AssistantMessage).where(m.AssistantMessage.task_id == t.id).order_by(m.AssistantMessage.id)).all()
     ver = db.scalars(select(m.Verification).where(m.Verification.task_id == t.id).order_by(m.Verification.id)).all()

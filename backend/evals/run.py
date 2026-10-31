@@ -320,7 +320,8 @@ def suite_variants(cases: list[dict]) -> dict:
 
 def suite_system() -> dict:
     """Workflow guarantees, exercised end-to-end through the API by the pytest suite."""
-    files = ["tests/test_interventions.py", "tests/test_api_gates.py", "tests/test_pipeline_and_insights.py"]
+    files = ["tests/test_interventions.py", "tests/test_api_gates.py", "tests/test_pipeline_and_insights.py",
+             "tests/test_llm_reader.py", "tests/test_planning.py", "tests/test_generation.py"]
     p = subprocess.run([sys.executable, "-m", "pytest", "-q", "-rf", *files], cwd=BACKEND, capture_output=True, text=True)
     tail = p.stdout.strip().splitlines()[-1] if p.stdout.strip() else p.stderr[-300:]
     failed = [ln.removeprefix("FAILED ") for ln in p.stdout.splitlines() if ln.startswith("FAILED ")]
