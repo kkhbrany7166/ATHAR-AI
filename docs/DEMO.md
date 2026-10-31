@@ -8,7 +8,7 @@
 
 | Time | Screen | Show | One line on screen or voice |
 |---|---|---|---|
-| 0:00 | Landing | "Behind every answer is a student." and the classroom moment | *Students wrote working code. Their explanations tell a different story.* |
+| 0:00 | Landing | "Behind every answer is a student." and the classroom moment | *Their code works. ATHAR flags the explanations a professor should read.* Say "flags for review": on this synthetic class about 20 of the flagged cases match the planted labels, and the rest are false or debatable flags (reader-v3 precision ≈ 0.44 here). |
 | 0:15 | Assignment 3 → Insights | "Believes recursion stops on its own": the count and the "working code, confused reasoning" figure | *The tests pass. The AI read 114 explanations, quoting each one word for word.* |
 | 0:30 | That insight → an example → **Open submission** | The "How the explanation was read" panel: summary, verbatim quotes, the AI tag | *Every claim links to the student's own words. AI suggests; it never grades alone.* |
 | 0:50 | **Who needs what** tab | Groups: concept gap, working code with confused reasoning, code that didn't run, demonstrated, no submission | *Different needs, different help. Syntax errors get debugging, not a lecture. Students who showed understanding get nothing extra.* |
