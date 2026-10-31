@@ -48,8 +48,13 @@ function findings(d: Detail) {
   else if (failing.length === 0 && heldCodes.length) conflict = "The code works, but the explanation suggests a different belief about why it stops. This is the case tests alone can't see.";
   else if (loadFailed && stopJudgment === "met") conflict = "The reasoning reads as correct; the failure is a code error unrelated to recursion.";
   // The reader may notice a code/explanation conflict and still tag the student; surface its own words, attributed.
-  if (!conflict && d.reading?.contradictions.length) conflict = `The ${who} reader also noted: ${d.reading.contradictions[0]} Check whether the reasoning is right and only the code is wrong.`;
-  return { code, reasoning, conflict, testCodes, ai, failing };
+  // Tests and reading pointing to the same misconception corroborate each other; that isn't a conflict.
+  const agree = testCodes.filter((c) => heldCodes.includes(c));
+  const agreement = !conflict && agree.length
+    ? `The tests and the ${who} reading point to the same gap: ${misconceptionLabel(agree[0]).toLowerCase()}. Two independent kinds of evidence agree, but it's still yours to confirm.`
+    : null;
+  if (!conflict && !agreement && d.reading?.contradictions.length) conflict = `The ${who} reader also noted: ${d.reading.contradictions[0]} Check whether the reasoning is right and only the code is wrong.`;
+  return { code, reasoning, conflict, agreement, testCodes, ai, failing };
 }
 
 export function SubmissionPage() {
@@ -101,6 +106,7 @@ export function SubmissionPage() {
           <li className="flex gap-3"><span className="pt-0.5 shrink-0"><EvidenceTag kind={f.ai ? "ai" : "rules"} /></span><span>{f.reasoning}</span></li>
         </ul>
         {f.conflict && <p className="mt-4 max-w-[70ch] border-l-2 border-amber pl-4 text-[16px] text-ink">{f.conflict}</p>}
+        {f.agreement && <p className="mt-4 max-w-[70ch] border-l-2 border-slate/70 pl-4 text-[16px] text-ink">{f.agreement}</p>}
       </section>
 
       <section className="grid lg:grid-cols-2 gap-x-10 gap-y-8 py-8 border-b border-line">
