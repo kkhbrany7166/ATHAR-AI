@@ -2,7 +2,7 @@
 
 > The storyboard and slide outline here are superseded by [STORY.md](STORY.md). The interview notes in §D still apply.
 
-Nothing here has been built or recorded yet. Numbers come from the current app (commit `f9348d5`) and the stored evaluation results.
+Nothing here has been built or recorded yet. Numbers come from the current app (commit `6436387`) and the stored evaluation results.
 
 ## A. Three-minute demo video: the real app, start to finish
 
@@ -41,11 +41,11 @@ Record at about 1360 px wide. Reset first with `reset-interventions` (free). Two
 |---|---|---|
 | Secrets in the working tree | ✅ `.env` git-ignored (mode 600); only `.env.example` tracked | Re-run the scan just before publishing |
 | Secrets in history | ✅ `git log --all -p` has 0 matches for key patterns | Same |
-| Large files in history | ⚠️ A 39 MB review ZIP and a 74-file package folder were committed in `a81646a` and untracked in `58226e1` / `f9348d5` | **Your decision:** publish a fresh single-commit history (orphan branch), or keep the history. Both are under GitHub's 100 MB limit, but clones are about 80 MB |
+| Large files in history | ✅ Removed before publishing (see `AUDIT.md` §7). The full history is backed up locally |
 | HADIR untouched | ✅ No changes; its last commit is Oct 30 | — |
 | Setup commands | ✅ README "Run it" | Add the free path for evaluators **without** a key (below) |
-| Evaluator without an API key | ⚠️ A fresh clone has no database. `reset --grade` without a key uses the rule reader, so the AI readings wouldn't appear | **Recommend:** commit a snapshot of the AI-graded synthetic class (no personal data, no keys), plus a `restore-snapshot` command, so judges see the stored AI evidence for free. Needs your OK |
-| Tests | ✅ 60 backend tests pass; `tsc` clean; `vite build` passes | List the counts in the README |
+| Evaluator without an API key | ✅ `athar.cli reset --replay` (recorded AI readings, labelled) |
+| Tests | ✅ 62 backend tests pass; `tsc` clean; `vite build` passes | List the counts in the README |
 | Evaluation reproducibility | ✅ `evals/report.py` rebuilds `EVALUATION.md` from stored results (free); `evals/run.py` re-runs live (costs money) | Say clearly in the README which one is free |
 | Frozen datasets | ✅ `FREEZE.json` hashes; final and final-2 untouched | — |
 | Evaluator guide | ⚠️ `docs/DEMO.md`, `JUDGING.md` and the review guide exist | Add a one-page `docs/EVALUATORS.md`: 5-minute path, what is live vs stored, costs |

@@ -315,7 +315,7 @@ On the synthetic class, the AI catches every planted *"recursion stops by itself
 | Item validator | 6/6 (final), 8/8 (held-out), 15/15 (dev) | Deterministic |
 | Code grading, held-out programs | Exact misconception set 18/20, base-case criterion 20/20 | Deterministic |
 | Live reliability | 752 logged calls, 0 provider failures, about 3–4 s each | Ledger: `backend/evals/results/spend.jsonl` |
-| Backend tests | **60 passed** | Sandbox, rules, reader validation with mocked models, API permission gates, workflow, conflict check, note check |
+| Backend tests | **62 passed** | Sandbox, rules, reader validation with mocked models, API permission gates, workflow, conflict check, note check, replay |
 
 The full report, with per-case failures, is in [docs/EVALUATION.md](docs/EVALUATION.md).
 

@@ -36,7 +36,7 @@ Deterministic parts on untouched data:
 - **Language:** paraphrase, negation (recorded as *rejected ideas*), code-switching, terse notation, and vague answers (the AI abstained on 4 of the class's 114 explanations, with reasons).
 - **Code and explanation disagreeing:** working code with confused reasoning is caught 7/7. Failing code with correct reasoning is a known weakness, flagged as a contradiction. Syntax errors go to *debugging*, never to a recursion misconception.
 - **Activities:** the AI-generated check for "no progress" was rejected by the validator in the live run, and it can't be approved. Intervention drafts can exist without a check, but approval is blocked until a validated one is chosen.
-- **Workflow:** duplicate drafts, approvals and executions are idempotent. All 60 backend tests pass.
+- **Workflow:** duplicate drafts, approvals and executions are idempotent. All 62 backend tests pass.
 - **AI-written notes:** a deterministic check (`interventions/note_check.py`) flags notes over 90 words, greetings, exclamation marks, lists, and reuse of the assignment's own functions. It never rewrites or truncates; approval is refused until the professor edits the note. Tested with a mocked over-long AI draft, with no paid call.
 
 ## 3. Evaluation and iteration

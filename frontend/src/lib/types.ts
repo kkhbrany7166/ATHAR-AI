@@ -11,7 +11,7 @@ export interface Health { status: string; llm: { provider: string; model: string
 export interface GradingRun {
   id: number; status: "queued" | "running" | "done" | "failed"; stage: string; total: number;
   tests_done: number; ai_done: number; ai_failed: number;
-  ai_status: "" | "used" | "baseline" | "unavailable" | "partial" | "failed" | "not_needed"; ai_provider: string;
+  ai_status: "" | "used" | "baseline" | "unavailable" | "partial" | "failed" | "not_needed" | "replayed"; ai_provider: string;
   error: string; started_at: string | null; finished_at: string | null;
 }
 

@@ -25,9 +25,9 @@ All ATHAR commits are dated Oct 31, 2026, between 08:05 and the audit, in a sepa
 | Evaluation discipline | `05f1070`, `827499a`, `88bbc0a`, `5a60100`, `6498ae8` | Held-out set, evaluation suite, **final** set written after freezing, freeze record with hashes, **final-2** written before reader-v3 |
 | LLM reader | `abc98f9`, `77826b3`, `7869292` | reader-v2 (stance, abstention, consistency checks), then reader-v3 chosen on dev (v3.1 rejected). Live runs on all splits |
 | Adaptive planning | `9e2ada6`, `c2096e1`, `47a24d5` | Diagnosis per student, three intervention kinds, AI-generated checks behind validation |
-| Honesty and design passes | `a255027` → `576e816` | "Flags for review" language, evidence kinds, review queue, signature submission screen, studio stepper, typography, clarity passes |
-| Safety after findings | `58226e1` | Conflict check (disputed AI claims → professor review), note check (≤ 90 words, approval blocked) |
-| Mentor feedback | `54ddbd0` | Local small-model feasibility study (desk research only) |
+| Honesty and design passes | `a255027` → `b492f5e` | "Flags for review" language, evidence kinds, review queue, signature submission screen, studio stepper, typography, clarity passes |
+| Safety after findings | `4bbb491` | Conflict check (disputed AI claims → professor review), note check (≤ 90 words, approval blocked) |
+| Mentor feedback | `1124d6e` | Local small-model feasibility study (desk research only) |
 
 ## 2. Product functionality
 
@@ -144,10 +144,10 @@ Deterministic results: item validator 6/6 (final), 8/8 (held-out), 15/15 (dev). 
 | Structure | `backend/`, `frontend/`, `docs/` (with `assets/`), README at the root |
 | README | Rewritten for judges and developers. Images use relative paths in `docs/assets/`, with charts in light and dark versions through `<picture>`. Mermaid diagrams render natively on GitHub |
 | Setup | Commands checked against the repository (`requirements.txt`, `package.json` scripts, `athar.cli`, `evals.run`) |
-| History | ⚠️ About 39 MB of review-package files are in history from `a81646a` (untracked later). Under GitHub's 100 MB limit, but they make clones larger. **Decision needed:** publish a squashed fresh history, or keep the full history as evidence of process. The full history is more convincing for the evaluation timeline |
+| History | ✅ Cleaned before publishing. `git filter-branch` removed only `athar-review-package.zip` and `athar-review-package/` (old local review copies) from history. Commits before `41c5798`, including every evaluation run and freeze commit, keep their original SHAs. The ten later commits got new SHAs, and their references in the docs were updated. The untouched full history is kept locally as a git bundle and the tag `local-backup-before-history-cleanup` (not pushed). The largest published object is 0.3 MB |
 | Licence | ❌ None. **Decision needed** (MIT is common for hackathons) |
 | Private files | `.env`, `backend/data/`, `review-package/`, `athar-review-package*`, `node_modules/`, `.venv/` are all ignored |
-| A judge without a key | A fresh clone has no database, and `reset --grade` without a key uses the rule reader, so a judge wouldn't see the stored AI readings. **Recommended:** commit a snapshot of the AI-graded synthetic database plus a restore command (needs your approval) |
+| A judge without a key | ✅ `athar.cli reset --replay` seeds the synthetic class, runs the real tests and replays the 114 recorded reader-v3 outputs (`backend/athar/seed/recorded_readings.json`), labelled *recorded, replayed*. Checked to reproduce the live run's evidence row for row; covered by `tests/test_replay.py` |
 
 ## 8. Judging readiness
 
@@ -157,7 +157,7 @@ Deterministic results: item validator 6/6 (final), 8/8 (held-out), 15/15 (dev). 
 | **2. Robustness and adaptation** | Seven-group routing; abstention; conflict check; validator rejecting an AI check; 752 calls with 0 failures; mocked failure tests | Different needs → different actions, and disputed evidence → human | Run-to-run variance; real-world text unseen | `planning.py`, `disputes.py`, the review queue, tests |
 | **3. Evaluation and iteration** | Four splits, freeze hashes, baselines, ablation, v3.1 rejected, failures per case | Discipline: sets written and frozen before runs, honest reporting of dev vs untouched | One annotator, small n, single runs | `FREEZE.json`, `git log -- backend/evals/datasets`, `EVALUATION.md` |
 | **4. Technical judgment and creativity** | LLM only for language; sandbox for facts; quote verification; approval gate; independent check after assisted practice; conflict check without retuning | Separating assistance from evidence | Local-model privacy path untested | `ARCHITECTURE.md` design decisions, README §6–§9 |
-| **5. Engineering quality** | 60 tests, type-check, build, idempotency, state machine, audit events, cost controls | Tests can never call a live model; permission gates tested | Prototype sandbox and auth; SQLite | `backend/tests/`, `provider.py`, `sandbox.py` |
+| **5. Engineering quality** | 62 tests, type-check, build, idempotency, state machine, audit events, cost controls | Tests can never call a live model; permission gates tested | Prototype sandbox and auth; SQLite | `backend/tests/`, `provider.py`, `sandbox.py` |
 | **6. Communication** | README, walkthrough, honest labels in the UI (synthetic, simulated, AI suggestion) | Every AI output labelled; limitations stated first | Video and slides not yet made | README, the app itself |
 
 **Prioritised blockers**
@@ -168,7 +168,7 @@ Deterministic results: item validator 6/6 (final), 8/8 (held-out), 15/15 (dev). 
 5. Submit with the correct challenge before 8:00 PM Saudi time.
 
 **Optional improvements, if time allows**
-1. Database snapshot so judges see AI evidence without a key.
+1. ~~Database snapshot so judges see AI evidence without a key.~~ Done as the replay mode (`reset --replay`).
 2. `docs/EVALUATORS.md`, a five-minute path.
 3. Local-model measurement on the frozen sets (free in API cost, about 1–2 h compute plus a download).
 
@@ -176,7 +176,7 @@ Deterministic results: item validator 6/6 (final), 8/8 (held-out), 15/15 (dev). 
 
 | Check | Result |
 |---|---|
-| Backend tests | `pytest -q`: **60 passed** |
+| Backend tests | `pytest -q`: **62 passed** |
 | Frontend | `tsc -b --noEmit` clean; `vite build` succeeds |
 | README and docs links, image and chart paths | All relative links resolve (scripted check); both Mermaid diagrams render (mermaid 10.9) |
 | Secrets in history | `git log --all -p` key-pattern matches: **0**. No `.env` or `.db` tracked |
