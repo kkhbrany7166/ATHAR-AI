@@ -3,14 +3,29 @@
   "configurations": [
     {
       "name": "athar-api",
-      "runtimeExecutable": "/Users/khalidkh/Documents/athar/backend/.venv/bin/uvicorn",
-      "runtimeArgs": ["athar.main:app", "--app-dir", "/Users/khalidkh/Documents/athar/backend", "--host", "127.0.0.1", "--port", "8710"],
+      "runtimeExecutable": "/usr/bin/env",
+      "runtimeArgs": [
+        "ATHAR_LLM_MAX_COST_USD=0.15",
+        "/Users/khalidkh/Documents/athar/backend/.venv/bin/uvicorn",
+        "athar.main:app",
+        "--app-dir",
+        "/Users/khalidkh/Documents/athar/backend",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8710"
+      ],
       "port": 8710
     },
     {
       "name": "athar-web",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "/Users/khalidkh/Documents/athar/frontend", "run", "dev"],
+      "runtimeArgs": [
+        "--prefix",
+        "/Users/khalidkh/Documents/athar/frontend",
+        "run",
+        "dev"
+      ],
       "port": 5710
     }
   ]

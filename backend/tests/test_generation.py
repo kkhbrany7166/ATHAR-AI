@@ -90,3 +90,17 @@ def test_generation_failures_are_explicit(client, db, world, rule_baseline):
     bad = _gen(client, prof, iv).json()["item"]
     client.patch(f"/api/professor/interventions/{iv['id']}", json={"followup_item_id": bad["id"]}, headers=prof)
     assert client.post(f"/api/professor/interventions/{iv['id']}/approve", headers=prof).status_code == 422
+
+
+def test_concept_draft_without_any_item_can_exist_but_never_be_approved(client, db, world, rule_baseline):
+    """MC-NO-PROGRESS has no item in the bank: drafting works, approval is blocked, generation is the way forward."""
+    start_run(db, world["assignment_id"], None, background=False)
+    prof = login(client, world["professor_id"])
+    plan = client.get(f"/api/professor/assignments/{world['assignment_id']}/plan", headers=prof).json()
+    g = next(x for x in plan["groups"] if x["misconception_code"] == "MC-NO-PROGRESS")
+    iv = client.post(f"/api/professor/assignments/{world['assignment_id']}/plan/draft",
+                     json={"category": "concept_gap", "misconception_code": "MC-NO-PROGRESS", "student_ids": [s["student_id"] for s in g["students"]]},
+                     headers=prof).json()
+    assert iv["status"] == "draft" and iv["followup_item"] is None
+    r = client.post(f"/api/professor/interventions/{iv['id']}/approve", headers=prof)
+    assert r.status_code == 422 and "no validated follow-up" in r.json()["detail"]

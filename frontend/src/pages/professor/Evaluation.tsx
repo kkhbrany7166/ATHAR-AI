@@ -100,6 +100,8 @@ export function EvaluationPage() {
         </p>
       </Section>
 
+      {data.final2 && <Final2 f2={data.final2} />}
+
       <div className="grid lg:grid-cols-2 gap-x-12">
         <Section title="Final set, by kind of answer" aside="Fully correct / total">
           <table className="w-full text-[14px]">
@@ -112,7 +114,10 @@ export function EvaluationPage() {
               ))}
             </tbody>
           </table>
-          <p className="text-[13px] text-faint mt-2">Columns: {readers.map((r) => (r === "llm" ? "AI reader" : "rule reader")).join(", ")}.</p>
+          <p className="text-[13px] text-faint mt-2">
+            Columns: {readers.map((r) => (r === "llm" ? "AI reader" : "rule reader")).join(", ")}. Fully correct needs the exact C3 judgment too.
+            {llm && <> The AI's misses on correct paraphrases and negations are “partial” instead of “met”. On negation it attributed no false misconception in {f.explanations.llm.negation.no_false_misconception}/{f.explanations.llm.negation.n} cases.</>}
+          </p>
         </Section>
         <Section title="Does each student get the right help?" aside="Final set · correct action / total">
           <table className="w-full text-[14px]">
@@ -136,6 +141,7 @@ export function EvaluationPage() {
           <tbody className="divide-y divide-line">
             <tr><td className="py-2.5">Follow-up item validator</td>{splits.map((s) => <td key={s} className="py-2.5 text-right"><Frac n={data[s].variants.correct} d={data[s].variants.n} strong={s === "final"} /></td>)}</tr>
             <tr><td className="py-2.5">Verifier outcome (rule reading)</td>{splits.map((s) => <td key={s} className="py-2.5 text-right"><Frac n={data[s].verifier.baseline.correct} d={data[s].verifier.baseline.n} strong={s === "final"} /></td>)}</tr>
+            {llm && <tr><td className="py-2.5">Verifier outcome (AI reading)</td>{splits.map((s) => <td key={s} className="py-2.5 text-right"><Frac n={data[s].verifier.llm?.correct} d={data[s].verifier.llm?.n} strong={s === "final"} /></td>)}</tr>}
             <tr><td className="py-2.5">Code grading: base-case criterion</td>{splits.map((s) => <td key={s} className="py-2.5 text-right">{data[s].code ? <Frac n={Math.round(data[s].code.c2_judgment_accuracy * data[s].code.n)} d={data[s].code.n} /> : <span className="text-faint">—</span>}</td>)}</tr>
             <tr><td className="py-2.5">Misconception flag: ATHAR probes</td>{splits.map((s) => <td key={s} className="py-2.5 text-right">{data[s].code ? <Frac n={Math.round(data[s].code.stopping_condition_flag_accuracy.probes * data[s].code.n)} d={data[s].code.n} /> : <span className="text-faint">—</span>}</td>)}</tr>
             <tr className="text-faint"><td className="py-2.5">Misconception flag: “any failing test” baseline</td>{splits.map((s) => <td key={s} className="py-2.5 text-right">{data[s].code ? <Frac n={Math.round(data[s].code.stopping_condition_flag_accuracy.baseline_any_failing_test * data[s].code.n)} d={data[s].code.n} /> : "—"}</td>)}</tr>
@@ -169,8 +175,44 @@ export function EvaluationPage() {
           <span>Reader prompt <span className="font-mono">{meta.reader_prompt_version}</span> · rules <span className="font-mono">{meta.baseline_version}</span> · verifier <span className="font-mono">{meta.verifier_version}</span></span>
           <span>LLM: {llm ? `${meta.llm.provider}:${meta.llm.model}` : "not configured"} · timeout {meta.llm.timeout_seconds}s · max {meta.llm.max_calls} calls</span>
           <span><span className="font-mono">cd backend && .venv/bin/python -m evals.run</span> → docs/EVALUATION.md</span>
+          {data.spend?.length > 0 && <span>Live inference so far: {data.spend.reduce((a: number, r: R) => a + r.calls, 0)} calls, {data.spend.reduce((a: number, r: R) => a + (r.failures ?? 0), 0)} failed ·
+            ≈ ${data.spend.reduce((a: number, r: R) => a + r.estimated_cost_usd, 0).toFixed(2)} estimated</span>}
         </div>
       </Section>
     </>
+  );
+}
+
+function Final2({ f2 }: { f2: R }) {
+  const rows = Object.entries(f2.readers as Record<string, R>).filter(([, v]) => v.n);
+  const label: Record<string, string> = { rules: "Rule reader", "reader-v2": "AI reader v2", "reader-v3": "AI reader v3 (default)", "reader-v3-blind": "AI v3, explanation only (ablation)" };
+  return (
+    <Section title="Code and explanation together" aside="Final-2 · 24 untouched cases · correct / total">
+      <div className="overflow-x-auto">
+        <table className="w-full text-[14px] min-w-[640px]">
+          <thead><tr className="text-left text-faint text-2xs uppercase tracking-[0.1em] border-b border-line">
+            <th className="font-medium py-2">Reader</th><th className="font-medium py-2 text-right">Misconception F1</th>
+            <th className="font-medium py-2 text-right">Working code, confused reasoning</th><th className="font-medium py-2 text-right">Right kind of help</th>
+            <th className="font-medium py-2 text-right">C3 judgment</th></tr></thead>
+          <tbody className="divide-y divide-line">
+            {rows.map(([k, v]) => (
+              <tr key={k} className={k === "rules" ? "text-faint" : ""}>
+                <td className="py-2.5">{label[k] ?? k}</td>
+                <td className="py-2.5 text-right num">{Math.round(v.misconceptions.micro.f1 * 100)}%<span className="text-faint text-[12px] ml-1.5">{v.misconceptions.micro.tp}/{v.misconceptions.micro.fp}/{v.misconceptions.micro.fn}</span></td>
+                <td className="py-2.5 text-right"><Frac n={v.working_code_confused_reasoning.caught} d={v.working_code_confused_reasoning.n} strong={k !== "rules"} /></td>
+                <td className="py-2.5 text-right"><Frac n={v.category_correct} d={v.n} /></td>
+                <td className="py-2.5 text-right"><Frac n={v.c3_correct} d={v.n} /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-[13px] text-faint mt-3 max-w-prose">
+        The AI reader catches confused reasoning behind working code that rules miss. Its main weakness is calibration: it calls most correct
+        explanations “partial”, so ATHAR under-certifies understanding and sends those students a short explain-your-reasoning task instead.
+        That errs on the side of caution, not harm. The explanation-only ablation was prompted partly by one case in this set, so it is
+        reported as an ablation, not as a clean result.
+      </p>
+    </Section>
   );
 }

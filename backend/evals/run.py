@@ -376,11 +376,17 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--split", choices=["dev", "heldout", "final", "all"], default="all")
     ap.add_argument("--no-system", action="store_true")
+    ap.add_argument("--final2-merge", action="store_true")
     ap.add_argument("--final2", default="", help="comma-separated readers to run on final-2, e.g. rules,reader-v2,reader-v3")
     args = ap.parse_args()
     provider = get_provider()
     if args.final2:
         r = run_final2(args.final2.split(","))
+        prev = ROOT / "results" / "final2.json"
+        if prev.exists() and args.final2_merge:  # keep earlier readers' results, add the new ones
+            old = json.loads(prev.read_text())
+            r["readers"] = {**old.get("readers", {}), **r["readers"]}
+            r["earlier_runs"] = old.get("earlier_runs", []) + [{"meta": old.get("meta"), "readers": list(old.get("readers", {})), "llm_usage": old.get("llm_usage")}]
         r["meta"] = {"ran_at": time.strftime("%Y-%m-%d %H:%M:%S %z"), "commit": git_rev(), "llm": provider_status()}
         (ROOT / "results" / "final2.json").write_text(json.dumps(r, indent=2, ensure_ascii=False))
         if r.get("llm_usage"):
@@ -427,15 +433,18 @@ def suite_final2(cases: list[dict], reader: str, provider) -> dict:
     specs = [TestSpec(t.id, t.function, t.args, t.expected) for t in A3_TESTS]
     crit = [SimpleNamespace(id=i + 1, code=c["code"], method=c["method"]) for i, c in enumerate(content.CRITERIA)]
     c3c = next(c for c in crit if c.code == "C3")
+    blind = reader.endswith("-blind")  # ablation: the reader sees only the explanation, not code or tests
     if reader != "rules":
-        llm_expl.PROMPT_VERSION = reader
+        llm_expl.PROMPT_VERSION = reader.removesuffix("-blind")
     preds, c3, cats, outputs, q_ret, q_kept, errors = {}, {}, {}, [], 0, 0, 0
 
     def one(c):
         rep = run_tests(c["code"], specs)
         summary = "\n".join(f"- {A3_TESTS[o.id].name}: {o.status} {o.error_type}" for o in rep.outcomes)
         try:
-            a = rule_baseline.analyze(c["explanation"], EXPL_CRITERIA) if reader == "rules" else _read("llm", provider, c["explanation"], code=c["code"], test_summary=summary)
+            a = (rule_baseline.analyze(c["explanation"], EXPL_CRITERIA) if reader == "rules" else
+                 _read("llm", provider, c["explanation"]) if blind else
+                 _read("llm", provider, c["explanation"], code=c["code"], test_summary=summary))
             return c, rep, a, None
         except Exception as e:  # noqa: BLE001
             return c, rep, None, e

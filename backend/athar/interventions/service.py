@@ -199,9 +199,9 @@ def draft_for_group(db: Session, assignment: m.Assignment, kind: str, misconcept
     if kind == "concept_practice":
         if mc is None:
             raise InterventionError("A concept intervention needs a misconception.", 422)
+        # A draft may exist without a follow-up check (e.g. no item in the bank yet): the professor can generate one,
+        # and approval stays blocked until a *validated* check is selected.
         practice, followup = _pick(items, "practice", mc.code), _pick(items, "followup", mc.code)
-        if followup is None:
-            raise InterventionError(f"No validated follow-up check exists for {mc.code} yet. Add one to the item bank, or generate one with AI.", 422)
     elif kind == "debugging":
         followup = next((i for i in items if i.role == "debug" and i.validation.get("valid")), None)
         if followup is None:
@@ -255,7 +255,7 @@ def approve_and_execute(db: Session, iv: m.Intervention, user: m.User) -> m.Inte
     if iv.status == "draft":
         item = db.get(m.AssessmentItem, iv.followup_item_id) if iv.followup_item_id else None
         if iv.kind != "explain_reasoning" and (item is None or not item.validation.get("valid")):
-            raise InterventionError("The follow-up check has not passed validation, so it cannot be approved.", 422)
+            raise InterventionError("There is no validated follow-up check yet, so this cannot be approved. Choose one from the item bank or generate one.", 422)
         if not iv.target_student_ids:
             raise InterventionError("Choose at least one student.", 422)
         transition(iv, "approved")

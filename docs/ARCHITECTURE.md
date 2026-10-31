@@ -166,3 +166,17 @@ explanation ─► reader (LLM reader-v2 │ rules-v1 │ none) ─► validated
 **Why some cases are escalated rather than classified.** An explanation like "it works" or "Recursion." supports no judgment. The reader is allowed, and asked, to abstain. The diagnosis then reports *reasoning unconfirmed*, and the verifier reports *insufficient evidence*, both marked for professor review. A confident wrong label would send a student the wrong help.
 
 **Why no multi-agent framework.** The workflow is a state machine with a few focused model calls. Extra agents would add failure modes without adding evidence, and the evaluation gives no reason to add them.
+
+## Live AI results and what they changed (Oct 31, gpt-4.1-mini)
+
+- **reader-v2 on the untouched final set:** misconception F1 0.93 vs the rule reader's 0.12. Every quote was verbatim (101/101).
+  Its weakness: correct explanations judged *partial* (14/14).
+- **On the synthetic class (development data), v2 missed 13 of 20 "stops on its own" explanations when the code passed.**
+  reader-v3 adds rules written from those misses: any sentence stating the misconception counts, and passing tests never soften the
+  reading. That raised recall to 19/20, at the cost of more false flags. v3.1 tried to win back precision, was worse, and was rejected.
+- **final-2** (written before v3, code and explanation together): v3 catches working code with confused reasoning 7/7 (rules 2/7).
+  C3 calibration is still the weakness.
+- **Context ablation:** reading the explanation without the code improved C3 and the chosen action. A *blind reader*, with a
+  deterministic layer combining its reading with the tests, is the top next step. It needs validation on a fresh set before it can be the default.
+- **Run-to-run variation:** the same v3 prompt flagged 39 and 45 students on two runs over the same data. That is one more reason
+  machine readings stay suggestions that a professor confirms, and why outcomes require tests and reading to agree.

@@ -1,21 +1,29 @@
-# Three-minute demo path
+# Three-minute demo: "A student submits working code. But do they understand why it works?"
 
-Reset first: `cd backend && .venv/bin/python -m athar.cli reset --grade`, then open http://localhost:5710.
-Without an API key the explanations are read by the rule reader, and every screen says so. Say it out loud too.
+**Before recording**
+- Run `cd backend && .venv/bin/python -m athar.cli reset-interventions`. It's free and keeps the live AI grading of the class.
+- A full re-grade (`reset --grade`) makes about 114 live calls (≈ $0.22). Only run it if the class data was lost.
+- Use a browser window about 1360 px wide at 100–110% zoom, so the text is readable in the video.
+- Every person is fictional. Keep the "Synthetic" tags visible.
 
-| Time | Screen | What to show | What to say |
+| Time | Screen | Show | One line on screen or voice |
 |---|---|---|---|
-| 0:00 | Landing | Headline, "A moment in the classroom" | Behind every answer is a student. This finding is computed from the class's (synthetic) work. |
-| 0:15 | Professor → Assignment 3 → Insights | The smallest-input insight: quotes, test comparison, evidence that disagrees | Grades hide this: most of this code passes typical tests. Every number links to student work. |
-| 0:40 | **Who needs what** tab | Groups: concept gap, working code with confused reasoning, syntax errors, demonstrated | Different difficulties get different help. Syntax errors get a debugging exercise, not a recursion lecture. Students who demonstrated it get nothing extra. |
-| 1:00 | Draft for the concept group → intervention draft | Editable text, "Show solutions and tests", "Generate a new check with AI" | The follow-up check is validated in the sandbox: correct code passes, and code with the misconception fails. AI proposals face the same gate. |
-| 1:20 | Approve and send | Status rail → *Delivered* | Nothing reached students before this. Approving twice changes nothing. |
-| 1:35 | Sara → Picked for you | Her own earlier error, think first, a practice run, a hint | Help is part of practice and is never held against her. |
-| 2:10 | Sara → Show what you can do | Submit the solution below → result card | Demonstrated *on this task*, with caveats: unsupervised, one task. |
-| 2:25 | Layla → Intervention → Simulate classmates | Outcome counts, per-student before and after, next steps | Outcomes come from explicit rules. Classmates are simulated and labelled. |
-| 2:45 | Evaluation | Final-set table and the ablation | Measured, with counts. The rule reader fails on paraphrase, which is exactly the job for the AI reader. We report it rather than hide it. |
+| 0:00 | Landing | "Behind every answer is a student." and the classroom moment | *Students wrote working code. Their explanations tell a different story.* |
+| 0:15 | Assignment 3 → Insights | "Believes recursion stops on its own": the count and the "working code, confused reasoning" figure | *The tests pass. The AI read 114 explanations, quoting each one word for word.* |
+| 0:30 | That insight → an example → **Open submission** | The "How the explanation was read" panel: summary, verbatim quotes, the AI tag | *Every claim links to the student's own words. AI suggests; it never grades alone.* |
+| 0:50 | **Who needs what** tab | Groups: concept gap, working code with confused reasoning, code that didn't run, demonstrated, no submission | *Different needs, different help. Syntax errors get debugging, not a lecture. Students who showed understanding get nothing extra.* |
+| 1:10 | Draft the concept group → **Show solutions and tests** | The validated check: correct code passes, misconception code fails | *The new check is proven to separate understanding from the misconception before any student sees it.* |
+| 1:25 | **Approve and send** | The status rail → *Delivered*, 16 tasks | *Nothing reaches students until the professor approves.* |
+| 1:35 | Sara → *Picked for you* | Her own earlier error, think first, a failing practice run, a hint | *Help is part of practice and is never held against her.* |
+| 2:10 | Sara → *Show what you can do* | Submit the solution below → *You showed it on this task* | *Tests run in a sandbox, AI reads the reasoning, and rules decide. With caveats: one task, unsupervised.* |
+| 2:25 | Layla → the intervention | Sara verified, before and after, next steps | *The professor sees new evidence, not a claim.* |
+| 2:40 | **Evaluation** | Final-set table (AI 0.93 vs rules 0.12 F1), final-2 "working code, confused reasoning 7/7 vs 2/7", the weaknesses paragraph | *Measured on cases nothing was tuned on, including where it's still weak.* |
 
-Sara's follow-up:
+**Optional cuts** if there's time, otherwise use them in the slides:
+- **Abstention:** submission 29 (Tariq), where the AI declines to judge a one-line answer.
+- **Rejected AI check:** draft the "no progress" group, then *Generate a new check with AI*. The validator rejects it.
+
+**Sara's follow-up**
 
 ```python
 def repeat_text(s, n):
@@ -24,6 +32,6 @@ def repeat_text(s, n):
     return s + repeat_text(s, n - 1)
 ```
 
-*"It stops when n is 0 and returns an empty string, because repeating something zero times gives nothing. Each call lowers n by one, so it always reaches 0."*
+*"It stops when n is 0 and returns an empty string, because repeating something zero times gives nothing. Each call lowers n by one, so for any n >= 0 it always reaches 0. So repeat_text("ab", 0) is ""."*
 
-If a key is configured, also show a submission's **How the explanation was read** panel: the summary, rejected ideas, abstention, and what validation removed.
+Sara's submission makes one live call (≈ $0.002). The model's reading can vary between runs. In rehearsal this explanation was judged *met* and Sara reached *demonstrated*.

@@ -1,14 +1,15 @@
 {
   "meta": {
-    "commit": "cc7085f",
-    "ran_at": "2026-10-31 09:11:22 +0300",
+    "commit": "5a60100",
+    "ran_at": "2026-10-31 09:27:07 +0300",
     "llm": {
-      "provider": "none",
-      "model": "",
-      "configured": false,
+      "provider": "openai",
+      "model": "gpt-4.1-mini",
+      "configured": true,
       "analyzer": "auto",
       "timeout_seconds": 45.0,
-      "max_calls": 400
+      "max_calls": 400,
+      "max_cost_usd": 0.4
     },
     "baseline_version": "rules-v1",
     "reader_prompt_version": "reader-v2",
@@ -16,7 +17,7 @@
     "python": "3.12.2"
   },
   "command": "pytest -q tests/test_interventions.py tests/test_api_gates.py tests/test_pipeline_and_insights.py tests/test_llm_reader.py tests/test_planning.py tests/test_generation.py",
-  "summary": "44 passed in 49.17s",
+  "summary": "45 passed in 52.95s",
   "ok": true,
   "failed": []
 }

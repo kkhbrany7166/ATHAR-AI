@@ -54,6 +54,41 @@ Cost is estimated from token counts at assumed list prices [0.4, 1.6] USD per 1M
 | off target | 2/2 (100%) | 2/2 (100%) |
 | smallest belief | 1/7 (14%) | 7/7 (100%) |
 
+## Final-2: code and explanation together (24 untouched cases)
+
+Hand-written after reader-v2 results were seen and before reader-v3 existed; committed before any run. Untouched for every reader version reported. reader-v3 was chosen as the default on development evidence before this set was run. `reader-v3-blind` is a context ablation (the reader sees only the explanation). It was prompted partly by one final-2 case, so treat it as an ablation, not a clean generalisation result.
+
+| Reader | Misconception F1 (tp/fp/fn) | Working code, confused reasoning caught | C3 judgment | Right kind of help | Quotes verbatim |
+|---|---|---|---|---|---|
+| rules | 43% (3/2/6) | 2/7 (29%) | 12/24 (50%) | 14/24 (58%) | — |
+| reader-v2 | 80% (8/3/1) | 7/7 (100%) | 11/24 (46%) | 16/24 (67%) | 96/98 (98%) |
+| reader-v3 | 82% (9/4/0) | 7/7 (100%) | 12/24 (50%) | 15/24 (62%) | 92/92 (100%) |
+| reader-v3-blind | 82% (9/4/0) | 7/7 (100%) | 14/24 (58%) | 17/24 (71%) | 80/80 (100%) |
+
+C3 errors by reader (expected → got × count):
+
+- rules: met→not_met ×2, met→unclear ×2, not_met→met ×1, not_met→unclear ×6, unclear→met ×1
+- reader-v2: met→not_met ×2, met→partial ×8, not_met→partial ×1, unclear→not_met ×1, unclear→partial ×1
+- reader-v3: met→not_met ×3, met→partial ×7, unclear→not_met ×1, unclear→partial ×1
+- reader-v3-blind: met→not_met ×1, met→partial ×7, met→unclear ×1, unclear→not_met ×1
+
+## Live inference spend (all runs)
+
+| When | What | Calls (failed) | Tokens in / out | Est. USD |
+|---|---|---|---|---|
+| 2026-10-31 09:27 | final | 58 (0) | 105,744 / 23,897 | 0.0805 |
+| 2026-10-31 09:29 | heldout | 43 (0) | 77,048 / 17,273 | 0.0585 |
+| 2026-10-31 09:30 | dev | 123 (0) | 229,350 / 68,256 | 0.2009 |
+| 2026-10-31 09:33 | classroom-regrade | 114 (0) | 240,603 / 68,757 | 0.2063 |
+| 2026-10-31 09:37 | classroom-regrade-v3 | 114 (0) | 274,119 / 70,532 | 0.2225 |
+| 2026-10-31 09:39 | classroom-regrade-v3.1 | 114 (0) | 295,551 / 70,672 | 0.2313 |
+| 2026-10-31 09:40 | final2 | 48 (0) | 102,074 / 22,071 | 0.0761 |
+| 2026-10-31 09:42 | classroom-regrade-v3-final | 114 (0) | 274,119 / 71,486 | 0.224 |
+| 2026-10-31 09:47 | final2 | 24 (0) | 49,723 / 10,512 | 0.0367 |
+| | **total** | 752 | | **1.337** |
+
+Not in the ledger: one connectivity test call (≈ $0.002) and a few interactive calls during browser testing, capped at $0.15 for the API server.
+
 ## Planning: does each student get the right kind of help?
 
 Sandbox → probes → explanation reading → fixed diagnosis rules (`interventions/planning.py`). The *no reader* column is the ablation: what the rules decide from code and tests alone.
@@ -77,6 +112,12 @@ Sandbox → probes → explanation reading → fixed diagnosis rules (`intervent
 | Code grading (heldout): C2 judgment / exact misconception set |  | 100% / 90% of 20 |  |
 
 Stopping-condition flag on held-out code (20 programs): ATHAR probes 90% vs “any failing test” baseline 80%.
+
+## Workflow safety
+
+`pytest -q tests/test_interventions.py tests/test_api_gates.py tests/test_pipeline_and_insights.py tests/test_llm_reader.py tests/test_planning.py tests/test_generation.py` → **45 passed in 52.95s**
+
+Covers approval gates, role and ownership checks, idempotent drafting and delivery, persistence across requests, LLM outage, malformed and fabricated output, budget limits, and gated generation of new checks.
 
 ## Failures, case by case (final set)
 

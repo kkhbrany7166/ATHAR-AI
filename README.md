@@ -14,7 +14,11 @@ makes every consequential decision. Students do the learning.
 ### Enabling live AI
 Put one line in `backend/.env` (git-ignored), then run `chmod 600 backend/.env` and restart the API:
 `ANTHROPIC_API_KEY=...` (model `claude-opus-5-5` by default; override with `ATHAR_ANTHROPIC_MODEL`) **or** `OPENAI_API_KEY=...`.
-Optional: `ATHAR_LLM_TIMEOUT` (default 45 s) and `ATHAR_LLM_MAX_CALLS` (default 400 per process). Re-run `python -m evals.run` to measure the AI reader.
+Optional: `ATHAR_LLM_TIMEOUT` (default 45 s), `ATHAR_LLM_MAX_CALLS` (default 400 per process), `ATHAR_LLM_MAX_COST_USD`
+(default 1.00 per process, estimated from tokens) and `ATHAR_READER_PROMPT` (default `reader-v3`).
+
+**Costs with gpt-4.1-mini:** grading the 114-student class is about 114 calls (≈ $0.22). `evals.run --split final` is about 58 calls (≈ $0.08).
+`athar.cli reset-interventions` returns the demo to "insights ready" for free. Every live run is appended to `backend/evals/results/spend.jsonl`.
 
 ## The journey that works end to end
 
@@ -48,7 +52,8 @@ Optional: `ATHAR_LLM_TIMEOUT` (default 45 s) and `ATHAR_LLM_MAX_CALLS` (default 
 | Students, courses, submissions | **Synthetic**, labelled in the database and the UI |
 | Classmates' follow-up attempts | **Simulated** on demand ("Simulate synthetic classmates"), sent through the real submission and verification path, and labelled *Simulated attempt* |
 | LLM evaluation numbers | **Not run in this repository's committed results.** No credentials were available, and nothing was simulated or replayed in their place |
-| Not built yet | Material upload and retrieval, voice, LMS integration, real authentication. Live LLM accuracy has **not** been measured: no credentials were available |
+| Live AI evaluation | **Measured** with `gpt-4.1-mini` on untouched sets: misconception F1 0.93 vs rules 0.12 (final, n=36); working code with confused reasoning caught 7/7 vs 2/7 (final-2, n=24). Known weakness: the stopping-condition judgment overuses "partial". See docs/EVALUATION.md |
+| Not built yet | Material upload and retrieval, voice, LMS integration, real authentication |
 
 Machine readings (AI or rules) never publish a grade. A professor must confirm them.
 

@@ -4,6 +4,7 @@
     .venv/bin/python -m athar.cli reset --grade    # ...and run grading synchronously
     .venv/bin/python -m athar.cli grade            # (re)run grading for the demo assignment
     .venv/bin/python -m athar.cli eval             # compare detected misconceptions with planted labels
+    .venv/bin/python -m athar.cli reset-interventions   # back to "insights ready", keeping the AI grading (free)
 """
 
 from __future__ import annotations
@@ -28,6 +29,37 @@ def _grade(db) -> None:
                       "ai_done": run.ai_done, "ai_failed": run.ai_failed, "error": run.error[:400]}, indent=2))
     for i in db.scalars(select(m.Insight).where(m.Insight.run_id == run.id)).all():
         print(f"- [{i.kind}] {i.title}: {i.summary}")
+
+
+def reset_interventions(db) -> dict:
+    """Remove all intervention work (drafts, tasks, follow-ups, attempts, verifications) but keep the graded class.
+
+    Free to run: no model calls. Use it to rehearse the demo from the 'insights ready' state.
+    """
+    from sqlalchemy import delete
+
+    targeted = [a.id for a in db.scalars(select(m.Assignment).where(m.Assignment.targeted.is_(True))).all()]
+    subs = [s.id for s in db.scalars(select(m.Submission).where(m.Submission.assignment_id.in_(targeted or [0]))).all()]
+    for model, col, ids in [(m.ExplanationReadingRecord, m.ExplanationReadingRecord.submission_id, subs),
+                            (m.MisconceptionEvidence, m.MisconceptionEvidence.submission_id, subs),
+                            (m.CriterionEvidence, m.CriterionEvidence.submission_id, subs),
+                            (m.TestResult, m.TestResult.submission_id, subs)]:
+        db.execute(delete(model).where(col.in_(ids or [0])))
+    db.execute(delete(m.Verification))
+    db.execute(delete(m.AssistantMessage))
+    db.execute(delete(m.PracticeAttempt))
+    db.execute(delete(m.InterventionTask))
+    db.execute(delete(m.Submission).where(m.Submission.id.in_(subs or [0])))
+    db.execute(delete(m.Intervention))
+    db.execute(delete(m.TestCase).where(m.TestCase.assignment_id.in_(targeted or [0])))
+    db.execute(delete(m.RubricCriterion).where(m.RubricCriterion.assignment_id.in_(targeted or [0])))
+    db.execute(delete(m.Assignment).where(m.Assignment.id.in_(targeted or [0])))
+    db.execute(delete(m.AssessmentItem).where(m.AssessmentItem.source.like("ai:%")))
+    for i in db.scalars(select(m.Insight)).all():
+        i.status = "open"
+    db.add(m.AuditEvent(actor_id=None, action="demo.reset_interventions", entity="course", entity_id=None, payload={"followups_removed": len(targeted)}))
+    db.commit()
+    return {"followup_assignments_removed": len(targeted), "followup_submissions_removed": len(subs)}
 
 
 def evaluate(db) -> dict:
@@ -57,6 +89,7 @@ def main() -> None:
     r = sub.add_parser("reset")
     r.add_argument("--grade", action="store_true")
     sub.add_parser("grade")
+    sub.add_parser("reset-interventions", help="clear intervention work, keep grading (no model calls)")
     sub.add_parser("eval")
     args = ap.parse_args()
 
@@ -70,6 +103,9 @@ def main() -> None:
         init_db()
         with SessionLocal() as db:
             _grade(db)
+    elif args.cmd == "reset-interventions":
+        with SessionLocal() as db:
+            print(json.dumps(reset_interventions(db), indent=2))
     elif args.cmd == "eval":
         with SessionLocal() as db:
             print(json.dumps(evaluate(db), indent=2))

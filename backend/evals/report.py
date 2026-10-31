@@ -94,6 +94,38 @@ def write_report(path: Path, results_dir: Path, system: dict | None) -> None:
             w(f"| {cat.replace('_', ' ')} | " + " | ".join(row) + " |")
         w("")
 
+    f2 = _load(results_dir / "final2.json")
+    if f2:
+        w("## Final-2: code and explanation together (24 untouched cases)\n")
+        w(f"{f2['provenance']} reader-v3 was chosen as the default on development evidence before this set was run. "
+          "`reader-v3-blind` is a context ablation (the reader sees only the explanation). It was prompted partly by one final-2 case, "
+          "so treat it as an ablation, not a clean generalisation result.\n")
+        w("| Reader | Misconception F1 (tp/fp/fn) | Working code, confused reasoning caught | C3 judgment | Right kind of help | Quotes verbatim |\n|---|---|---|---|---|---|")
+        for r, v in f2["readers"].items():
+            if "n" not in v:
+                continue
+            mi = v["misconceptions"]["micro"]
+            wc = v["working_code_confused_reasoning"]
+            w(f"| {r} | {pct(mi['f1'])} ({mi['tp']}/{mi['fp']}/{mi['fn']}) | {frac(wc['caught'], wc['n'])} | {frac(v['c3_correct'], v['n'])} | "
+              f"{frac(v['category_correct'], v['n'])} | {frac(v['quotes']['verbatim'], v['quotes']['returned']) if v['quotes']['returned'] else '—'} |")
+        w("\nC3 errors by reader (expected → got × count):\n")
+        for r, v in f2["readers"].items():
+            if "c3_confusion" in v:
+                w(f"- {r}: " + ", ".join(f"{x['expected']}→{x['got']} ×{x['count']}" for x in v["c3_confusion"] if x["expected"] != x["got"]))
+        w("")
+
+    ledger = results_dir / "spend.jsonl"
+    if ledger.exists():
+        rows = [json.loads(x) for x in ledger.read_text().splitlines() if x.strip()]
+        rows = [r for r in rows if r.get("calls")]
+        if rows:
+            w("## Live inference spend (all runs)\n")
+            w("| When | What | Calls (failed) | Tokens in / out | Est. USD |\n|---|---|---|---|---|")
+            for r in rows:
+                w(f"| {r['ran_at'][:16]} | {r['split']} | {r['calls']} ({r.get('failures', 0)}) | {r['input_tokens']:,} / {r['output_tokens']:,} | {r['estimated_cost_usd']} |")
+            w(f"| | **total** | {sum(r['calls'] for r in rows)} | | **{sum(r['estimated_cost_usd'] for r in rows):.3f}** |\n")
+            w("Not in the ledger: one connectivity test call (≈ $0.002) and a few interactive calls during browser testing, capped at $0.15 for the API server.\n")
+
     w("## Planning: does each student get the right kind of help?\n")
     w("Sandbox → probes → explanation reading → fixed diagnosis rules (`interventions/planning.py`). "
       "The *no reader* column is the ablation: what the rules decide from code and tests alone.\n")

@@ -85,4 +85,7 @@ def evaluation(user: m.User = Depends(current_user)):
     def load(name: str):
         p = results / f"{name}.json"
         return json.loads(p.read_text()) if p.exists() else None
-    return {"dev": load("dev"), "heldout": load("heldout"), "final": load("final"), "system": load("system")}
+    ledger = results / "spend.jsonl"
+    spend = [json.loads(x) for x in ledger.read_text().splitlines() if x.strip()] if ledger.exists() else []
+    return {"dev": load("dev"), "heldout": load("heldout"), "final": load("final"), "final2": load("final2"), "system": load("system"),
+            "spend": [r for r in spend if r.get("calls")]}
