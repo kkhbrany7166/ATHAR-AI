@@ -235,6 +235,11 @@ def simulate(iv_id: int, user: m.User = Depends(require_professor), db: Session 
 
 # ------------------------------------------------------------------ student
 
+def _attempt_text(db: Session, submission_id: int) -> dict:
+    sub = db.get(m.Submission, submission_id)
+    return {"code": sub.code if sub else "", "explanation": sub.explanation if sub else ""}
+
+
 def task_out(db: Session, t: m.InterventionTask) -> dict:
     iv = t.intervention
     a = db.get(m.Assignment, iv.followup_assignment_id)
@@ -252,6 +257,13 @@ def task_out(db: Session, t: m.InterventionTask) -> dict:
             mine = [e.detail for e in db.scalars(select(m.MisconceptionEvidence).where(
                 m.MisconceptionEvidence.submission_id == orig_sub.id, m.MisconceptionEvidence.source == "tests",
                 m.MisconceptionEvidence.misconception_code == iv.misconception_code)).all()]
+    earlier = None
+    if orig_sub:
+        rs = db.scalars(select(m.TestResult).where(m.TestResult.submission_id == orig_sub.id)).all()
+        names = {tc.id: tc.name for tc in db.scalars(select(m.TestCase).where(m.TestCase.assignment_id == iv.assignment_id)).all()}
+        earlier = {"passed": sum(r.status == "pass" for r in rs), "total": len(rs),
+                   "failing": [{"name": names.get(r.test_case_id, "?"), "error": r.error_type or f"returned {r.actual}"} for r in rs if r.status != "pass"][:3],
+                   "code": orig_sub.code}
     practice = db.scalars(select(m.PracticeAttempt).where(m.PracticeAttempt.task_id == t.id).order_by(m.PracticeAttempt.id)).all()
     msgs = db.scalars(select(m.AssistantMessage).where(m.AssistantMessage.task_id == t.id).order_by(m.AssistantMessage.id)).all()
     ver = db.scalars(select(m.Verification).where(m.Verification.task_id == t.id).order_by(m.Verification.id)).all()
@@ -260,7 +272,8 @@ def task_out(db: Session, t: m.InterventionTask) -> dict:
         "id": t.id, "status": t.status, "kind": iv.kind, "title": iv.title, "course_code": a.course.code if a else "",
         "my_original_code": orig_sub.code if orig_sub else "",
         "from_assignment": db.get(m.Assignment, iv.assignment_id).title,
-        "my_earlier_evidence": mine, "explanation": iv.explanation, "explanation_source": iv.explanation_source,
+        "my_earlier_evidence": mine, "my_earlier_result": earlier, "explanation": iv.explanation, "explanation_source": iv.explanation_source,
+        "initial_locked": bool(t.initial_reasoning) and (t.hints_revealed > 0 or len(practice) > 0),
         "initial_reasoning": t.initial_reasoning, "revised_reasoning": t.revised_reasoning, "reflection": t.reflection,
         "practice": item_out(item, for_student=True),
         "hints": item.hints[: t.hints_revealed] if item else [],
@@ -271,7 +284,8 @@ def task_out(db: Session, t: m.InterventionTask) -> dict:
                                          "starter_code": a.starter_code, "conditions": a.conditions, "ai_policy": a.ai_policy,
                                          "visible_tests": [x.name for x in a.tests if not x.hidden]},
         "results": [{"outcome": v.outcome, "label": OUTCOME_FOR_STUDENT[v.outcome], "reasons": v.reasons, "tests_passed": v.tests_passed,
-                     "tests_total": v.tests_total, "at": ser.iso(v.created_at)} for v in ver],
+                     "tests_total": v.tests_total, "at": ser.iso(v.created_at), "attempt": i + 1, **_attempt_text(db, v.submission_id)}
+                    for i, v in enumerate(ver)],
         "intervention_status": iv.status,
     }
 

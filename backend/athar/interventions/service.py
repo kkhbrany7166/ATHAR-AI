@@ -93,10 +93,11 @@ class DraftExplanation(BaseModel):
     cited_passages: list[str] = Field(description="Short passages copied verbatim from the course notes that the explanation relies on")
 
 
-DRAFT_SYSTEM = """You help a professor write a short, targeted explanation for a group of students who share a specific misconception.
-Ground the explanation in the provided course notes and cite the passages you used, copied verbatim.
-Address students directly and kindly. Explain the idea, give one small worked example that is NOT the assignment problem,
-and end with one question they can ask themselves. Do not mention grades, AI, or that anyone made a mistake."""
+DRAFT_SYSTEM = """You help a professor write a short note to a small group of students who share the same difficulty.
+Strict format: at most 90 words, plain sentences, no greeting, no headings, no lists, no exclamation marks.
+Content: name the one idea they need (one or two sentences), give one tiny example that is NOT the assignment problem,
+and end with one question they can ask themselves while coding. Ground it in the course notes and cite the passages you used, verbatim.
+Never mention grades, AI, or that anyone made a mistake. Write like a calm teacher, not a textbook."""
 
 
 TITLES = {
@@ -363,6 +364,10 @@ def _start(t: m.InterventionTask) -> None:
 def save_checkpoint(db: Session, t: m.InterventionTask, kind: str, text: str) -> None:
     if kind not in ("initial", "revised", "reflection"):
         raise InterventionError("Unknown checkpoint.", 422)
+    # The first answer is the "before" in the before/after comparison: it locks once practice or hints begin.
+    if kind == "initial" and t.initial_reasoning and (t.hints_revealed > 0 or db.scalar(
+            select(m.PracticeAttempt.id).where(m.PracticeAttempt.task_id == t.id).limit(1)) is not None):
+        raise InterventionError("Your first answer is kept as it was before practice, so you can compare it later.", 409)
     setattr(t, {"initial": "initial_reasoning", "revised": "revised_reasoning", "reflection": "reflection"}[kind], text.strip())
     _start(t)
     db.commit()

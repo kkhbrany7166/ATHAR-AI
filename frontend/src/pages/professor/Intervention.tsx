@@ -50,15 +50,19 @@ export function InterventionPage() {
         <p className="py-3 border-y border-line text-brick text-[14px]">Rejected. Nothing was sent to students.</p>
       ) : (
         <ol className="grid grid-cols-2 md:grid-cols-5 border-y border-line" aria-label="Intervention progress">
-          {[
-            { label: "Evidence", value: `${iv.target_student_ids.length} students`, sub: "from tests and readings", on: true },
-            { label: "Plan", value: iv.explanation_source.startsWith("ai:") ? "AI draft" : "Template", sub: "you can edit it", on: true },
-            { label: "Your approval", value: iv.approved_at ? fmtDate(iv.approved_at) : "Waiting", sub: iv.approved_at ? "approved" : "nothing sent yet", on: !!iv.approved_at },
-            { label: "Delivered", value: `${iv.progress.delivered} activities`, sub: "one per student", on: iv.progress.delivered > 0 },
-            { label: "Verified", value: `${iv.progress.verified} new attempts`, sub: "checked by fixed rules", on: iv.progress.verified > 0 },
-          ].map((x, i) => (
-            <li key={x.label} className={cx("py-4 pr-4 border-t-2 -mt-px", x.on ? "border-accent-strong" : "border-transparent")}>
-              <div className="text-[12.5px] text-faint num">{i + 1} · {x.label}</div>
+          {(() => {
+            const stages = [
+              { label: "Evidence", value: `${iv.target_student_ids.length} students`, sub: "from tests and readings", on: true },
+              { label: "Proposed support", value: iv.explanation_source.startsWith("ai:") ? "AI draft" : "Template", sub: "you can edit it", on: true },
+              { label: "Your approval", value: iv.approved_at ? fmtDate(iv.approved_at) : "Waiting for you", sub: iv.approved_at ? "approved" : "nothing sent yet", on: !!iv.approved_at },
+              { label: "Delivered", value: `${iv.progress.delivered} students`, sub: "one activity each", on: iv.progress.delivered > 0 },
+              { label: "Verified outcomes", value: `${iv.progress.verified} of ${iv.progress.delivered || iv.target_student_ids.length}`, sub: "new independent check, fixed rules", on: iv.progress.verified > 0 },
+            ];
+            const current = stages.findIndex((x) => !x.on);
+            return stages.map((x, i) => ({ ...x, current: i === (current === -1 ? stages.length - 1 : current) }));
+          })().map((x, i) => (
+            <li key={x.label} aria-current={x.current ? "step" : undefined} className={cx("py-4 pr-4 border-t-2 -mt-px", x.on ? "border-accent-strong" : "border-transparent")}>
+              <div className="text-[13px] text-faint num">{i + 1} · {x.label}{x.current && <span className="ml-1.5 text-amber">· now</span>}</div>
               <div className={cx("text-[15.5px] mt-1", x.on ? "text-ink" : "text-faint")}>{x.value}</div>
               <div className="text-[13px] text-faint">{x.sub}</div>
             </li>
@@ -244,19 +248,28 @@ function ItemSummary({ item, brokenLabel }: { item: Item; brokenLabel?: string }
 function LiveView({ iv, act }: { iv: Intervention; act: ReturnType<typeof useMutation<Intervention | { intervention: Intervention }, Error, string>> }) {
   const p = iv.progress;
   const [filter, setFilter] = useState<Outcome | "waiting" | "all">("all");
+  const [who, setWho] = useState<"all" | "real" | "simulated">("all");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const PER = 10;
   const rows = iv.students.filter((s) =>
-    filter === "all" ? true : filter === "waiting" ? !s.verification : s.verification?.outcome === filter);
+    (filter === "all" ? true : filter === "waiting" ? !s.verification : s.verification?.outcome === filter)
+    && (who === "all" ? true : who === "simulated" ? !!s.task?.is_simulated : !s.task?.is_simulated)
+    && (!search || s.name.toLowerCase().includes(search.toLowerCase())))
+    .sort((a, b) => Number(b.is_demo_persona) - Number(a.is_demo_persona));
+  const pages = Math.max(1, Math.ceil(rows.length / PER));
+  const shown = rows.slice((Math.min(page, pages) - 1) * PER, Math.min(page, pages) * PER);
   const hasSynthPending = iv.students.some((s) => s.is_synthetic && !s.is_demo_persona && !s.verification);
 
   return (
     <div className="pt-2">
       <div className="grid grid-cols-2 md:grid-cols-5 border-b border-line divide-x divide-line">
         {[
-          ["Delivered", p.delivered, ""],
-          ["Started", p.started, ""],
-          ["Demonstrated", p.demonstrated, "text-accent-ink"],
+          ["Demonstrated on this task", p.demonstrated, "text-accent-ink"],
           ["Still developing", p.still_developing, "text-amber"],
           ["Insufficient evidence", p.insufficient_evidence, "text-muted"],
+          ["Not attempted yet", p.delivered - p.verified, "text-faint"],
+          ["Simulated classmates", p.simulated, "text-faint"],
         ].map(([k, v, c]) => (
           <div key={k as string} className="py-4 px-4 first:pl-0">
             <div className={cx("font-serif text-[28px] leading-none num", c as string)}>{v}</div>
@@ -266,24 +279,40 @@ function LiveView({ iv, act }: { iv: Intervention; act: ReturnType<typeof useMut
       </div>
       {p.simulated > 0 && (
         <p className="text-[13px] text-faint mt-3">
-          {p.simulated} of these attempts are simulated synthetic classmates, sent through the real grading and verification path. Their outcomes were computed, not scripted.
+          Simulated classmates are fictional attempts sent through the same checks as a real student. Their outcomes are computed, not scripted.
         </p>
       )}
 
       <div className="grid lg:grid-cols-[minmax(0,1fr)_300px] gap-x-12">
         <div>
-          <Section title="Students" aside={
-            <span className="flex gap-1">
+          <Section title="Student outcomes">
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Search students" aria-label="Search students"
+                className="h-9 w-full sm:w-52 bg-surface border border-line-strong rounded px-3 text-[14.5px] placeholder:text-faint" />
+              <select value={who} onChange={(e) => { setWho(e.target.value as typeof who); setPage(1); }} aria-label="Real or simulated"
+                className="h-9 bg-surface border border-line-strong rounded px-2 text-[14px] text-ink">
+                <option value="all">Everyone</option><option value="real">Real interactions</option><option value="simulated">Simulated classmates</option>
+              </select>
+            </div>
+            <div className="flex flex-wrap gap-1.5 mb-2" role="group" aria-label="Filter by outcome">
               {(["all", "demonstrated", "still_developing", "insufficient_evidence", "waiting"] as const).map((f) => (
-                <button key={f} onClick={() => setFilter(f)} className={cx("px-2 h-6 rounded text-[12.5px]", filter === f ? "bg-raised text-ink" : "text-faint hover:text-ink")}>
-                  {f === "all" ? "All" : f === "waiting" ? "Waiting" : OUTCOME[f].label.split(" ")[0]}
+                <button key={f} onClick={() => { setFilter(f); setPage(1); }} aria-pressed={filter === f}
+                  className={cx("h-8 px-3 rounded-full text-[13.5px] border", filter === f ? "border-accent-strong bg-accent-wash text-ink" : "border-line text-muted hover:text-ink")}>
+                  {f === "all" ? "All" : f === "waiting" ? "Not attempted" : OUTCOME[f].label}
                 </button>
               ))}
-            </span>
-          }>
+            </div>
             <ul className="divide-y divide-line">
-              {rows.map((s) => <StudentRow key={s.student_id} s={s} />)}
+              {shown.map((s) => <StudentRow key={s.student_id} s={s} />)}
+              {shown.length === 0 && <li className="py-6 text-muted">No students match.</li>}
             </ul>
+            {pages > 1 && (
+              <div className="flex items-center justify-end gap-2 mt-3 text-[14px] text-muted">
+                <Button variant="ghost" disabled={page <= 1} onClick={() => setPage(page - 1)}>← Previous</Button>
+                <span className="num">Page {Math.min(page, pages)} of {pages}</span>
+                <Button variant="ghost" disabled={page >= pages} onClick={() => setPage(page + 1)}>Next →</Button>
+              </div>
+            )}
           </Section>
         </div>
         <aside className="lg:pt-6 space-y-8 text-[14px]">

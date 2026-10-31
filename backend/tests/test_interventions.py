@@ -161,3 +161,20 @@ def test_simulated_classmates_go_through_the_real_verifier(client, db, world, ru
     sara = next(s for s in out["intervention"]["students"] if s["student_id"] == world["sara_id"])
     assert sara["verification"] is None  # the demo persona is never simulated
     assert out["intervention"]["recommendations"]
+
+
+def test_first_answer_locks_once_practice_starts(client, db, world, rule_baseline):
+    prof, insight = _setup(client, db, world)
+    iv = _draft(client, prof, insight)
+    client.post(f"/api/professor/interventions/{iv['id']}/approve", headers=prof)
+    sara = login(client, world["sara_id"])
+    tid = client.get("/api/student/home", headers=sara).json()["tasks"][0]["id"]
+    ok = client.post(f"/api/student/tasks/{tid}/checkpoint", json={"kind": "initial", "text": "first try"}, headers=sara)
+    assert ok.status_code == 200 and ok.json()["initial_locked"] is False
+    assert client.post(f"/api/student/tasks/{tid}/checkpoint", json={"kind": "initial", "text": "edited before practice"}, headers=sara).status_code == 200
+    client.post(f"/api/student/tasks/{tid}/hint", headers=sara)
+    locked = client.post(f"/api/student/tasks/{tid}/checkpoint", json={"kind": "initial", "text": "rewritten after a hint"}, headers=sara)
+    assert locked.status_code == 409
+    task = client.get(f"/api/student/tasks/{tid}", headers=sara).json()
+    assert task["initial_reasoning"] == "edited before practice" and task["initial_locked"] is True
+    assert task["my_earlier_result"]["passed"] < task["my_earlier_result"]["total"]

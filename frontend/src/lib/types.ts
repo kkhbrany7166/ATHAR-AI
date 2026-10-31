@@ -143,7 +143,8 @@ export interface Intervention {
 }
 
 export interface StudentTask {
-  kind: InterventionKind; my_original_code: string;
+  kind: InterventionKind; my_original_code: string; initial_locked: boolean;
+  my_earlier_result: null | { passed: number; total: number; failing: { name: string; error: string }[]; code: string };
   id: number; status: string; title: string; course_code: string; from_assignment: string; my_earlier_evidence: string[];
   explanation: string; explanation_source: string; initial_reasoning: string; revised_reasoning: string; reflection: string;
   practice: null | { id: number; title: string; prompt: string; explanation_prompt: string; starter_code: string; hint_count: number; tests: string[] };
@@ -151,7 +152,7 @@ export interface StudentTask {
   practice_attempts: { id: number; passed: number; total: number; code: string; at: string; results: { name: string; status: string; actual: string; error_type: string; error_message: string }[] }[];
   messages: { id: number; role: string; content: string; source: string }[];
   check: null | { assignment_id: number; title: string; prompt: string; explanation_prompt: string; starter_code: string; conditions: string; ai_policy: string; visible_tests: string[] };
-  results: { outcome: Outcome; label: string; reasons: string[]; tests_passed: number; tests_total: number; at: string }[];
+  results: { outcome: Outcome; label: string; reasons: string[]; tests_passed: number; tests_total: number; at: string; attempt: number; code: string; explanation: string }[];
   intervention_status: string;
 }
 

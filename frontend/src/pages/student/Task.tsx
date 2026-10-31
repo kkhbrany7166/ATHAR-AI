@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
 import type { StudentTask } from "../../lib/types";
-import { Button, CONDITIONS, Crumb, ErrorState, Loading, Tag, cx } from "../../components/ui";
+import { Button, Crumb, ErrorState, Loading, cx } from "../../components/ui";
 
 const STEPS_BY_KIND: Record<string, { id: string; label: string }[]> = {
   concept_practice: [
@@ -82,26 +82,19 @@ export function TaskPage() {
         <h2 className="font-serif text-[26px] mb-1">{step.label}</h2>
         <p className="text-[14px] text-faint mb-6">Step {idx + 1} of {STEPS.length}{step.id === "practice" ? " · help is welcome here" : step.id === "check" ? " · this part is on your own" : ""}</p>
 
-        {step.id === "why" && (
-          <div>
-            {t.my_earlier_evidence.length > 0 && (
-              <div className="mb-6">
-                <div className="text-[14px] text-faint mb-2">In {t.from_assignment.split("—")[0].trim()}, {t.kind === "explain_reasoning" ? "your code worked, and you wrote:" : "your code ran into this:"}</div>
-                <div className="flex flex-wrap gap-2">{t.my_earlier_evidence.map((e) => <code key={e} className="font-mono text-[14px] text-amber bg-amber-wash px-2 py-1 rounded">{e}</code>)}</div>
-                <p className="text-muted mt-3 text-[15px]">It's one of the most common places to get stuck with recursion, and a good one to understand properly. Nothing here is graded until the last step.</p>
-              </div>
-            )}
-            <div className="border-l-2 border-accent-strong pl-5">
-              <p className="font-serif text-[17.5px] leading-[1.8] text-ink whitespace-pre-line">{t.explanation}</p>
-            </div>
-          </div>
-        )}
+        {step.id === "why" && <WhyThis t={t} />}
 
         {step.id === "think" && (
           <div>
             <p className="text-ink text-[16px] mb-1">{t.practice?.explanation_prompt}</p>
             <p className="text-muted mb-4 text-[15px]">Write what you think now, before any help. It isn't graded, and you'll compare it with your answer later.</p>
-            <Checkpoint value={t.initial_reasoning} placeholder="I think it should return…" onSave={(text) => post("checkpoint", { kind: "initial", text }).then(onOk)} />
+            {t.initial_locked ? (
+              <div>
+                <p className="bg-surface border border-line rounded-md px-4 py-3 text-ink">{t.initial_reasoning}</p>
+                <p className="text-[14px] text-faint mt-2">Kept exactly as you wrote it before practice, so you can compare later.</p>
+              </div>
+            ) : <Checkpoint value={t.initial_reasoning} placeholder="I think it should return…" onSave={(text) => post("checkpoint", { kind: "initial", text }).then(onOk)} />}
+            {!t.initial_locked && <p className="text-[14px] text-faint mt-2">You can change this until you start practising. "I'm not sure" is a fine answer.</p>}
           </div>
         )}
 
@@ -124,6 +117,7 @@ export function TaskPage() {
                 <Checkpoint value={t.revised_reasoning} placeholder="Now I think…" onSave={(text) => post("checkpoint", { kind: "revised", text }).then(onOk)} />
               </div>
             </div>
+            <p className="text-[14px] text-faint">A clearer answer is a good sign. The last step is where you show it on a new problem.</p>
             <details className="text-[15px]">
               <summary className="cursor-pointer text-muted hover:text-ink">Optional: note what changed in your thinking</summary>
               <div className="mt-3"><Checkpoint value={t.reflection} placeholder="What I understand differently now is…" onSave={(text) => post("checkpoint", { kind: "reflection", text }).then(onOk)} /></div>
@@ -133,7 +127,7 @@ export function TaskPage() {
 
         {step.id === "check" && t.check && (
           <div className="border border-line-strong rounded-lg p-5 sm:p-6">
-            <div className="flex flex-wrap items-center gap-2 mb-4"><Tag>{CONDITIONS[t.check.conditions]?.label}</Tag><span className="text-[13.5px] text-faint">No hints or assistant here. That's what makes it your own evidence.</span></div>
+            <p className="text-[15px] text-ink mb-4">Independent check: no built-in hints or assistant.</p>
             <FollowUp t={t} post={post} onOk={onOk} />
           </div>
         )}
@@ -216,7 +210,7 @@ function Practice({ t, post, onOk }: { t: StudentTask; post: Post; onOk: (t: Stu
           <ul className="space-y-1 font-mono text-[12.5px]">
             {last.results.map((r) => (
               <li key={r.name} className={r.status === "pass" ? "text-accent-ink" : "text-amber"}>
-                {r.status === "pass" ? "✓" : "✗"} {r.name}{r.status !== "pass" && <span className="text-faint"> · {r.error_type || `got ${r.actual}`}</span>}
+                {r.status === "pass" ? "✓" : "✗"} {r.name.replace(" is ", " should be ")}{r.status !== "pass" && <span className="text-faint font-sans"> · your code {r.error_type ? `raised ${r.error_type}` : `gave ${r.actual}`}</span>}
               </li>
             ))}
           </ul>
@@ -280,32 +274,52 @@ const RESULT_NEXT: Record<string, string> = {
 
 function FollowUp({ t, post, onOk }: { t: StudentTask; post: Post; onOk: (t: StudentTask) => void }) {
   const c = t.check!;
-  const [code, setCode] = useState(t.kind === "explain_reasoning" ? t.my_original_code : c.starter_code);
   const explainOnly = t.kind === "explain_reasoning";
-  const [explanation, setExplanation] = useState("");
-  const [disclosure, setDisclosure] = useState("");
-  const submit = useMutation({ mutationFn: () => post("followup", { code, explanation, ai_use_disclosure: disclosure }), onSuccess: onOk });
+  const draftKey = `athar.draft.${t.id}`;
   const last = t.results[t.results.length - 1];
+  // The draft survives navigation and reloads; it starts from the last submitted attempt, never silently from scratch.
+  const saved = (() => { try { return JSON.parse(localStorage.getItem(draftKey) || "null"); } catch { return null; } })();
+  const [code, setCode] = useState<string>(saved?.code ?? (explainOnly ? t.my_original_code : last?.code || c.starter_code));
+  const [explanation, setExplanation] = useState<string>(saved?.explanation ?? last?.explanation ?? "");
+  const [disclosure, setDisclosure] = useState("");
+  useEffect(() => { try { localStorage.setItem(draftKey, JSON.stringify({ code, explanation })); } catch { /* storage unavailable */ } }, [code, explanation, draftKey]);
+  const submit = useMutation({
+    mutationFn: () => post("followup", { code, explanation, ai_use_disclosure: disclosure }),
+    onSuccess: (r) => { try { localStorage.removeItem(draftKey); } catch { /* ignore */ } onOk(r); },
+  });
   const closed = t.intervention_status !== "active";
   return (
-    <div className="space-y-5">
-      <p className="text-muted text-[14.5px]">{c.ai_policy}</p>
+    <div className="space-y-6">
       <p className="text-ink text-[16px]">{c.prompt}</p>
-      {last && (
-        <div className={cx("rounded-md border px-5 py-4", RESULT_TONE[last.outcome])}>
-          <div className="font-serif text-[20px] text-ink">{last.label}</div>
-          <p className="text-muted mt-1">{last.outcome === "demonstrated" && t.kind !== "concept_practice"
-            ? (t.kind === "debugging" ? "Your program runs and passes every test, so your recursion can now be checked properly. Your professor can see this."
-               : "Your explanation names where and why the recursion stops. Your professor can see this.")
-            : RESULT_NEXT[last.outcome]}</p>
-          <ul className="mt-3 space-y-1 text-[14px] text-muted list-disc ml-4">{last.reasons.map((r) => <li key={r}>{r}</li>)}</ul>
-          <div className="text-[12.5px] text-faint mt-2 num">{last.tests_passed}/{last.tests_total} tests passed · attempt {t.results.length}</div>
+
+      {t.results.length > 0 && (
+        <div className="space-y-3">
+          {[...t.results].reverse().map((r, i) => (
+            <div key={r.attempt} className={cx("rounded-md border px-5 py-4", i === 0 ? RESULT_TONE[r.outcome] : "border-line opacity-80")}>
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <div className="font-serif text-[20px] text-ink">{r.label}</div>
+                <div className="text-[13.5px] text-faint num">Attempt {r.attempt} · {new Date(r.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · {r.tests_passed}/{r.tests_total} tests</div>
+              </div>
+              {i === 0 && <p className="text-muted mt-1">{r.outcome === "demonstrated" && t.kind !== "concept_practice"
+                ? (t.kind === "debugging" ? "Your program runs and passes every test. Your professor can see this." : "Your explanation names where and why the recursion stops. Your professor can see this.")
+                : RESULT_NEXT[r.outcome]}</p>}
+              {i === 0 && <ul className="mt-2 space-y-1 text-[14.5px] text-muted list-disc ml-4">{r.reasons.filter((x) => !x.startsWith("Unsupervised")).map((x) => <li key={x}>{x}</li>)}</ul>}
+              <details className="mt-2 text-[14px]">
+                <summary className="cursor-pointer text-faint hover:text-ink">What you submitted in attempt {r.attempt}</summary>
+                {!explainOnly && <pre className="font-mono text-[13px] bg-canvas border border-line rounded p-3 mt-2 overflow-x-auto">{r.code}</pre>}
+                {r.explanation && <p className="mt-2 text-muted">{r.explanation}</p>}
+              </details>
+            </div>
+          ))}
+          <p className="text-[13.5px] text-faint">This was done without supervision, so it shows what you submitted, not that no outside help was used.</p>
         </div>
       )}
+
       {!closed && (
-        <>
+        <div className="space-y-4 border-t border-line pt-5">
+          <div className="text-[15px] text-ink">{t.results.length ? `Draft for attempt ${t.results.length + 1}` : "Your answer"}</div>
           {explainOnly ? (
-            <div><div className="eyebrow mb-2">Your Assignment 3 code</div><pre className="font-mono text-[13px] bg-canvas border border-line rounded-md p-4 overflow-x-auto">{t.my_original_code}</pre></div>
+            <div><div className="text-[14px] text-faint mb-2">Your Assignment 3 code</div><pre className="font-mono text-[13.5px] bg-canvas border border-line rounded-md p-4 overflow-x-auto">{t.my_original_code}</pre></div>
           ) : <CodeEditor value={code} onChange={setCode} rows={8} />}
           <div>
             <label className="block text-muted mb-2" htmlFor="fx">{explainOnly ? "Your explanation" : t.kind === "debugging" ? `${c.explanation_prompt} (optional)` : c.explanation_prompt}</label>
@@ -313,20 +327,49 @@ function FollowUp({ t, post, onOk }: { t: StudentTask; post: Post; onOk: (t: Stu
               className="w-full bg-surface border border-line-strong rounded-md px-4 py-3 text-[15px]" />
           </div>
           <div>
-            <label className="block text-[13.5px] text-faint mb-1.5" htmlFor="dx">Did you use any outside help or AI tools? (optional, and honest answers are never penalised)</label>
-            <input id="dx" value={disclosure} onChange={(e) => setDisclosure(e.target.value)}
-              className="w-full h-9 bg-surface border border-line rounded px-3 text-[14px]" />
+            <label className="block text-[14px] text-faint mb-1.5" htmlFor="dx">Did you use any outside help? Optional, and an honest answer never counts against you.</label>
+            <input id="dx" value={disclosure} onChange={(e) => setDisclosure(e.target.value)} className="w-full h-10 bg-surface border border-line rounded px-3 text-[15px]" />
           </div>
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-[13px] text-faint">{explainOnly ? "Your explanation is read and checked against the stopping condition. Your code is not re-graded." :
-              t.kind === "debugging" ? "Runs your fixed program against the tests." : "Checked with tests you can't see yet, plus your explanation."}</span>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span className="text-[14px] text-faint">{explainOnly ? "Only your explanation is read; your code isn't re-graded." : "Checked with tests, including some you can't see, plus your explanation."}</span>
             <Button variant="primary" disabled={submit.isPending || (explainOnly ? !explanation.trim() : !code.trim())} onClick={() => submit.mutate()}>
-              {submit.isPending ? "Checking…" : last ? "Submit another attempt" : "Submit"}
+              {submit.isPending ? "Checking…" : t.results.length ? `Submit attempt ${t.results.length + 1}` : "Submit"}
             </Button>
           </div>
-          {submit.error && <p className="text-brick text-[13px]">{(submit.error as Error).message}</p>}
-        </>
+          {submit.error && <p className="text-brick text-[14px]">{(submit.error as Error).message}</p>}
+        </div>
       )}
+    </div>
+  );
+}
+
+function WhyThis({ t }: { t: StudentTask }) {
+  const [more, setMore] = useState(false);
+  const e = t.my_earlier_result;
+  const words = t.explanation.trim().split(/\s+/);
+  const long = words.length > 110;
+  const text = long && !more ? words.slice(0, 90).join(" ") + "…" : t.explanation;
+  const opener = t.kind === "explain_reasoning"
+    ? "Your code passed every test. This step is about putting into words why it stops."
+    : t.kind === "debugging"
+      ? `Your code didn't run${e?.failing[0] ? ` (${e.failing[0].error})` : ""}, so the tests couldn't show what you know yet.`
+      : e && e.failing.length
+        ? `Your code passed ${e.passed} of ${e.total} tests. It didn't work for ${e.failing.map((f) => f.name.split(" is ")[0]).slice(0, 2).join(" or ")}: ${e.failing[0].error}.`
+        : "Here's what this practice is about.";
+  return (
+    <div className="space-y-6">
+      <p className="font-serif text-[22px] leading-snug text-ink max-w-[46ch]">{opener}</p>
+      {e?.code && (
+        <details className="text-[15px]">
+          <summary className="cursor-pointer text-muted hover:text-ink">See the code you submitted</summary>
+          <pre className="font-mono text-[13.5px] bg-canvas border border-line rounded-md p-4 mt-2 overflow-x-auto">{e.code}</pre>
+        </details>
+      )}
+      <div className="border-l-2 border-accent-strong pl-5">
+        <div className="text-[14px] text-faint mb-2">{t.explanation_source.startsWith("ai:") ? "A note from your professor, drafted with AI and approved by them" : "A note from your professor"}</div>
+        <p className="font-serif text-[18px] leading-[1.75] text-ink whitespace-pre-line max-w-[62ch]">{text}</p>
+        {long && <button className="link text-[14px] mt-2" onClick={() => setMore((x) => !x)}>{more ? "Show less" : "Read the rest"}</button>}
+      </div>
     </div>
   );
 }

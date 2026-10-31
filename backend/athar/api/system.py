@@ -99,3 +99,21 @@ def evaluation(user: m.User = Depends(current_user), db: Session = Depends(get_d
     classroom = {"reader": run.ai_provider if run else "", "recovery": planted_recovery(db)} if run else None
     return {"dev": load("dev"), "heldout": load("heldout"), "final": load("final"), "final2": load("final2"), "system": load("system"),
             "spend": [r for r in spend if r.get("calls")], "classroom": classroom}
+
+
+@router.get("/public/example")
+def example(db: Session = Depends(get_db)):
+    """One concrete stored case for the landing page: all tests pass, and a machine reading quoted the explanation.
+
+    Prefers the demo persona Sara if her case fits; otherwise the first such synthetic submission. Read-only.
+    """
+    rows = db.execute(select(m.MisconceptionEvidence, m.Submission).join(m.Submission, m.MisconceptionEvidence.submission_id == m.Submission.id)
+                      .where(m.MisconceptionEvidence.source.in_(("ai", "baseline")), m.MisconceptionEvidence.quote != "")
+                      .order_by(m.Submission.id)).all()
+    for ev, sub in rows:
+        results = db.scalars(select(m.TestResult).where(m.TestResult.submission_id == sub.id)).all()
+        if results and all(r.status == "pass" for r in results) and not sub.assignment.targeted:
+            return {"available": True, "student": sub.student.name, "submission_id": sub.id, "tests_passed": len(results),
+                    "tests_total": len(results), "quote": ev.quote, "flag": ev.misconception_code,
+                    "reader": "AI" if ev.source == "ai" else "rule-based reader", "is_synthetic": sub.is_synthetic}
+    return {"available": False}

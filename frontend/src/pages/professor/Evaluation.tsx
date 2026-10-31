@@ -45,8 +45,8 @@ export function EvaluationPage() {
 
   return (
     <>
-      <PageHeader eyebrow="How well does ATHAR work?" title="Evaluation">
-        Measured, not claimed. The final set was written and committed before anything ran on it. Every percentage shows its count.
+      <PageHeader title="How well does it work?">
+        Three findings from evaluation sets nobody tuned on. Small, synthetic, labelled by one person; details below.
       </PageHeader>
 
       {!llm && (
@@ -56,9 +56,12 @@ export function EvaluationPage() {
         </Callout>
       )}
 
-      <Headline data={data} />
-      <Datasets data={data} />
-      {data.classroom && <Classroom c={data.classroom} />}
+      <Findings data={data} />
+
+      <div className="mt-10 space-y-3">
+        <Expand title="How the data was built, and which sets were untouched"><Datasets data={data} /></Expand>
+        {data.classroom && <Expand title="Where the AI over-flags: the synthetic class"><Classroom c={data.classroom} /></Expand>}
+        <Expand title="Full metrics: precision, recall, AI vs rules on every set">
 
       <Section title="Reading written explanations" aside="Correct / total">
         <div className="overflow-x-auto">
@@ -139,6 +142,8 @@ export function EvaluationPage() {
         </Section>
       </div>
 
+        </Expand>
+        <Expand title="Tests, validation and verification (no AI involved)">
       <Section title="Deterministic components" aside="Correct / total">
         <table className="w-full text-[14px]">
           <thead><tr className="text-left text-faint text-2xs uppercase tracking-[0.1em] border-b border-line"><th className="font-medium py-2">Measure</th>
@@ -155,6 +160,8 @@ export function EvaluationPage() {
         {data.system && <p className="text-[14px] text-muted mt-4">Workflow safety checks (approval gates, permissions, idempotent delivery, outages, malformed and fabricated output, gated generation): <span className="text-ink">{data.system.summary}</span></p>}
       </Section>
 
+        </Expand>
+        <Expand title="Failure examples and what is AI">
       <div className="grid lg:grid-cols-[1.2fr_1fr] gap-x-12">
         <Section title={`Final-set misses (${f.explanations.baseline.failures.length + f.verifier.baseline.failures.length + f.variants.failures.length})`} aside="Rule reader">
           <ul className="space-y-1.5 text-[13px] text-muted max-h-80 overflow-y-auto pr-2">
@@ -174,6 +181,8 @@ export function EvaluationPage() {
         </Section>
       </div>
 
+        </Expand>
+        <Expand title="Reproduce: versions, commands, cost">
       <Section title="Reproduce">
         <div className={cx("grid sm:grid-cols-2 gap-x-10 gap-y-1 text-[13.5px] text-muted")}>
           <span>Commit <span className="font-mono text-ink">{meta.commit}</span> · {meta.ran_at}</span>
@@ -184,7 +193,48 @@ export function EvaluationPage() {
             ≈ ${data.spend.reduce((a: number, r: R) => a + r.estimated_cost_usd, 0).toFixed(2)} estimated</span>}
         </div>
       </Section>
+        </Expand>
+      </div>
     </>
+  );
+}
+
+function Expand({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <details className="border-t border-line pt-4 group">
+      <summary className="cursor-pointer list-none flex items-center justify-between text-[16px] text-ink hover:text-accent-ink">
+        {title}<span className="text-faint text-[14px] group-open:hidden">Show</span><span className="text-faint text-[14px] hidden group-open:inline">Hide</span>
+      </summary>
+      <div className="pb-4">{children}</div>
+    </details>
+  );
+}
+
+function Findings({ data }: { data: Record<string, R> }) {
+  const f = data.final?.explanations, f2 = data.final2?.readers, cls = data.classroom?.recovery?.["MC-STOP-IMPLICIT"];
+  if (!f?.llm?.misconceptions || !f2?.["reader-v3"]) return null;
+  const mi = (e: R) => e.misconceptions.micro;
+  const items = [
+    { n: "1", head: "The AI finds misconceptions that keyword rules miss.",
+      body: `On ${f.llm.n} hand-written explanations nobody tuned on, the AI caught ${mi(f.llm).tp} of ${mi(f.llm).tp + mi(f.llm).fn} misconceptions with ${mi(f.llm).fp} false alarm. Rules caught ${mi(f.baseline).tp}.`,
+      tag: `F1 ${Math.round(mi(f.llm).f1 * 100)}% vs ${Math.round(mi(f.baseline).f1 * 100)}%` },
+    { n: "2", head: "It sees the case tests can't: working code, confused reasoning.",
+      body: `In a second untouched set of ${f2["reader-v3"].n} code-and-explanation pairs, it recognised all ${f2["reader-v3"].working_code_confused_reasoning.n} of these students. Rules recognised ${f2.rules.working_code_confused_reasoning.caught}.`,
+      tag: `${f2["reader-v3"].working_code_confused_reasoning.caught}/${f2["reader-v3"].working_code_confused_reasoning.n} vs ${f2.rules.working_code_confused_reasoning.caught}/${f2.rules.working_code_confused_reasoning.n}` },
+    { n: "3", head: "It over-flags, and it is too cautious about correct answers.",
+      body: `${cls ? `On the demo class it flagged ${cls.detected} explanations where ${cls.planted} were planted. ` : ""}It often calls correct explanations “partial”, so some students who understand get an extra short task. That is why every AI flag waits for the professor.`,
+      tag: `stopping judgment ${f.llm.c3_correct}/${f.llm.n}` },
+  ];
+  return (
+    <ol className="divide-y divide-line border-y border-line">
+      {items.map((x) => (
+        <li key={x.n} className="py-6 grid md:grid-cols-[40px_minmax(0,1fr)_auto] gap-x-6 gap-y-2">
+          <span className="font-serif text-[26px] text-faint leading-none">{x.n}</span>
+          <div><div className="font-serif text-[23px] leading-snug text-ink">{x.head}</div><p className="text-[16px] text-muted mt-2 max-w-[62ch]">{x.body}</p></div>
+          <span className="num text-[14px] text-faint md:text-right">{x.tag}</span>
+        </li>
+      ))}
+    </ol>
   );
 }
 
@@ -219,28 +269,6 @@ function Final2({ f2 }: { f2: R }) {
         reported as an ablation, not as a clean result.
       </p>
     </Section>
-  );
-}
-
-function Headline({ data }: { data: Record<string, R> }) {
-  const f = data.final?.explanations?.llm, b = data.final?.explanations?.baseline;
-  const f2 = data.final2?.readers;
-  if (!f?.misconceptions || !f2?.["reader-v3"]) return null;
-  const items = [
-    { v: `${Math.round(f.misconceptions.micro.f1 * 100)}%`, vs: `${Math.round(b.misconceptions.micro.f1 * 100)}%`, label: "misconception F1, AI vs rules", sub: `Final set, ${f.n} explanations, untouched` },
-    { v: `${f2["reader-v3"].working_code_confused_reasoning.caught}/${f2["reader-v3"].working_code_confused_reasoning.n}`, vs: `${f2.rules.working_code_confused_reasoning.caught}/${f2.rules.working_code_confused_reasoning.n}`, label: "working code, confused reasoning caught", sub: `Final-2, ${f2["reader-v3"].n} cases, untouched` },
-    { v: `${f.c3_correct}/${f.n}`, vs: `${b.c3_correct}/${b.n}`, label: "stopping-condition judgment: the weak spot", sub: "The AI calls correct explanations “partial”" },
-  ];
-  return (
-    <div className="grid md:grid-cols-3 border-y border-line md:divide-x divide-line mb-4">
-      {items.map((x) => (
-        <div key={x.label} className="py-5 md:px-5 md:first:pl-0">
-          <div className="flex items-baseline gap-3"><span className="font-serif text-[34px] leading-none num">{x.v}</span><span className="text-faint num text-[14px]">rules {x.vs}</span></div>
-          <div className="text-[14.5px] text-ink mt-2">{x.label}</div>
-          <div className="text-[13px] text-faint">{x.sub}</div>
-        </div>
-      ))}
-    </div>
   );
 }
 
