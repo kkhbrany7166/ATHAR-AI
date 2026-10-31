@@ -42,6 +42,8 @@ function findings(d: Detail) {
   if (testCodes.length && stopJudgment === "met" && !heldCodes.length) conflict = "The explanation describes a correct stopping condition, but the code doesn't implement it. Worth a conversation, not a penalty for the reasoning.";
   else if (failing.length === 0 && heldCodes.length) conflict = "The code works, but the explanation suggests a different belief about why it stops. This is the case tests alone can't see.";
   else if (loadFailed && stopJudgment === "met") conflict = "The reasoning reads as correct; the failure is a code error unrelated to recursion.";
+  // The reader may notice a code/explanation conflict and still tag the student; surface its own words, attributed.
+  if (!conflict && d.reading?.contradictions.length) conflict = `The ${who} reader also noted: ${d.reading.contradictions[0]} Check whether the reasoning is right and only the code is wrong.`;
   return { code, reasoning, conflict, testCodes, ai, failing };
 }
 

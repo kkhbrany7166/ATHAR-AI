@@ -278,14 +278,19 @@ function FollowUp({ t, post, onOk }: { t: StudentTask; post: Post; onOk: (t: Stu
   const draftKey = `athar.draft.${t.id}`;
   const last = t.results[t.results.length - 1];
   // The draft survives navigation and reloads; it starts from the last submitted attempt, never silently from scratch.
-  const saved = (() => { try { return JSON.parse(localStorage.getItem(draftKey) || "null"); } catch { return null; } })();
+  // Only a draft the student actually edited, written after their latest attempt, may override that attempt.
+  const saved = (() => { try { const v = JSON.parse(localStorage.getItem(draftKey) || "null"); return v && v.after === t.results.length ? v : null; } catch { return null; } })();
+  const [dirty, setDirty] = useState(false);
   const [code, setCode] = useState<string>(saved?.code ?? (explainOnly ? t.my_original_code : last?.code || c.starter_code));
   const [explanation, setExplanation] = useState<string>(saved?.explanation ?? last?.explanation ?? "");
   const [disclosure, setDisclosure] = useState("");
-  useEffect(() => { try { localStorage.setItem(draftKey, JSON.stringify({ code, explanation })); } catch { /* storage unavailable */ } }, [code, explanation, draftKey]);
+  useEffect(() => {
+    if (!dirty) return;
+    try { localStorage.setItem(draftKey, JSON.stringify({ code, explanation, after: t.results.length })); } catch { /* storage unavailable */ }
+  }, [code, explanation, draftKey, dirty, t.results.length]);
   const submit = useMutation({
     mutationFn: () => post("followup", { code, explanation, ai_use_disclosure: disclosure }),
-    onSuccess: (r) => { try { localStorage.removeItem(draftKey); } catch { /* ignore */ } onOk(r); },
+    onSuccess: (r) => { try { localStorage.removeItem(draftKey); } catch { /* ignore */ } setDirty(false); setCode(r.results[r.results.length - 1]?.code || code); onOk(r); },
   });
   const closed = t.intervention_status !== "active";
   return (
@@ -320,10 +325,10 @@ function FollowUp({ t, post, onOk }: { t: StudentTask; post: Post; onOk: (t: Stu
           <div className="text-[15px] text-ink">{t.results.length ? `Draft for attempt ${t.results.length + 1}` : "Your answer"}</div>
           {explainOnly ? (
             <div><div className="text-[14px] text-faint mb-2">Your Assignment 3 code</div><pre className="font-mono text-[13.5px] bg-canvas border border-line rounded-md p-4 overflow-x-auto">{t.my_original_code}</pre></div>
-          ) : <CodeEditor value={code} onChange={setCode} rows={8} />}
+          ) : <CodeEditor value={code} onChange={(v) => { setDirty(true); setCode(v); }} rows={8} />}
           <div>
             <label className="block text-muted mb-2" htmlFor="fx">{explainOnly ? "Your explanation" : t.kind === "debugging" ? `${c.explanation_prompt} (optional)` : c.explanation_prompt}</label>
-            <textarea id="fx" value={explanation} onChange={(e) => setExplanation(e.target.value)} rows={4}
+            <textarea id="fx" value={explanation} onChange={(e) => { setDirty(true); setExplanation(e.target.value); }} rows={4}
               className="w-full bg-surface border border-line-strong rounded-md px-4 py-3 text-[15px]" />
           </div>
           <div>

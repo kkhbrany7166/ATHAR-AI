@@ -58,6 +58,9 @@
   .rule {
     @apply border-t border-line;
   }
+  .font-serif {
+    font-variant-numeric: lining-nums;
+  }
   .num {
     font-variant-numeric: tabular-nums;
   }
