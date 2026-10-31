@@ -1,0 +1,17 @@
+{
+  "description": "Held-out follow-up attempts on the repeat_text check (target misconception MC-BASE-SMALLEST). Expected outcome is what a careful instructor would conclude from the code and the reasoning together. Hand-written after verify-v1 was fixed.",
+  "cases": [
+    {"id": "hv01", "code": "def repeat_text(s, n):\n    if n == 0:\n        return ''\n    return s + repeat_text(s, n - 1)\n", "explanation": "It ends when n hits zero, giving back an empty string, since zero copies of anything is nothing.", "expected": "demonstrated"},
+    {"id": "hv02", "code": "def repeat_text(s, n):\n    if n == 1:\n        return s\n    return s + repeat_text(s, n - 1)\n", "explanation": "The base case is n == 0, which returns the empty string.", "expected": "still_developing"},
+    {"id": "hv03", "code": "def repeat_text(s, n):\n    if n == 0:\n        return ''\n    return s + repeat_text(s, n - 1)\n", "explanation": "It finishes when it runs out of times to repeat, then it is done.", "expected": "still_developing"},
+    {"id": "hv04", "code": "def repeat_text(s, n):\n    if n == 0:\n        return ''\n    return s + repeat_text(s, n - 1)\n", "explanation": "", "expected": "insufficient_evidence"},
+    {"id": "hv05", "code": "def repeat_text(s, n):\n    if n == 0:\n        return ''\n    return repeat_text(s, n - 1) + s\n", "explanation": "It works, I tested it.", "expected": "insufficient_evidence"},
+    {"id": "hv06", "code": "def repeat_text(s, n)\n    return s\n", "explanation": "Stops when n is 0.", "expected": "insufficient_evidence"},
+    {"id": "hv07", "code": "def repeat_text(s, n):\n    return '' if n == 0 else s + repeat_text(s, n - 1)\n", "explanation": "The base case n == 0 returns '' because repeating zero times gives the empty string; each call reduces n so it always gets there.", "expected": "demonstrated"},
+    {"id": "hv08", "code": "def repeat_text(s, n):\n    if n == 0:\n        return s\n    return s + repeat_text(s, n - 1)\n", "explanation": "It stops when n is 0 and returns s.", "expected": "still_developing"},
+    {"id": "hv09", "code": "def repeat_text(s, n):\n    return s * n\n", "explanation": "I didn't use recursion, s * n already handles every case.", "expected": "insufficient_evidence"},
+    {"id": "hv10", "code": "def repeat_text(s, n):\n    if n == 0:\n        return ''\n    return s + repeat_text(s, n - 1)\n", "explanation": "يتوقف when n == 0 and returns an empty string, because there is nothing to repeat.", "expected": "demonstrated"},
+    {"id": "hv11", "code": "def repeat_text(s, n):\n    if n == 0:\n        return ''\n    return s + repeat_text(s, n - 1)\n", "explanation": "It does not stop on its own; the check n == 0 stops it and returns the empty string.", "expected": "demonstrated"},
+    {"id": "hv12", "code": "def repeat_text(s, n):\n    if n == 0:\n        return ''\n    return s + repeat_text(s, n)\n", "explanation": "It stops when n is 0.", "expected": "still_developing"}
+  ]
+}
