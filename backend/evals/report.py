@@ -67,6 +67,8 @@ def write_report(path: Path, results_dir: Path, system: dict | None) -> None:
     w("| Says unclear when evidence is insufficient | " + " | ".join(cells(lambda e: pct(e["abstains_when_evidence_is_insufficient"]))) + " |")
     w("| Says unclear when it shouldn't | " + " | ".join(cells(lambda e: pct(e["wrongly_abstains_when_decidable"]))) + " |")
     w("| Errors (timeouts, malformed output) | " + " | ".join(cells(lambda e: str(e["errors"]))) + " |")
+    w("| Evidence quotes verbatim in the student's text | " + " | ".join(cells(lambda e: frac(e["quotes"]["verbatim"], e["quotes"]["returned"]) if e.get("quotes", {}).get("returned") else "—")) + " |")
+    w("| Negation: no misconception wrongly attributed | " + " | ".join(cells(lambda e: frac(e["negation"]["no_false_misconception"], e["negation"]["n"]) if e.get("negation", {}).get("n") else "—")) + " |")
     triv = [frac(round(_get(R[s], "explanations", "baseline", "trivial_baseline_always_met_no_misconception", "c3_accuracy") * R[s]["explanations"]["baseline"]["n"]), R[s]["explanations"]["baseline"]["n"])
             for s in SPLITS if R[s] for _ in readers]
     w("| *Trivial baseline: always “met”* | " + " | ".join(triv) + " |\n")
@@ -74,6 +76,14 @@ def write_report(path: Path, results_dir: Path, system: dict | None) -> None:
         w("> **The LLM reader was not evaluated in this run.** No model credentials were available. Its behaviour is covered by unit tests with "
           "mocked responses (negation, abstention, fabricated quotes, timeouts, malformed output), but no accuracy claim is made for it. "
           "Set `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` in `backend/.env` and re-run to measure it. Nothing was simulated or replayed in its place.\n")
+
+    usage = [(s, R[s].get("llm_usage")) for s in SPLITS if R[s] and R[s].get("llm_usage")]
+    if usage:
+        w("### Cost and latency of live inference\n")
+        w("| Split | Calls (failed) | Input tokens | Output tokens | Avg latency | Est. cost (USD) |\n|---|---|---|---|---|---|")
+        for s_, u in usage:
+            w(f"| {s_} | {u['calls']} ({u['failures']}) | {u['input_tokens']:,} | {u['output_tokens']:,} | {u['avg_latency_s']} s | {u['estimated_cost_usd']} |")
+        w(f"\nCost is estimated from token counts at assumed list prices {usage[0][1]['price_basis_per_1m']} USD per 1M input/output tokens; the provider's billing page is authoritative.\n")
 
     if R["final"]:
         w("### Final set by category (rule baseline" + (" vs LLM" if llm else "") + ")\n")

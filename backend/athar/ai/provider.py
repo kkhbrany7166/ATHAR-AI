@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 import threading
+import time
 from typing import Protocol, TypeVar
 
 from pydantic import BaseModel
@@ -39,6 +40,42 @@ class _Budget:
 
 BUDGET = _Budget(MAX_CALLS)
 
+# Approximate list prices in USD per 1M tokens (input, output). Used only to *estimate* cost; check your billing page.
+PRICES = {
+    "gpt-4.1-mini": (0.40, 1.60), "gpt-4.1": (2.00, 8.00), "gpt-4o-mini": (0.15, 0.60), "gpt-4o": (2.50, 10.00),
+    "gpt-5-mini": (0.25, 2.00), "gpt-5": (1.25, 10.00), "claude-opus-5-5": (4.00, 20.00), "claude-sonnet-5-5": (2.00, 10.00),
+}
+
+
+class _Usage:
+    """Thread-safe counters for calls, tokens and latency (per process)."""
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self.reset()
+
+    def reset(self) -> None:
+        self.calls = self.failures = self.input_tokens = self.output_tokens = 0
+        self.latency_s = 0.0
+
+    def record(self, *, ok: bool, input_tokens: int = 0, output_tokens: int = 0, latency_s: float = 0.0) -> None:
+        with self._lock:
+            self.calls += 1
+            self.failures += 0 if ok else 1
+            self.input_tokens += input_tokens or 0
+            self.output_tokens += output_tokens or 0
+            self.latency_s += latency_s
+
+    def snapshot(self, model: str = "") -> dict:
+        price = PRICES.get(model)
+        cost = None if price is None else round(self.input_tokens / 1e6 * price[0] + self.output_tokens / 1e6 * price[1], 4)
+        return {"calls": self.calls, "failures": self.failures, "input_tokens": self.input_tokens, "output_tokens": self.output_tokens,
+                "avg_latency_s": round(self.latency_s / self.calls, 2) if self.calls else None, "estimated_cost_usd": cost,
+                "price_basis_per_1m": price}
+
+
+USAGE = _Usage()
+
 
 class LLMProvider(Protocol):
     name: str
@@ -61,6 +98,7 @@ class AnthropicProvider:
 
     def parse(self, system: str, user: str, schema: type[T], max_tokens: int = 4000) -> T:
         BUDGET.take()
+        t0 = time.monotonic()
         try:
             resp = self.client.messages.parse(
                 model=self.model,
@@ -70,9 +108,14 @@ class AnthropicProvider:
                 output_format=schema,
             )
         except self._anthropic.APIError as e:
+            USAGE.record(ok=False, latency_s=time.monotonic() - t0)
             raise LLMError(f"Anthropic API error: {e.__class__.__name__}: {e}") from e
         except Exception as e:  # malformed JSON / schema validation inside the SDK's parser
+            USAGE.record(ok=False, latency_s=time.monotonic() - t0)
             raise LLMError(f"malformed model output: {e.__class__.__name__}") from e
+        u = getattr(resp, "usage", None)
+        USAGE.record(ok=resp.stop_reason not in ("refusal", "max_tokens") and resp.parsed_output is not None,
+                     input_tokens=getattr(u, "input_tokens", 0), output_tokens=getattr(u, "output_tokens", 0), latency_s=time.monotonic() - t0)
         if resp.stop_reason == "refusal":
             raise LLMError("model declined the request")
         if resp.stop_reason == "max_tokens":
@@ -104,6 +147,7 @@ class OpenAIProvider:
 
     def parse(self, system: str, user: str, schema: type[T], max_tokens: int = 4000) -> T:
         BUDGET.take()
+        t0 = time.monotonic()
         try:
             resp = self.client.chat.completions.parse(
                 model=self.model,
@@ -112,10 +156,16 @@ class OpenAIProvider:
                 max_completion_tokens=max_tokens,
             )
         except self._openai.OpenAIError as e:
+            USAGE.record(ok=False, latency_s=time.monotonic() - t0)
             raise LLMError(f"OpenAI API error: {e.__class__.__name__}: {e}") from e
         except Exception as e:  # malformed JSON / schema validation inside the SDK's parser
+            USAGE.record(ok=False, latency_s=time.monotonic() - t0)
             raise LLMError(f"malformed model output: {e.__class__.__name__}") from e
+        u = getattr(resp, "usage", None)
         msg = resp.choices[0].message
+        ok = not getattr(msg, "refusal", None) and msg.parsed is not None
+        USAGE.record(ok=ok, input_tokens=getattr(u, "prompt_tokens", 0), output_tokens=getattr(u, "completion_tokens", 0),
+                     latency_s=time.monotonic() - t0)
         if getattr(msg, "refusal", None):
             raise LLMError("model declined the request")
         if msg.parsed is None:

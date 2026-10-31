@@ -186,6 +186,8 @@ class ValidatedAnalysis:
     code_issue: str = ""
     summary: str = ""
     prompt_version: str = ""
+    quotes_returned: int = 0  # every quote the model produced (criteria, findings, objectives)
+    quotes_kept: int = 0      # how many survived verbatim validation
 
 
 def _validate_criteria(items: list[CriterionJudgment], explanation: str, codes: list[str], rejected: list[str]) -> dict[str, ValidatedCriterion]:
@@ -229,6 +231,11 @@ def validate(raw: ExplanationAnalysis | ExplanationReading, *, explanation: str,
         v = ValidatedSignal(s.code, s.quote.strip().strip(_STRIP), s.reasoning, s.confidence)
         (rejects if getattr(s, "stance", "holds") == "rejects" else holds).append(v)
     out = ValidatedAnalysis(crit, holds, rejected, rejected_ideas=rejects)
+    all_quotes = [q for j in raw.criteria for q in j.quotes] + [x.quote for x in raw.misconceptions]
+    if isinstance(raw, ExplanationReading):
+        all_quotes += [o.quote for o in raw.objectives if o.quote]
+    out.quotes_returned = len(all_quotes)
+    out.quotes_kept = sum(1 for q in all_quotes if quote_in_text(q, explanation))
     if isinstance(raw, ExplanationReading):
         out.prompt_version = PROMPT_VERSION
         out.answer_type, out.code_issue, out.summary = raw.answer_type, raw.code_issue, raw.professor_summary.strip()[:600]

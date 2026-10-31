@@ -12,6 +12,17 @@ from athar.ai.reader import set_analyzer_override
 from athar.seed.demo import seed_demo
 
 
+@pytest.fixture(autouse=True)
+def _never_call_live_models(monkeypatch):
+    """Tests must never spend money or depend on the network, even when backend/.env holds a real key."""
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    set_provider_override(None)
+    yield
+    clear_provider_override()
+    set_analyzer_override(None)
+
+
 @pytest.fixture()
 def world(tmp_path):
     dbmod.configure(f"sqlite:///{tmp_path / 'test.db'}")

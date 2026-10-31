@@ -201,9 +201,21 @@ def _read(kind: str, provider, text: str, code: str = "(not shown)", test_summar
 
 def suite_explanations(cases: list[dict], kind: str, provider) -> dict:
     preds, c3, errors, failures, outputs, abstained = {}, {}, 0, [], [], 0
-    for c in cases:
+    q_ret = q_kept = 0
+    from concurrent.futures import ThreadPoolExecutor
+
+    def read_one(c):
         try:
-            a = _read(kind, provider, c["text"])
+            return c, _read(kind, provider, c["text"]), None
+        except Exception as e:  # noqa: BLE001
+            return c, None, e
+    with ThreadPoolExecutor(max_workers=6 if kind == "llm" else 1) as pool:
+        readings = list(pool.map(read_one, cases))
+    for c, a, err in readings:
+        try:
+            if err:
+                raise err
+            q_ret, q_kept = q_ret + a.quotes_returned, q_kept + a.quotes_kept
             preds[c["id"]] = {s.code for s in a.signals} & set(EXPL_CODES)
             c3[c["id"]] = a.criteria["C3"].judgment if "C3" in a.criteria else "missing"
             abstained += bool(a.abstained)
@@ -226,6 +238,9 @@ def suite_explanations(cases: list[dict], kind: str, provider) -> dict:
         "abstains_when_evidence_is_insufficient": _r(sum(c3[c["id"]] == "unclear" for c in unclear) / len(unclear)) if unclear else None,
         "wrongly_abstains_when_decidable": _r(sum(c3[c["id"]] == "unclear" for c in decided) / len(decided)) if decided else None,
         "c3_correct": sum(c3[c["id"]] == c["c3"] for c in cases),
+        "quotes": {"returned": q_ret, "verbatim": q_kept},
+        "negation": (lambda neg: {"n": len(neg), "no_false_misconception": sum(1 for c in neg if not preds[c["id"]]),
+                                  "c3_correct": sum(1 for c in neg if c3[c["id"]] == c["c3"])})([c for c in cases if c.get("category") == "negation"]),
         "c3_confusion": [{"expected": e, "got": g, "count": n} for (e, g), n in sorted(Counter((c["c3"], c3[c["id"]]) for c in cases).items())],
         "abstention_rate": _r(abstained / len(cases)) if kind == "llm" else None,
         "unclear_rate": _r(sum(c3[c["id"]] == "unclear" for c in cases) / len(cases)),
@@ -331,6 +346,8 @@ def suite_system() -> dict:
 # ------------------------------------------------------------------ main
 
 def run_split(name: str, sets: dict, provider) -> dict:
+    from athar.ai.provider import USAGE
+    USAGE.reset()
     readers = ["baseline"] + (["llm"] if provider else [])
     res = {"split": name, "provenance": sets["provenance"], "variants": suite_variants(sets["variants"]),
            "explanations": {k: suite_explanations(sets["explanations"], k, provider) for k in readers},
@@ -339,6 +356,7 @@ def run_split(name: str, sets: dict, provider) -> dict:
         res["code"] = suite_code(sets["code"])
     if "diagnosis" in sets:
         res["diagnosis"] = {k: suite_diagnosis(sets["diagnosis"], k, provider) for k in ["none", *readers]}
+    res["llm_usage"] = USAGE.snapshot(provider.model) if provider else None
     if not provider:
         msg = {"not_run": "No model credentials configured. Nothing was simulated or replayed in its place."}
         res["explanations"]["llm"] = res["verifier"]["llm"] = msg
