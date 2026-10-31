@@ -25,6 +25,7 @@ class LLMError(Exception):
 
 TIMEOUT_SECONDS = float(os.getenv("ATHAR_LLM_TIMEOUT", "45"))
 MAX_CALLS = int(os.getenv("ATHAR_LLM_MAX_CALLS", "400"))  # per process: a hard ceiling on spend
+MAX_COST_USD = float(os.getenv("ATHAR_LLM_MAX_COST_USD", "1.00"))  # per process, estimated from tokens
 
 
 class _Budget:
@@ -33,6 +34,8 @@ class _Budget:
 
     def take(self) -> None:
         with self._lock:
+            if USAGE.lifetime_cost >= MAX_COST_USD:
+                raise LLMError(f"LLM spending ceiling reached (≈${USAGE.lifetime_cost:.2f} of ${MAX_COST_USD:.2f}); raise ATHAR_LLM_MAX_COST_USD deliberately if needed")
             if self.used >= self.limit:
                 raise LLMError(f"LLM call budget exhausted ({self.limit} calls); raise ATHAR_LLM_MAX_CALLS deliberately if needed")
             self.used += 1
@@ -52,6 +55,8 @@ class _Usage:
 
     def __init__(self):
         self._lock = threading.Lock()
+        self.lifetime_cost = 0.0  # never reset: backs the per-process spending ceiling
+        self.model = ""
         self.reset()
 
     def reset(self) -> None:
@@ -65,6 +70,8 @@ class _Usage:
             self.input_tokens += input_tokens or 0
             self.output_tokens += output_tokens or 0
             self.latency_s += latency_s
+            price = PRICES.get(self.model, (5.0, 20.0))  # unknown model: assume an expensive one
+            self.lifetime_cost += (input_tokens or 0) / 1e6 * price[0] + (output_tokens or 0) / 1e6 * price[1]
 
     def snapshot(self, model: str = "") -> dict:
         price = PRICES.get(model)
@@ -95,6 +102,7 @@ class AnthropicProvider:
         self._anthropic = anthropic
         self.client = anthropic.Anthropic(max_retries=1, timeout=TIMEOUT_SECONDS)
         self.model = model
+        USAGE.model = model
 
     def parse(self, system: str, user: str, schema: type[T], max_tokens: int = 4000) -> T:
         BUDGET.take()
@@ -144,6 +152,7 @@ class OpenAIProvider:
         self._openai = openai
         self.client = openai.OpenAI(max_retries=1, timeout=TIMEOUT_SECONDS)
         self.model = model
+        USAGE.model = model
 
     def parse(self, system: str, user: str, schema: type[T], max_tokens: int = 4000) -> T:
         BUDGET.take()
@@ -219,4 +228,4 @@ def provider_status() -> dict[str, object]:
         return {"provider": _override.name if _override else "none", "model": _override.model if _override else "",
                 "configured": _override is not None}
     return {"provider": p, "model": model, "configured": p in ("anthropic", "openai"), "analyzer": s.analyzer,
-            "timeout_seconds": TIMEOUT_SECONDS, "max_calls": MAX_CALLS}
+            "timeout_seconds": TIMEOUT_SECONDS, "max_calls": MAX_CALLS, "max_cost_usd": MAX_COST_USD}

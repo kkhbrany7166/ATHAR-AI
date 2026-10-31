@@ -395,6 +395,10 @@ def main() -> None:
         path.write_text(json.dumps(r, indent=2, ensure_ascii=False))
         results[n] = r
         print(f"wrote {path.relative_to(BACKEND)}")
+        if r.get("llm_usage"):
+            with (out_dir / "spend.jsonl").open("a") as fh:  # append-only spending ledger
+                fh.write(json.dumps({"ran_at": meta["ran_at"], "split": n, "model": meta["llm"]["model"], **r["llm_usage"]}) + "\n")
+            print(f"  LLM usage: {r['llm_usage']}")
     system = None if args.no_system else suite_system()
     if system:
         (out_dir / "system.json").write_text(json.dumps({"meta": meta, **system}, indent=2))

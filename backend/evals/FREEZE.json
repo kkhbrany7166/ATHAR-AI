@@ -1,0 +1,38 @@
+{
+  "frozen_at": "2026-10-31 09:26:54 +0300",
+  "commit": "af08cf6",
+  "llm": {
+    "provider": "openai",
+    "model": "gpt-4.1-mini",
+    "configured": true,
+    "analyzer": "auto",
+    "timeout_seconds": 45.0,
+    "max_calls": 400,
+    "max_cost_usd": 1.0
+  },
+  "sampling": "provider defaults (temperature not set); structured output via chat.completions.parse",
+  "reader_prompt_version": "reader-v2",
+  "reader_prompt_sha": "22740952c7b0be2b",
+  "validation_sha": "f3f1440ec3a01cc6",
+  "rule_baseline": "rules-v1",
+  "rule_baseline_sha": "c85126da3cc35d09",
+  "verifier": "verify-v1",
+  "verifier_sha": "59c731d87c337247",
+  "planning_sha": "62859eeb09092a97",
+  "datasets": {
+    "datasets/final/diagnosis.json": "e53db0e28bedcb5e",
+    "datasets/final/explanations.json": "a5bca53c08c7fb6a",
+    "datasets/final/variants.json": "a73c2ca68aff478d",
+    "datasets/final/verifier.json": "5bda26f047e5a3d2",
+    "datasets/heldout/code.json": "0e3940d7b3a47b13",
+    "datasets/heldout/explanations.json": "28677f6244a4ad3b",
+    "datasets/heldout/variants.json": "91d75083b80d11a4",
+    "datasets/heldout/verifier.json": "ae36db6390ad75dc"
+  },
+  "scoring": {
+    "explanations": "Per case: held misconceptions (MC-STOP-IMPLICIT, MC-BASE-SMALLEST) vs label \u2192 micro P/R/F1; C3 judgment exact match (met / not_met / unclear; partial counts as wrong). 'Rejects' findings are not held. Errors count as wrong with no misconception.",
+    "verifier": "Outcome exact match (demonstrated / still_developing / insufficient_evidence) from sandbox tests + reading + verify-v1 rules.",
+    "diagnosis": "Category exact match from sandbox + probes + reading + planning rules.",
+    "variants": "Validator valid/invalid vs label."
+  }
+}
