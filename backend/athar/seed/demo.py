@@ -86,6 +86,11 @@ def seed_demo(db: Session) -> dict[str, int]:
         db.add(m.SyntheticLabel(submission_id=sub.id, code_pattern=plan.code_pattern, explanation_pattern=plan.explanation_pattern))
         submitted += 1
 
+    db.flush()
+    from ..interventions.service import ensure_item_bank  # local import: seeding must not depend on API modules
+
+    db.refresh(course)
+    ensure_item_bank(db, course)
     db.add(m.AuditEvent(actor_id=None, action="seed.demo", entity="course", entity_id=course.id,
                         payload={"students": len(names) + 1, "submissions": submitted + 1}))
     db.commit()

@@ -150,3 +150,85 @@ Tracing factorial(3):
   factorial(2) returns 2 * 1 = 2
   factorial(3) returns 3 * 2 = 6
 """
+
+
+# ---------------------------------------------------------------------------------------------
+# Item bank for interventions. Each item carries a reference solution and an implementation that
+# holds the targeted misconception. An item is only usable if the validator confirms the reference
+# passes every test AND the misconception implementation fails a probe in the expected way.
+# ---------------------------------------------------------------------------------------------
+
+def _t(name, fn, args, expected, criterion, probes=(), hidden=False):
+    return {"name": name, "function": fn, "args": args, "expected": expected, "criterion": criterion,
+            "hidden": hidden, "probes": list(probes)}
+
+
+_P_SMALLEST = [{"misconception": "MC-BASE-SMALLEST", "on": "error", "error_types": _SMALLEST_ERR},
+               {"misconception": "MC-BASE-VALUE", "on": "wrong_value"}]
+
+FOLLOWUP_CRITERIA = [
+    {"code": "C1", "title": "Correct results on general inputs", "method": "tests", "objective": "REC-2", "max_points": 2,
+     "description": "Returns correct results for typical inputs."},
+    {"code": "C2", "title": "Base case handles the smallest valid input", "method": "tests", "objective": "REC-1", "max_points": 2,
+     "description": "Returns the right value for the smallest valid input."},
+    {"code": "C3", "title": "Explains when and why the recursion stops", "method": "explanation", "objective": "REC-1", "max_points": 2,
+     "description": "Names the explicit stopping condition, why it is reached for every valid input, and why it returns that value."},
+]
+
+ITEM_BANK = [
+    {
+        "key": "product_list", "role": "practice", "misconception": "MC-BASE-SMALLEST", "objective": "REC-1",
+        "title": "Practice: product_list",
+        "prompt": "Write a recursive function product_list(xs) that returns the product of a list of integers. "
+                  "The list may be empty. No loops, no math.prod.",
+        "explanation_prompt": "What does product_list([]) return, and why is that the right answer?",
+        "starter_code": "def product_list(xs):\n    pass\n",
+        "reference_solution": "def product_list(xs):\n    if not xs:\n        return 1\n    return xs[0] * product_list(xs[1:])\n",
+        "misconception_solution": "def product_list(xs):\n    if len(xs) == 1:\n        return xs[0]\n    return xs[0] * product_list(xs[1:])\n",
+        "tests": [
+            _t("product_list([2, 3, 4]) is 24", "product_list", [[2, 3, 4]], 24, "C1"),
+            _t("product_list([7]) is 7", "product_list", [[7]], 7, "C1"),
+            _t("product_list([-1, 5]) is -5", "product_list", [[-1, 5]], -5, "C1"),
+            _t("product_list([]) is 1", "product_list", [[]], 1, "C2", _P_SMALLEST),
+        ],
+        "hints": [
+            "What is the smallest list this function can receive? Write that case down before anything else.",
+            "For an empty list, think about which number leaves a product unchanged when you multiply by it.",
+            "Check for the empty list first and return 1. The recursive case multiplies xs[0] by the product of the rest.",
+        ],
+    },
+    {
+        "key": "repeat_text", "role": "followup", "misconception": "MC-BASE-SMALLEST", "objective": "REC-1",
+        "title": "Check: repeat_text",
+        "prompt": "Write a recursive function repeat_text(s, n) that returns the string s repeated n times, for any n >= 0. "
+                  "Do not use loops or the * operator on strings.",
+        "explanation_prompt": "Explain when and why repeat_text stops recursing, and what repeat_text(\"ab\", 0) returns and why.",
+        "starter_code": "def repeat_text(s, n):\n    pass\n",
+        "reference_solution": "def repeat_text(s, n):\n    if n == 0:\n        return \"\"\n    return s + repeat_text(s, n - 1)\n",
+        "misconception_solution": "def repeat_text(s, n):\n    if n == 1:\n        return s\n    return s + repeat_text(s, n - 1)\n",
+        "tests": [
+            _t("repeat_text('ab', 3) is 'ababab'", "repeat_text", ["ab", 3], "ababab", "C1"),
+            _t("repeat_text('x', 1) is 'x'", "repeat_text", ["x", 1], "x", "C1"),
+            _t("repeat_text('', 4) is ''", "repeat_text", ["", 4], "", "C1", hidden=True),
+            _t("repeat_text('hi', 0) is ''", "repeat_text", ["hi", 0], "", "C2", _P_SMALLEST),
+            _t("repeat_text('z', 0) is ''", "repeat_text", ["z", 0], "", "C2", _P_SMALLEST, hidden=True),
+        ],
+        "hints": [],
+    },
+    {
+        "key": "countdown", "role": "followup", "misconception": "MC-BASE-SMALLEST", "objective": "REC-1",
+        "title": "Check: countdown",
+        "prompt": "Write a recursive function countdown(n) that returns the list [n, n-1, ..., 1] for any n >= 0. "
+                  "countdown(0) is the empty list. No loops or range().",
+        "explanation_prompt": "Explain when and why countdown stops recursing, and what countdown(0) returns and why.",
+        "starter_code": "def countdown(n):\n    pass\n",
+        "reference_solution": "def countdown(n):\n    if n == 0:\n        return []\n    return [n] + countdown(n - 1)\n",
+        "misconception_solution": "def countdown(n):\n    if n == 1:\n        return [1]\n    return [n] + countdown(n - 1)\n",
+        "tests": [
+            _t("countdown(3) is [3, 2, 1]", "countdown", [3], [3, 2, 1], "C1"),
+            _t("countdown(1) is [1]", "countdown", [1], [1], "C1"),
+            _t("countdown(0) is []", "countdown", [0], [], "C2", _P_SMALLEST),
+        ],
+        "hints": [],
+    },
+]

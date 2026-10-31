@@ -99,35 +99,8 @@ def _execute(db: Session, run: m.GradingRun, reader: Reader) -> None:
     with ThreadPoolExecutor(max_workers=8) as pool:
         reports = list(pool.map(lambda s: run_tests(s.code, specs), subs))
 
-    tests_by_id = {t.id: t for t in tests}
     for sub, report in zip(subs, reports):
-        # Replace machine-produced evidence from earlier runs; keep professor decisions.
-        db.execute(delete(m.MisconceptionEvidence).where(m.MisconceptionEvidence.submission_id == sub.id))
-        db.execute(delete(m.TestResult).where(m.TestResult.submission_id == sub.id))
-        db.execute(delete(m.CriterionEvidence).where(m.CriterionEvidence.submission_id == sub.id,
-                                                     m.CriterionEvidence.source.in_(("tests", "rules", "ai"))))
-        db.flush()
-        result_rows = {}
-        for o in report.outcomes:
-            tr = m.TestResult(submission_id=sub.id, test_case_id=o.id, run_id=run.id, status=o.status, actual=o.actual,
-                              error_type=o.error_type, error_message=o.error_message)
-            db.add(tr)
-            result_rows[o.id] = tr
-        db.flush()
-        load_failed = report.load_error is not None or any(o.error_type == "Crash" for o in report.outcomes)
-        for c in test_criteria:
-            outs = [(tests_by_id[o.id], o.status, o.error_type) for o in report.outcomes if tests_by_id[o.id].criterion_id == c.id]
-            score = ev.score_test_criterion(c, outs)
-            reasons = ["code_did_not_load"] if load_failed else []
-            db.add(m.CriterionEvidence(submission_id=sub.id, criterion_id=c.id, run_id=run.id, source="tests",
-                                       judgment=score.judgment, points=score.points, rationale=score.rationale,
-                                       needs_review=bool(reasons), review_reasons=reasons, confidence="high"))
-        for o in report.outcomes:
-            for code in ev.probe_hits(tests_by_id[o.id], o.status, o.error_type, load_failed):
-                tc = tests_by_id[o.id]
-                detail = f"{tc.name}: " + (f"{o.error_type}" if o.status in ("error", "timeout") else f"returned {o.actual}")
-                db.add(m.MisconceptionEvidence(submission_id=sub.id, misconception_code=code, run_id=run.id, source="tests",
-                                               detail=detail, test_result_id=result_rows[o.id].id, confidence="high"))
+        record_test_evidence(db, sub, report, tests, test_criteria, run.id)
         run.tests_done += 1
     db.commit()
 
@@ -157,7 +130,7 @@ def _execute(db: Session, run: m.GradingRun, reader: Reader) -> None:
     if expl_criteria:
         with ThreadPoolExecutor(max_workers=6 if reader.kind == "llm" else 1) as pool:
             for sub, result, err in pool.map(analyze_one, list(zip(subs, reports))):
-                _store_explanation_evidence(db, run, sub, expl_criteria, crit_by_code, result, err, reader)
+                store_explanation_evidence(db, run.id, sub, expl_criteria, crit_by_code, result, err, reader)
                 if err and err != "unavailable":
                     run.ai_failed += 1
                 elif result is not None:
@@ -189,11 +162,47 @@ def _execute(db: Session, run: m.GradingRun, reader: Reader) -> None:
     db.commit()
 
 
-def _store_explanation_evidence(db, run, sub, expl_criteria, crit_by_code, result, err, reader: Reader) -> None:
+def record_test_evidence(db: Session, sub: m.Submission, report: RunReport, tests: list[m.TestCase],
+                         test_criteria: list[m.RubricCriterion], run_id: int | None) -> bool:
+    """Store test results, test-scored criteria and probe-based misconception evidence. Returns load_failed.
+
+    Replaces machine-produced evidence from earlier runs; professor decisions are kept.
+    """
+    tests_by_id = {t.id: t for t in tests}
+    db.execute(delete(m.MisconceptionEvidence).where(m.MisconceptionEvidence.submission_id == sub.id))
+    db.execute(delete(m.TestResult).where(m.TestResult.submission_id == sub.id))
+    db.execute(delete(m.CriterionEvidence).where(m.CriterionEvidence.submission_id == sub.id,
+                                                 m.CriterionEvidence.source.in_(("tests", "rules", "ai", "baseline"))))
+    db.flush()
+    result_rows = {}
+    for o in report.outcomes:
+        tr = m.TestResult(submission_id=sub.id, test_case_id=o.id, run_id=run_id, status=o.status, actual=o.actual,
+                          error_type=o.error_type, error_message=o.error_message)
+        db.add(tr)
+        result_rows[o.id] = tr
+    db.flush()
+    load_failed = report.load_error is not None or any(o.error_type == "Crash" for o in report.outcomes)
+    for c in test_criteria:
+        outs = [(tests_by_id[o.id], o.status, o.error_type) for o in report.outcomes if tests_by_id[o.id].criterion_id == c.id]
+        score = ev.score_test_criterion(c, outs)
+        reasons = ["code_did_not_load"] if load_failed else []
+        db.add(m.CriterionEvidence(submission_id=sub.id, criterion_id=c.id, run_id=run_id, source="tests",
+                                   judgment=score.judgment, points=score.points, rationale=score.rationale,
+                                   needs_review=bool(reasons), review_reasons=reasons, confidence="high"))
+    for o in report.outcomes:
+        tc = tests_by_id[o.id]
+        for code in ev.probe_hits(tc, o.status, o.error_type, load_failed):
+            detail = f"{tc.name}: " + (f"{o.error_type}" if o.status in ("error", "timeout") else f"returned {o.actual}")
+            db.add(m.MisconceptionEvidence(submission_id=sub.id, misconception_code=code, run_id=run_id, source="tests",
+                                           detail=detail, test_result_id=result_rows[o.id].id, confidence="high"))
+    return load_failed
+
+
+def store_explanation_evidence(db, run_id, sub, expl_criteria, crit_by_code, result, err, reader: Reader) -> None:
     if result is None:
         if not sub.explanation.strip():
             for c in expl_criteria:
-                db.add(m.CriterionEvidence(submission_id=sub.id, criterion_id=c.id, run_id=run.id, source="rules",
+                db.add(m.CriterionEvidence(submission_id=sub.id, criterion_id=c.id, run_id=run_id, source="rules",
                                            judgment="not_met", points=0.0, rationale="No written explanation was submitted.",
                                            confidence="high"))
             return
@@ -201,7 +210,7 @@ def _store_explanation_evidence(db, run, sub, expl_criteria, crit_by_code, resul
         rationale = ("No AI provider is configured, so this explanation has not been analysed. It needs professor review."
                      if err == "unavailable" else f"AI analysis failed: {err}. It needs professor review.")
         for c in expl_criteria:
-            db.add(m.CriterionEvidence(submission_id=sub.id, criterion_id=c.id, run_id=run.id, source="ai", judgment=judgment,
+            db.add(m.CriterionEvidence(submission_id=sub.id, criterion_id=c.id, run_id=run_id, source="ai", judgment=judgment,
                                        points=None, rationale=rationale, needs_review=True, review_reasons=[judgment],
                                        model=reader.label))
         return
@@ -210,7 +219,7 @@ def _store_explanation_evidence(db, run, sub, expl_criteria, crit_by_code, resul
     for c in expl_criteria:
         v = result.criteria.get(c.code)
         if v is None:
-            db.add(m.CriterionEvidence(submission_id=sub.id, criterion_id=c.id, run_id=run.id, source=source, judgment="ai_failed",
+            db.add(m.CriterionEvidence(submission_id=sub.id, criterion_id=c.id, run_id=run_id, source=source, judgment="ai_failed",
                                        points=None, rationale="The AI response did not include this criterion.",
                                        needs_review=True, review_reasons=["missing_from_ai_output"], model=model))
             continue
@@ -218,9 +227,9 @@ def _store_explanation_evidence(db, run, sub, expl_criteria, crit_by_code, resul
         reasons = list(v.review_reasons)
         if result.rejected:
             reasons.append("ai_output_partially_rejected")
-        db.add(m.CriterionEvidence(submission_id=sub.id, criterion_id=c.id, run_id=run.id, source=source, judgment=v.judgment,
+        db.add(m.CriterionEvidence(submission_id=sub.id, criterion_id=c.id, run_id=run_id, source=source, judgment=v.judgment,
                                    points=points, rationale=v.rationale, quotes=v.quotes, confidence=v.confidence,
                                    needs_review=bool(reasons), review_reasons=sorted(set(reasons)), model=model))
     for s in result.signals:
-        db.add(m.MisconceptionEvidence(submission_id=sub.id, misconception_code=s.code, run_id=run.id, source=source,
+        db.add(m.MisconceptionEvidence(submission_id=sub.id, misconception_code=s.code, run_id=run_id, source=source,
                                        detail=s.reasoning, quote=s.quote, confidence=s.confidence))

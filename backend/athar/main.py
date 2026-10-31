@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api import professor, student, system
+from .api import interventions, professor, student, system
 from .config import get_settings
 from .db import init_db
 
@@ -24,6 +24,7 @@ def create_app() -> FastAPI:
     app.include_router(system.router)
     app.include_router(professor.router)
     app.include_router(student.router)
+    app.include_router(interventions.router)
 
     return app
 

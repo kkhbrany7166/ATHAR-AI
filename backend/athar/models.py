@@ -100,6 +100,8 @@ class Assignment(Base):
     starter_code: Mapped[str] = mapped_column(Text, default="")
     reference_solution: Mapped[str] = mapped_column(Text, default="")  # never sent to students
     status: Mapped[str] = mapped_column(String(20), default="open")  # draft | open | closed
+    # Targeted assignments (intervention follow-ups) are visible only to students with a task for them.
+    targeted: Mapped[bool] = mapped_column(Boolean, default=False)
     due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
@@ -282,3 +284,118 @@ class SyntheticLabel(Base):
     submission_id: Mapped[int] = mapped_column(ForeignKey("submissions.id"), unique=True)
     code_pattern: Mapped[str] = mapped_column(String(60))
     explanation_pattern: Mapped[str] = mapped_column(String(60))
+
+
+# ------------------------------------------------------------------ Milestone 2: intervene → verify
+
+class AssessmentItem(Base):
+    """A practice or check problem. Usable only once validated against reference + misconception code."""
+
+    __tablename__ = "assessment_items"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    course_id: Mapped[int] = mapped_column(ForeignKey("courses.id"))
+    objective_id: Mapped[int | None] = mapped_column(ForeignKey("learning_objectives.id"), nullable=True)
+    misconception_code: Mapped[str] = mapped_column(String(40))
+    key: Mapped[str] = mapped_column(String(60))
+    role: Mapped[str] = mapped_column(String(20))  # practice | followup
+    title: Mapped[str] = mapped_column(String(300))
+    prompt: Mapped[str] = mapped_column(Text)
+    explanation_prompt: Mapped[str] = mapped_column(Text, default="")
+    starter_code: Mapped[str] = mapped_column(Text, default="")
+    reference_solution: Mapped[str] = mapped_column(Text)
+    misconception_solution: Mapped[str] = mapped_column(Text)
+    tests: Mapped[list[dict[str, Any]]] = mapped_column(JSON)
+    hints: Mapped[list[str]] = mapped_column(JSON, default=list)
+    source: Mapped[str] = mapped_column(String(40), default="item_bank")  # item_bank | ai:<model>
+    validation: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class Intervention(Base):
+    __tablename__ = "interventions"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    course_id: Mapped[int] = mapped_column(ForeignKey("courses.id"))
+    assignment_id: Mapped[int] = mapped_column(ForeignKey("assignments.id"))
+    insight_id: Mapped[int | None] = mapped_column(ForeignKey("insights.id", ondelete="SET NULL"), nullable=True)
+    misconception_code: Mapped[str] = mapped_column(String(40))
+    objective_id: Mapped[int | None] = mapped_column(ForeignKey("learning_objectives.id"), nullable=True)
+    # draft → approved → active → completed ; draft → rejected
+    status: Mapped[str] = mapped_column(String(20), default="draft")
+    title: Mapped[str] = mapped_column(String(300))
+    explanation: Mapped[str] = mapped_column(Text)
+    explanation_source: Mapped[str] = mapped_column(String(80))  # template | ai:<model>
+    practice_item_id: Mapped[int | None] = mapped_column(ForeignKey("assessment_items.id"), nullable=True)
+    followup_item_id: Mapped[int | None] = mapped_column(ForeignKey("assessment_items.id"), nullable=True)
+    followup_assignment_id: Mapped[int | None] = mapped_column(ForeignKey("assignments.id"), nullable=True)
+    target_student_ids: Mapped[list[int]] = mapped_column(JSON)
+    professor_note: Mapped[str] = mapped_column(Text, default="")
+    execution_error: Mapped[str] = mapped_column(Text, default="")
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    approved_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    executed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    practice_item: Mapped[AssessmentItem | None] = relationship(foreign_keys=[practice_item_id])
+    followup_item: Mapped[AssessmentItem | None] = relationship(foreign_keys=[followup_item_id])
+    tasks: Mapped[list[InterventionTask]] = relationship(back_populates="intervention")
+
+
+class InterventionTask(Base):
+    """One student's copy of an approved intervention. Unique per (intervention, student): delivery is idempotent."""
+
+    __tablename__ = "intervention_tasks"
+    __table_args__ = (UniqueConstraint("intervention_id", "student_id"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    intervention_id: Mapped[int] = mapped_column(ForeignKey("interventions.id"))
+    student_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    # assigned → started → submitted → verified
+    status: Mapped[str] = mapped_column(String(20), default="assigned")
+    initial_reasoning: Mapped[str] = mapped_column(Text, default="")
+    revised_reasoning: Mapped[str] = mapped_column(Text, default="")
+    reflection: Mapped[str] = mapped_column(Text, default="")
+    hints_revealed: Mapped[int] = mapped_column(Integer, default=0)
+    is_simulated: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+    intervention: Mapped[Intervention] = relationship(back_populates="tasks")
+    student: Mapped[User] = relationship()
+
+
+class PracticeAttempt(Base):
+    __tablename__ = "practice_attempts"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    task_id: Mapped[int] = mapped_column(ForeignKey("intervention_tasks.id"))
+    code: Mapped[str] = mapped_column(Text)
+    passed: Mapped[int] = mapped_column(Integer)
+    total: Mapped[int] = mapped_column(Integer)
+    results: Mapped[list[dict[str, Any]]] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class AssistantMessage(Base):
+    __tablename__ = "assistant_messages"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    task_id: Mapped[int] = mapped_column(ForeignKey("intervention_tasks.id"))
+    role: Mapped[str] = mapped_column(String(20))  # student | assistant | system
+    content: Mapped[str] = mapped_column(Text)
+    source: Mapped[str] = mapped_column(String(80), default="")  # ai:<model> | unavailable | error
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class Verification(Base):
+    __tablename__ = "verifications"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    task_id: Mapped[int] = mapped_column(ForeignKey("intervention_tasks.id"))
+    submission_id: Mapped[int] = mapped_column(ForeignKey("submissions.id"))
+    # demonstrated | still_developing | insufficient_evidence
+    outcome: Mapped[str] = mapped_column(String(30))
+    reasons: Mapped[list[str]] = mapped_column(JSON)
+    tests_passed: Mapped[int] = mapped_column(Integer)
+    tests_total: Mapped[int] = mapped_column(Integer)
+    explanation_judgment: Mapped[str] = mapped_column(String(20), default="")
+    explanation_reader: Mapped[str] = mapped_column(String(80), default="")
+    rule_version: Mapped[str] = mapped_column(String(20))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
