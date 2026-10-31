@@ -6,7 +6,7 @@ import { OverviewTab } from "./Overview";
 import { criterionLabel, misconceptionLabel } from "../../lib/labels";
 import type { AssignmentDetail, GradingRun, SubmissionRow } from "../../lib/types";
 import {
-  Button, CONDITIONS, Callout, CodeBlock, Crumb, ErrorState, JudgmentMark, KIND, Loading, Meter, PageHeader,
+  Button, CONDITIONS, Callout, CodeBlock, Crumb, Empty, ErrorState, JudgmentMark, KIND, Loading, Meter, PageHeader,
   Section, Tag, cx, fmtDate,
 } from "../../components/ui";
 
@@ -166,108 +166,119 @@ function GradingPanel({ a }: { a: AssignmentDetail }) {
 
 // ---------------------------------------------------------------- submissions
 
-type Filter = "all" | "review" | "misconception" | "ready";
+type Filter = "all" | "review" | "tests_failed" | "flagged" | "awaiting" | "reviewed";
+const FILTERS: [Filter, string][] = [["all", "All"], ["review", "Needs review"], ["tests_failed", "Tests failed"], ["flagged", "Flagged"], ["awaiting", "Awaiting your decision"], ["reviewed", "Reviewed"]];
+const PAGE = 20;
+
+function matches(r: SubmissionRow, f: Filter) {
+  if (f === "review") return r.needs_review;
+  if (f === "tests_failed") return r.criteria.some((c) => c.source === "tests" && c.judgment !== "met");
+  if (f === "flagged") return r.misconceptions.length > 0;
+  if (f === "awaiting") return r.includes_unconfirmed_ai || r.criteria.some((c) => c.judgment === "ai_unavailable" || c.judgment === "ai_failed");
+  if (f === "reviewed") return r.grade_status === "reviewed" || r.grade_status === "published";
+  return true;
+}
 
 function SubmissionsTab({ a }: { a: AssignmentDetail }) {
   const qc = useQueryClient();
-  const [filter, setFilter] = useState<Filter>("all");
-  const [search, setSearch] = useState("");
+  const [params, setParams] = useSearchParams();
+  const filter = (params.get("f") as Filter) || "all";
+  const search = params.get("q") ?? "";
+  const sort = params.get("sort") ?? "name";
+  const page = Math.max(1, Number(params.get("page") ?? 1));
+  const set = (patch: Record<string, string>) => {
+    const next = new URLSearchParams(params);
+    Object.entries(patch).forEach(([k, v]) => (v ? next.set(k, v) : next.delete(k)));
+    next.set("tab", "submissions");
+    setParams(next, { replace: true });
+  };
+  useEffect(() => {  // remember this exact list view for "Back to all submissions"
+    try { sessionStorage.setItem("athar.submissionsList", `/p/assignments/${a.id}?${params.toString()}`); } catch { /* ignore */ }
+  }, [params, a.id]);
   const q = useQuery({ queryKey: ["submissions", String(a.id)], queryFn: () => api<SubmissionRow[]>(`/api/professor/assignments/${a.id}/submissions`) });
   const publish = useMutation({
     mutationFn: () => api<{ published: number[]; blocked: { reasons: string[] }[] }>(`/api/professor/assignments/${a.id}/publish`, { method: "POST", json: {} }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["submissions", String(a.id)] });
-      qc.invalidateQueries({ queryKey: ["assignment", String(a.id)] });
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["submissions", String(a.id)] }); qc.invalidateQueries({ queryKey: ["assignment", String(a.id)] }); },
   });
+  const all = q.data ?? [];
   const rows = useMemo(() => {
-    const all = q.data ?? [];
-    return all.filter((r) => {
-      if (search && !r.student.name.toLowerCase().includes(search.toLowerCase())) return false;
-      if (filter === "review") return r.needs_review;
-      if (filter === "misconception") return r.misconceptions.length > 0;
-      if (filter === "ready") return r.grade_status === "reviewed";
-      return true;
-    });
-  }, [q.data, filter, search]);
+    const r = all.filter((x) => matches(x, filter) && (!search || x.student.name.toLowerCase().includes(search.toLowerCase())));
+    const by: Record<string, (x: SubmissionRow) => number | string> = {
+      name: (x) => x.student.name, score: (x) => -(x.total ?? -1), status: (x) => (x.needs_review ? 0 : 1) + x.student.name,
+    };
+    return [...r].sort((p, q2) => { const A = by[sort]?.(p) ?? 0, B = by[sort]?.(q2) ?? 0; return A < B ? -1 : A > B ? 1 : 0; });
+  }, [all, filter, search, sort]);
   if (q.isLoading) return <Loading />;
   if (q.error) return <ErrorState error={q.error} />;
+  const pages = Math.max(1, Math.ceil(rows.length / PAGE));
+  const shown = rows.slice((Math.min(page, pages) - 1) * PAGE, Math.min(page, pages) * PAGE);
   const crits = a.criteria;
 
   return (
-    <div className="pt-5">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <div className="flex flex-wrap gap-1">
-          {([["all", "All"], ["review", "Needs your review"], ["misconception", "Flagged"], ["ready", "Reviewed"]] as [Filter, string][]).map(([f, l]) => (
-            <button key={f} onClick={() => setFilter(f)}
-              className={cx("h-7 px-2.5 rounded text-[13.5px]", filter === f ? "bg-raised text-ink" : "text-muted hover:text-ink")}>
-              {l}
-            </button>
-          ))}
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Find a student"
-            className="ml-2 h-7 w-44 bg-surface border border-line rounded px-2 text-[13.5px] placeholder:text-faint" />
-        </div>
-        <Button onClick={() => publish.mutate()} disabled={publish.isPending}>Publish reviewed grades</Button>
+    <div className="pt-6">
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <input value={search} onChange={(e) => set({ q: e.target.value, page: "" })} placeholder="Search students" aria-label="Search students"
+          className="h-10 w-full sm:w-64 bg-surface border border-line-strong rounded px-3 text-[15px] placeholder:text-faint" />
+        <label className="text-[14px] text-muted flex items-center gap-2">Sort
+          <select value={sort} onChange={(e) => set({ sort: e.target.value })} className="h-10 bg-surface border border-line-strong rounded px-2 text-ink">
+            <option value="name">Name</option><option value="status">Needs review first</option><option value="score">Score</option>
+          </select>
+        </label>
+        <Button className="sm:ml-auto" onClick={() => publish.mutate()} disabled={publish.isPending}>Release reviewed feedback</Button>
+      </div>
+      <div className="flex flex-wrap gap-1.5 mb-4" role="group" aria-label="Filter submissions">
+        {FILTERS.map(([f, l]) => (
+          <button key={f} onClick={() => set({ f: f === "all" ? "" : f, page: "" })} aria-pressed={filter === f}
+            className={cx("h-9 px-3 rounded-full text-[14px] border", filter === f ? "border-accent-strong bg-accent-wash text-ink" : "border-line text-muted hover:text-ink")}>
+            {l} <span className="text-faint num">{all.filter((x) => matches(x, f)).length}</span>
+          </button>
+        ))}
       </div>
       {publish.data && (
-        <div className="mb-4">
-          <Callout tone={publish.data.published.length ? "accent" : "amber"} title={`${publish.data.published.length} grades published`}>
-            {publish.data.blocked.length} held back: a grade is only published once every criterion rests on tests or your own decision.
-            AI suggestions alone never release a grade.
-          </Callout>
+        <div className="mb-4"><Callout tone={publish.data.published.length ? "accent" : "amber"} title={`${publish.data.published.length} released`}>
+          {publish.data.blocked.length} held back until every criterion rests on tests or your decision.</Callout></div>
+      )}
+      {shown.length === 0 ? <Empty title="No submissions match">Try another filter or clear the search.</Empty> : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-[14.5px] min-w-[720px]">
+            <thead>
+              <tr className="text-left text-faint text-[13px] border-b border-line">
+                <th className="font-medium py-2.5">Student</th>
+                {crits.map((c) => <th key={c.id} className="font-medium py-2.5 px-2 max-w-[110px]" title={`${c.code}: ${c.title}`}>{criterionLabel(c.code)}</th>)}
+                <th className="font-medium py-2.5 text-right pr-4">Score</th>
+                <th className="font-medium py-2.5">Flags</th>
+                <th className="sr-only">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {shown.map((r) => (
+                <tr key={r.id} className="hover:bg-surface/60">
+                  <td className="py-3 pr-3"><Link to={`/p/submissions/${r.id}`} className="text-ink hover:text-accent-ink">{r.student.name}</Link></td>
+                  {r.criteria.map((c) => (
+                    <td key={c.criterion_id} className="py-3 px-2" title={`${criterionLabel(c.code)}: ${c.judgment ?? "no evidence"} (${c.source ?? "—"})`}>
+                      <span className="inline-flex items-center gap-1.5"><JudgmentMark judgment={c.judgment} compact />
+                        {(c.source === "ai" || c.source === "baseline") && c.judgment !== "ai_unavailable" && <span className="text-[12px] text-amber">suggested</span>}
+                        {c.source === "professor" && <span className="text-[12px] text-accent-ink">you</span>}</span>
+                    </td>
+                  ))}
+                  <td className="py-3 text-right pr-4 num">{r.total === null ? <span className="text-faint">—</span> : <>{r.total}<span className="text-faint">/{r.max_total}</span></>}</td>
+                  <td className="py-3"><span className="flex flex-wrap gap-1">{[...new Set(r.misconceptions)].slice(0, 2).map((m) => <Tag key={m} tone="amber" title={`${m}: flagged, not confirmed`}>{misconceptionLabel(m)}</Tag>)}</span></td>
+                  <td className="py-3 text-right"><Link to={`/p/submissions/${r.id}`} className="link text-[14px]">Review →</Link></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
-      <div className="overflow-x-auto">
-        <table className="w-full text-[14px] min-w-[760px]">
-          <thead>
-            <tr className="text-left text-faint text-2xs uppercase tracking-[0.1em] border-b border-line">
-              <th className="font-medium py-2">Student</th>
-              {crits.map((c) => <th key={c.id} className="font-medium py-2 px-2 normal-case tracking-normal text-[12.5px] leading-4 max-w-[96px]" title={`${c.code}: ${c.title}`}>{criterionLabel(c.code)}</th>)}
-              <th className="font-medium py-2 text-right pr-4">Total</th>
-              <th className="font-medium py-2">Flags</th>
-              <th className="font-medium py-2">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-line">
-            {rows.map((r) => (
-              <tr key={r.id} className="hover:bg-surface/50">
-                <td className="py-2.5 pr-3">
-                  <Link to={`/p/submissions/${r.id}`} className="text-ink hover:text-accent-ink">{r.student.name}</Link>
-                </td>
-                {r.criteria.map((c) => (
-                  <td key={c.criterion_id} className="py-2.5 px-2" title={`${c.code}: ${c.judgment ?? "no evidence"} (${c.source ?? "—"})`}>
-                    <span className="inline-flex items-center gap-1">
-                      <JudgmentMark judgment={c.judgment} compact />
-                      {c.source === "ai" && c.judgment !== "ai_unavailable" && <span className="text-2xs text-amber">AI</span>}
-                      {c.source === "baseline" && <span className="text-2xs text-amber">Rule</span>}
-                      {c.source === "professor" && <span className="text-2xs text-accent-ink">You</span>}
-                    </span>
-                  </td>
-                ))}
-                <td className="py-2.5 text-right pr-4 num">
-                  {r.total === null ? <span className="text-faint">—</span> : (
-                    <span className={r.includes_unconfirmed_ai ? "text-amber" : ""} title={r.includes_unconfirmed_ai ? "Includes unconfirmed AI suggestions" : ""}>
-                      {r.total}<span className="text-faint">/{r.max_total}</span>
-                    </span>
-                  )}
-                </td>
-                <td className="py-2.5">
-                  <span className="flex flex-wrap gap-1">
-                    {r.needs_review && <Tag tone="amber">Review</Tag>}
-                    {[...new Set(r.misconceptions)].map((m) => <Tag key={m} tone="amber" title={`${m}: flagged, not confirmed`}>{misconceptionLabel(m)}</Tag>)}
-                  </span>
-                </td>
-                <td className="py-2.5 text-muted text-[13.5px]">{r.grade_status}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className="flex items-center gap-4 text-2xs text-faint mt-3">
-        <span>{rows.length} shown</span><span>·</span>
-        <span><JudgmentMark judgment="met" /></span><span><JudgmentMark judgment="partial" /></span>
-        <span><JudgmentMark judgment="not_met" /></span><span><JudgmentMark judgment="ai_unavailable" /></span>
-        <span className="text-amber">AI / Rule</span><span>= unconfirmed machine reading</span>
+      <div className="flex flex-wrap items-center justify-between gap-3 mt-4 text-[14px] text-muted">
+        <span className="num">{rows.length} of {all.length} submissions</span>
+        {pages > 1 && (
+          <span className="flex items-center gap-2" aria-label="Pages">
+            <Button variant="ghost" disabled={page <= 1} onClick={() => set({ page: String(page - 1) })}>← Previous</Button>
+            <span className="num">Page {Math.min(page, pages)} of {pages}</span>
+            <Button variant="ghost" disabled={page >= pages} onClick={() => set({ page: String(page + 1) })}>Next →</Button>
+          </span>
+        )}
       </div>
     </div>
   );

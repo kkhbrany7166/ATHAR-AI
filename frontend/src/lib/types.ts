@@ -21,7 +21,7 @@ export interface CourseDetail {
   id: number; code: string; title: string; term: string; description: string; is_synthetic: boolean; student_count: number;
   objectives: { id: number; code: string; title: string; description: string; source: string; misconceptions: { code: string; title: string }[] }[];
   assignments: {
-    id: number; title: string; kind: string; conditions: string; status: string; due_at: string | null; submitted: number; enrolled: number;
+    id: number; title: string; kind: string; conditions: string; status: string; due_at: string | null; submitted: number; enrolled: number; targeted?: boolean;
     latest_run: GradingRun | null; insights: { id: number; kind: string; title: string; student_count: number }[];
   }[];
   materials: { id: number; title: string; kind: string; chars: number }[];

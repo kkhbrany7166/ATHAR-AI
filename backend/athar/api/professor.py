@@ -59,7 +59,7 @@ def course_detail(course_id: int, user: m.User = Depends(require_professor), db:
         run = _latest_run(db, a.id)
         done = _latest_run(db, a.id, done_only=True)
         insights = db.scalars(select(m.Insight).where(m.Insight.run_id == done.id)).all() if done else []
-        assignments.append({"id": a.id, "title": a.title, "kind": a.kind, "conditions": a.conditions, "status": a.status,
+        assignments.append({"id": a.id, "title": a.title, "kind": a.kind, "conditions": a.conditions, "status": a.status, "targeted": a.targeted,
                             "due_at": ser.iso(a.due_at), "submitted": len(latest_submissions(db, a.id)), "enrolled": enrolled,
                             "latest_run": ser.run_out(run),
                             "insights": [{"id": i.id, "kind": i.kind, "title": i.title, "student_count": i.student_count}

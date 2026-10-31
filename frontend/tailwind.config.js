@@ -26,10 +26,12 @@ export default {
         slate: v("slate"),
       },
       fontFamily: {
-        sans: ['"Inter"', "system-ui", "sans-serif"],
-        serif: ['"Source Serif 4"', "Georgia", "serif"],
-        mono: ['"JetBrains Mono"', "ui-monospace", "monospace"],
-        arabic: ['"Noto Naskh Arabic"', "serif"],
+        // Plex Sans for the interface, Newsreader for headings and student writing, Plex Mono for code,
+        // Plex Sans Arabic so أثر shares the Latin letterforms' structure. See docs/DESIGN-REVIEW.md.
+        sans: ['"IBM Plex Sans"', "system-ui", "sans-serif"],
+        serif: ['"Newsreader"', "Georgia", "serif"],
+        mono: ['"IBM Plex Mono"', "ui-monospace", "monospace"],
+        arabic: ['"IBM Plex Sans Arabic"', "sans-serif"],
       },
       fontSize: {
         "2xs": ["0.75rem", { lineHeight: "1.05rem", letterSpacing: "0.02em" }],

@@ -53,7 +53,7 @@
 
 @layer components {
   .eyebrow {
-    @apply text-2xs uppercase tracking-[0.12em] text-faint font-medium;
+    @apply text-[13px] text-faint font-medium;
   }
   .rule {
     @apply border-t border-line;

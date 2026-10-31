@@ -7,7 +7,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api";
 import { misconceptionLabel } from "../../lib/labels";
 import type { AssignmentDetail, Insight, InsightEvidence, Plan, PlanGroup } from "../../lib/types";
-import { EvidenceLegend, EvidenceTag } from "../../components/Evidence";
+import { EvidenceTag } from "../../components/Evidence";
 import { Button, Callout, ErrorState, Loading, cx } from "../../components/ui";
 
 interface CourseIv { id: number; status: string; kind: string; misconception_code: string; assignment_id: number; targets: number; delivered: number; verified: number }
@@ -54,19 +54,14 @@ export function OverviewTab({ a }: { a: AssignmentDetail }) {
         <Fig n={count("execution_error") + count("reasoning_unconfirmed")} of={submitted} label="need a closer look: code didn't run, or reasoning unclear" />
         <Fig n={count("demonstrated")} of={submitted} label="pass and read as sound: no action proposed" />
       </div>
-      <div className="mt-4"><EvidenceLegend kinds={["test", readerAI ? "ai" : "rules", "professor", "verified"]} /></div>
 
       {readerAI && (
         <div className="mt-6">
-          <Callout tone="amber" title="AI flags are a starting point, not a diagnosis">
-            On this synthetic class the AI reader over-flags. Of the explanations it flagged as "thinks recursion stops by itself", only about
-            half match how the class was generated (see Evaluation). Open a group to check the quoted evidence before you act.
-          </Callout>
+          <p className="text-[14.5px] text-amber border-l-2 border-amber pl-3">AI flags are leads, not diagnoses. On this class the AI over-flags, so check the quoted evidence before acting.</p>
         </div>
       )}
 
-      <h2 className="font-serif text-[24px] mt-10 mb-1">Who needs your attention, and why</h2>
-      <p className="text-muted text-[14.5px] mb-5 max-w-prose">Each student is in exactly one group, placed by fixed rules over their tests and the reading of their explanation. You decide what happens next.</p>
+      <h2 className="font-serif text-[26px] mt-10 mb-4">Review queue</h2>
       <ol className="divide-y divide-line border-y border-line">
         {groups.map((g) => <GroupRow key={g.category + g.misconception_code} g={g} a={a} insight={insightFor(g)} iv={ivFor(g)} kinds={evidenceKinds(g)} readerAI={readerAI} />)}
       </ol>
@@ -97,6 +92,8 @@ function GroupRow({ g, a, insight, iv, kinds, readerAI }: { g: PlanGroup; a: Ass
     onSuccess: (r) => navigate(`/p/interventions/${r.id}`),
   });
   const quiet = g.category === "demonstrated" || g.category === "no_submission";
+  const first = g.students.find((s) => s.evidence.length) ?? g.students[0];
+  const preview = first && first.evidence[0] ? `${first.name}: ${first.evidence[0]}` : "";
   const ev = insight?.evidence as InsightEvidence | undefined;
   const base = g.label.split(" · ")[0];
   const title = g.category === "concept_gap" && g.misconception_code ? `${base}: ${misconceptionLabel(g.misconception_code).toLowerCase()}` : base;
@@ -112,10 +109,10 @@ function GroupRow({ g, a, insight, iv, kinds, readerAI }: { g: PlanGroup; a: Ass
         <div className={cx("font-serif text-[30px] leading-none num", quiet ? "text-muted" : "text-ink")}>{g.students.length}</div>
         <div className="min-w-0">
           <div className="text-[16.5px] text-ink">{title}</div>
-          <p className="text-[14px] text-muted mt-1 max-w-prose">{why}</p>
+          {preview && <p className="text-[15px] text-muted mt-1.5 max-w-prose truncate" title={preview}>{preview}</p>}
           <div className="flex flex-wrap items-center gap-2 mt-2.5">
             {kinds.map((k) => <EvidenceTag key={k} kind={k === "ai" && !readerAI ? "rules" : k} />)}
-            <span className="text-[13.5px] text-faint">Proposed: <span className="text-muted">{g.action_label.toLowerCase()}</span></span>
+            {!quiet && <span className="text-[14px] text-faint">Suggested: <span className="text-muted">{g.action_label.toLowerCase()}</span></span>}
           </div>
         </div>
         <div className="flex md:flex-col md:items-end gap-2">
@@ -127,11 +124,12 @@ function GroupRow({ g, a, insight, iv, kinds, readerAI }: { g: PlanGroup; a: Ass
             <Button onClick={() => draft.mutate()} disabled={draft.isPending}>{draft.isPending ? "Drafting…" : `Plan for ${available.length}`}</Button>
           ) : null}
           <button onClick={() => setOpen((x) => !x)} aria-expanded={open} className="text-[13.5px] text-faint hover:text-ink">
-            {open ? "Hide evidence" : "See the evidence"}
+            {open ? "Hide" : "See the evidence"}
           </button>
         </div>
       </div>
       {draft.error && <div className="mt-3 md:ml-[96px]"><Callout tone="brick">{(draft.error as Error).message}</Callout></div>}
+      {open && <p className="mt-3 md:ml-[96px] text-[14.5px] text-muted max-w-prose">{why}</p>}
       {open && (
         <div className="mt-4 md:ml-[96px] grid lg:grid-cols-[minmax(0,1fr)_280px] gap-x-10 gap-y-4">
           <ul className="space-y-2.5 text-[14px]">
