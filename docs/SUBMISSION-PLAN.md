@@ -1,5 +1,7 @@
 # Submission plan (for approval, Oct 31)
 
+> The storyboard and slide outline here are superseded by [STORY.md](STORY.md). The interview notes in §D still apply.
+
 Nothing here has been built or recorded yet. Numbers come from the current app (commit `f9348d5`) and the stored evaluation results.
 
 ## A. Three-minute demo video: the real app, start to finish
