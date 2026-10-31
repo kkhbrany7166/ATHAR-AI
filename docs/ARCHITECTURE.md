@@ -95,3 +95,26 @@ The server enforces access on every route:
 | **M2** Intervene → Verify | Intervention drafting, variant generation validated against reference and misconception implementations, approval state machine, delivery to students, student reasoning workspace and AI helper, follow-up assessment, verifier, updated professor view | The full Layla → Sara → Layla journey runs on real state |
 | **M3** Grounding and authoring | Material upload (PDF and text), retrieval-grounded assistant, AI-proposed objectives from materials, grounded Q&A about the class | Assistant answers cite course material, and the professor can ask "who is struggling with X and why" |
 | **M4** Polish | Voice input (optional, consent-based), calibration views, accessibility pass, demo script | One-minute demo runs cleanly |
+
+## Status (Oct 31, 2026)
+
+- **M1 done.** Grading, evidence rules, insights, grade review with publish gates.
+- **M2 done, except AI-generated variants.**
+  - Interventions follow `draft → approved → active → completed` (or `draft → rejected`), with every transition enforced in `interventions/service.py`.
+  - Follow-up items come from an authored item bank and are validated in the sandbox (`interventions/validation.py`).
+  - Students work through think, practise, look back, then check.
+  - `interventions/verifier.py` (`verify-v1`) decides outcomes with explicit rules.
+- **Added beyond the plan:**
+  - `ai/baseline.py` (`rules-v1`): a transparent rule-based explanation reader. It keeps the product useful without model credits and serves as the evaluation baseline. It is always labelled as rules, never as AI.
+  - `ai/reader.py`: chooses the LLM, the rules, or nothing via `ATHAR_ANALYZER`.
+  - `evals/`: dev and held-out evaluation with baselines, system checks and a generated report.
+
+### Why a rule baseline, and not a mock LLM
+The hackathon provides no model credits. A fake "AI" that returns plausible text would make the demo look better and the product
+dishonest. The rule reader is real software with measurable, documented weaknesses: on held-out explanations it is roughly coin-flip
+on the stopping-condition judgment. Showing that gap is the argument for the LLM reader, not something to hide.
+
+### Why deterministic verification
+Whether a student has demonstrated something decides what the professor does next, so it can't rest on a model's opinion. The
+verifier combines sandboxed test outcomes with the reasoning reading, and it only says *demonstrated* when both agree. Its errors
+therefore lean towards *insufficient evidence*. In the held-out set, its one miss comes from the rule reader misreading a negation.

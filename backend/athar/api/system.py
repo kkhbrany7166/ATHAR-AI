@@ -72,3 +72,17 @@ def highlight(db: Session = Depends(get_db)):
             "headline": f"{top.student_count} of {c['submitted']} students share the same gap.",
             "detail": f"{top.title}. Most of their code still passes the typical tests, so the grade alone would hide it.",
             "source": run.ai_status}
+
+
+@router.get("/evaluation")
+def evaluation(user: m.User = Depends(current_user)):
+    """Latest results written by `python -m evals.run`. Read-only; nothing is computed here."""
+    import json
+    from pathlib import Path
+
+    results = Path(__file__).resolve().parents[2] / "evals" / "results"
+
+    def load(name: str):
+        p = results / f"{name}.json"
+        return json.loads(p.read_text()) if p.exists() else None
+    return {"dev": load("dev"), "heldout": load("heldout"), "system": load("system")}

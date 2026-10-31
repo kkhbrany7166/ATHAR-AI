@@ -60,6 +60,8 @@ export function AppShell() {
                   <span className="text-faint mr-1.5">{c.code}</span>{c.title}
                 </NavItem>
               ))}
+              <div className="hidden md:block h-4" />
+              <NavItem to="/p/evaluation">Evaluation</NavItem>
             </>
           ) : (
             <NavItem to="/s" end>My learning</NavItem>
