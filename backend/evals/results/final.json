@@ -1,0 +1,875 @@
+{
+  "meta": {
+    "commit": "88bbc0a",
+    "ran_at": "2026-10-31 09:04:42 +0300",
+    "llm": {
+      "provider": "none",
+      "model": "",
+      "configured": false,
+      "analyzer": "auto",
+      "timeout_seconds": 45.0,
+      "max_calls": 400
+    },
+    "baseline_version": "rules-v1",
+    "reader_prompt_version": "reader-v2",
+    "verifier_version": "verify-v1",
+    "python": "3.12.2"
+  },
+  "split": "final",
+  "provenance": "Hand-written after reader-v2, rules-v1, the verifier and the diagnosis rules were frozen; committed before any run (git log -- backend/evals/datasets/final). This is the reported generalisation result.",
+  "variants": {
+    "n": 6,
+    "accuracy": 1.0,
+    "correct": 6,
+    "failures": []
+  },
+  "explanations": {
+    "baseline": {
+      "n": 36,
+      "reader": "baseline",
+      "errors": 0,
+      "misconceptions": {
+        "MC-STOP-IMPLICIT": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 1,
+          "fn": 7
+        },
+        "MC-BASE-SMALLEST": {
+          "precision": 0.5,
+          "recall": 0.143,
+          "f1": 0.222,
+          "tp": 1,
+          "fp": 1,
+          "fn": 6
+        },
+        "micro": {
+          "precision": 0.333,
+          "recall": 0.071,
+          "f1": 0.118,
+          "tp": 1,
+          "fp": 2,
+          "fn": 13
+        }
+      },
+      "c3_accuracy": 0.389,
+      "abstains_when_evidence_is_insufficient": 1.0,
+      "wrongly_abstains_when_decidable": 0.75,
+      "c3_correct": 14,
+      "c3_confusion": [
+        {
+          "expected": "met",
+          "got": "met",
+          "count": 4
+        },
+        {
+          "expected": "met",
+          "got": "not_met",
+          "count": 1
+        },
+        {
+          "expected": "met",
+          "got": "unclear",
+          "count": 9
+        },
+        {
+          "expected": "not_met",
+          "got": "not_met",
+          "count": 2
+        },
+        {
+          "expected": "not_met",
+          "got": "unclear",
+          "count": 12
+        },
+        {
+          "expected": "unclear",
+          "got": "unclear",
+          "count": 8
+        }
+      ],
+      "abstention_rate": null,
+      "unclear_rate": 0.806,
+      "by_category": {
+        "correct_paraphrase": {
+          "n": 10,
+          "fully_correct": 2
+        },
+        "implicit_stop": {
+          "n": 7,
+          "fully_correct": 0
+        },
+        "insufficient_or_ambiguous": {
+          "n": 6,
+          "fully_correct": 6
+        },
+        "negation": {
+          "n": 4,
+          "fully_correct": 2
+        },
+        "off_target": {
+          "n": 2,
+          "fully_correct": 2
+        },
+        "smallest_belief": {
+          "n": 7,
+          "fully_correct": 1
+        }
+      },
+      "outputs": [
+        {
+          "id": "fx01",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx02",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx03",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx04",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx05",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx06",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx07",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx08",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx09",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx10",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx11",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx12",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx13",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx14",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx15",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx16",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx17",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx18",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx19",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx20",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx21",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx22",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx23",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx24",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx25",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx26",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx27",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx28",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx29",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx30",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx31",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx32",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx33",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx34",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx35",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "fx36",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        }
+      ],
+      "trivial_baseline_always_met_no_misconception": {
+        "c3_accuracy": 0.389,
+        "micro_f1": 0.0
+      },
+      "failures": [
+        {
+          "id": "fx01",
+          "text": "The function bottoms out at an exponent of zero, where the answer is simply 1; every step shaves one off the e",
+          "expected": [],
+          "found": [],
+          "c3_expected": "met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "fx02",
+          "text": "Base condition: if not xs, give back 0. Otherwise peel off the head and recurse on the tail, which is one shor",
+          "expected": [],
+          "found": [],
+          "c3_expected": "met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "fx03",
+          "text": "Termination happens at e = 0. b^0 = 1, which is why that branch returns 1 without another call.",
+          "expected": [],
+          "found": [],
+          "c3_expected": "met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "fx04",
+          "text": "My guard clause catches the zero exponent first and returns one. Since we always pass exp minus one, any non-n",
+          "expected": [],
+          "found": [],
+          "c3_expected": "met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "fx05",
+          "text": "Il s'arrête quand exp vaut 0 and returns 1, because anything raised to zero is one.",
+          "expected": [],
+          "found": [],
+          "c3_expected": "met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "fx07",
+          "text": "When the exponent runs down to nothing, i.e. 0, we return the multiplicative identity 1.",
+          "expected": [],
+          "found": [],
+          "c3_expected": "met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "fx08",
+          "text": "power(3, 2) calls power(3, 1) which calls power(3, 0); that last one hits the if and hands back 1, so the resu",
+          "expected": [],
+          "found": [],
+          "c3_expected": "met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "fx09",
+          "text": "The stopping rule is checked before recursing: exponent zero means return 1. Without it we'd recurse into nega",
+          "expected": [],
+          "found": [],
+          "c3_expected": "met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "fx11",
+          "text": "Recursion naturally winds down once there's no work left to do.",
+          "expected": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "found": [],
+          "c3_expected": "not_met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "fx12",
+          "text": "The returns are what end it: as soon as a return happens, the recursion is over.",
+          "expected": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "found": [],
+          "c3_expected": "not_met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "fx13",
+          "text": "It just keeps calling itself until the job is complete, and then Python knows to stop.",
+          "expected": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "found": [],
+          "c3_expected": "not_met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "fx14",
+          "text": "The list gets consumed and once it's all gone the function is finished automatically.",
+          "expected": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "found": [],
+          "c3_expected": "not_met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "fx15",
+          "text": "The stack fills up and unwinds when it can't go deeper, that's how it stops.",
+          "expected": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "found": [],
+          "c3_expected": "not_met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "fx16",
+          "text": "There's no need for a special case, the function stops by itself after the last multiplication.",
+          "expected": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "found": [
+            "MC-BASE-SMALLEST"
+          ],
+          "c3_expected": "not_met",
+          "c3_got": "not_met"
+        },
+        {
+          "id": "fx17",
+          "text": "It terminates whenever the computation has nothing more to multiply.",
+          "expected": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "found": [],
+          "c3_expected": "not_met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "fx18",
+          "text": "I stop at an exponent of one, since x to the first power is just x and nothing remains to multiply.",
+          "expected": [
+            "MC-BASE-SMALLEST"
+          ],
+          "found": [],
+          "c3_expected": "not_met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "fx20",
+          "text": "When only a single value remains I return it directly. Zero items can't happen in practice.",
+          "expected": [
+            "MC-BASE-SMALLEST"
+          ],
+          "found": [],
+          "c3_expected": "not_met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "fx21",
+          "text": "Recursion ends at e == 1 and returns b. Nobody raises a number to the power zero anyway.",
+          "expected": [
+            "MC-BASE-SMALLEST"
+          ],
+          "found": [],
+          "c3_expected": "not_met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "fx22",
+          "text": "My stopping point is the final element of the list, which I return as is.",
+          "expected": [
+            "MC-BASE-SMALLEST"
+          ],
+          "found": [],
+          "c3_expected": "not_met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "fx23",
+          "text": "power halts when the exponent reaches one; that is the smallest exponent that makes sense.",
+          "expected": [
+            "MC-BASE-SMALLEST"
+          ],
+          "found": [],
+          "c3_expected": "not_met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "fx24",
+          "text": "It stops one call before zero, at exponent 1, which avoids the pointless zero case.",
+          "expected": [
+            "MC-BASE-SMALLEST"
+          ],
+          "found": [],
+          "c3_expected": "not_met",
+          "c3_got": "unclear"
+        },
+        {
+          "id": "fx26",
+          "text": "At first I thought the return statement was what stopped it, but that's wrong: it's the empty-list check that ",
+          "expected": [],
+          "found": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "c3_expected": "met",
+          "c3_got": "not_met"
+        },
+        {
+          "id": "fx27",
+          "text": "It is not enough to stop at exponent 1, because power(x, 0) is a valid call; so the base case has to be expone",
+          "expected": [],
+          "found": [],
+          "c3_expected": "met",
+          "c3_got": "unclear"
+        }
+      ]
+    },
+    "llm": {
+      "not_run": "No model credentials configured. Nothing was simulated or replayed in its place."
+    }
+  },
+  "verifier": {
+    "baseline": {
+      "n": 12,
+      "reader": "baseline",
+      "accuracy": 0.667,
+      "correct": 8,
+      "confusion": [
+        {
+          "expected": "demonstrated",
+          "got": "demonstrated",
+          "count": 1
+        },
+        {
+          "expected": "demonstrated",
+          "got": "insufficient_evidence",
+          "count": 1
+        },
+        {
+          "expected": "demonstrated",
+          "got": "still_developing",
+          "count": 1
+        },
+        {
+          "expected": "insufficient_evidence",
+          "got": "insufficient_evidence",
+          "count": 3
+        },
+        {
+          "expected": "still_developing",
+          "got": "insufficient_evidence",
+          "count": 2
+        },
+        {
+          "expected": "still_developing",
+          "got": "still_developing",
+          "count": 4
+        }
+      ],
+      "failures": [
+        {
+          "id": "fv03",
+          "expected": "still_developing",
+          "got": "insufficient_evidence",
+          "reasons": [
+            "Every test passes, but the reasoning was judged unclear. Professor review recommended."
+          ]
+        },
+        {
+          "id": "fv07",
+          "expected": "demonstrated",
+          "got": "insufficient_evidence",
+          "reasons": [
+            "Every test passes, but the reasoning was judged unclear. Professor review recommended."
+          ]
+        },
+        {
+          "id": "fv08",
+          "expected": "demonstrated",
+          "got": "still_developing",
+          "reasons": [
+            "Every test passes, but the written reasoning still describes the misconception."
+          ]
+        },
+        {
+          "id": "fv12",
+          "expected": "still_developing",
+          "got": "insufficient_evidence",
+          "reasons": [
+            "Every test passes, but the reasoning was judged unclear. Professor review recommended."
+          ]
+        }
+      ]
+    },
+    "llm": {
+      "not_run": "No model credentials configured. Nothing was simulated or replayed in its place."
+    }
+  },
+  "diagnosis": {
+    "none": {
+      "n": 12,
+      "reader": "none",
+      "accuracy": 0.583,
+      "correct": 7,
+      "confusion": [
+        {
+          "expected": "concept_gap",
+          "got": "concept_gap",
+          "count": 3
+        },
+        {
+          "expected": "demonstrated",
+          "got": "reasoning_unconfirmed",
+          "count": 3
+        },
+        {
+          "expected": "execution_error",
+          "got": "execution_error",
+          "count": 2
+        },
+        {
+          "expected": "reasoning_gap",
+          "got": "reasoning_unconfirmed",
+          "count": 2
+        },
+        {
+          "expected": "reasoning_unconfirmed",
+          "got": "reasoning_unconfirmed",
+          "count": 2
+        }
+      ],
+      "failures": [
+        {
+          "id": "fd05",
+          "expected": "reasoning_gap",
+          "got": "reasoning_unconfirmed"
+        },
+        {
+          "id": "fd06",
+          "expected": "reasoning_gap",
+          "got": "reasoning_unconfirmed"
+        },
+        {
+          "id": "fd09",
+          "expected": "demonstrated",
+          "got": "reasoning_unconfirmed"
+        },
+        {
+          "id": "fd10",
+          "expected": "demonstrated",
+          "got": "reasoning_unconfirmed"
+        },
+        {
+          "id": "fd12",
+          "expected": "demonstrated",
+          "got": "reasoning_unconfirmed"
+        }
+      ]
+    },
+    "baseline": {
+      "n": 12,
+      "reader": "baseline",
+      "accuracy": 0.75,
+      "correct": 9,
+      "confusion": [
+        {
+          "expected": "concept_gap",
+          "got": "concept_gap",
+          "count": 3
+        },
+        {
+          "expected": "demonstrated",
+          "got": "demonstrated",
+          "count": 2
+        },
+        {
+          "expected": "demonstrated",
+          "got": "reasoning_gap",
+          "count": 1
+        },
+        {
+          "expected": "execution_error",
+          "got": "execution_error",
+          "count": 2
+        },
+        {
+          "expected": "reasoning_gap",
+          "got": "reasoning_unconfirmed",
+          "count": 2
+        },
+        {
+          "expected": "reasoning_unconfirmed",
+          "got": "reasoning_unconfirmed",
+          "count": 2
+        }
+      ],
+      "failures": [
+        {
+          "id": "fd05",
+          "expected": "reasoning_gap",
+          "got": "reasoning_unconfirmed"
+        },
+        {
+          "id": "fd06",
+          "expected": "reasoning_gap",
+          "got": "reasoning_unconfirmed"
+        },
+        {
+          "id": "fd12",
+          "expected": "demonstrated",
+          "got": "reasoning_gap"
+        }
+      ]
+    },
+    "llm": {
+      "not_run": "No model credentials configured. Nothing was simulated or replayed in its place."
+    }
+  }
+}

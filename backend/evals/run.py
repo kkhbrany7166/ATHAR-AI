@@ -90,9 +90,9 @@ def dev_sets() -> dict:
 
     var = []
     for it in content.ITEM_BANK:
-        var.append({"id": f"di-{it['key']}", "label_valid": True, "reference": it["reference_solution"], "misconception": it["misconception_solution"], "tests_full": it["tests"]})
-        var.append({"id": f"di-{it['key']}-swapped", "label_valid": False, "reference": it["misconception_solution"], "misconception": it["reference_solution"], "tests_full": it["tests"]})
-        var.append({"id": f"di-{it['key']}-noprobe", "label_valid": False, "reference": it["reference_solution"], "misconception": it["misconception_solution"],
+        var.append({"id": f"di-{it['key']}", "label_valid": True, "misconception_code": it["misconception"], "reference": it["reference_solution"], "misconception": it["misconception_solution"], "tests_full": it["tests"]})
+        var.append({"id": f"di-{it['key']}-swapped", "label_valid": False, "misconception_code": it["misconception"], "reference": it["misconception_solution"], "misconception": it["reference_solution"], "tests_full": it["tests"]})
+        var.append({"id": f"di-{it['key']}-noprobe", "label_valid": False, "misconception_code": it["misconception"], "reference": it["reference_solution"], "misconception": it["misconception_solution"],
                     "tests_full": [t for t in it["tests"] if not t["probes"]]})
     return {"explanations": expl, "code": code, "verifier": ver, "variants": var,
             "provenance": "Generated from athar/seed/synthetic.py (seed 201) and the authored item bank. The rule baseline was written from these templates."}
@@ -106,7 +106,22 @@ def heldout_sets() -> dict:
         c["tests_full"] = [{"name": f"{fn}{tuple(args)}", "function": fn, "args": args, "expected": exp, "criterion": "C2" if probe else "C1",
                             "hidden": False, "probes": variants["probe"] if probe else []} for fn, args, exp, probe in c["tests"]]
     return {"explanations": load("explanations")["cases"], "code": load("code")["cases"], "verifier": load("verifier")["cases"],
-            "variants": variants["cases"], "provenance": "Hand-written in evals/datasets/heldout/ after the components were frozen."}
+            "variants": variants["cases"],
+            "provenance": "Hand-written after rules-v1 and the probes/verifier were frozen. Still unseen for those. NOT unseen for the "
+                          "LLM reader: its failures were inspected while designing reader-v2, so LLM numbers here are development numbers."}
+
+
+def final_sets() -> dict:
+    d = ROOT / "datasets" / "final"
+    load = lambda n: json.loads((d / f"{n}.json").read_text())  # noqa: E731
+    variants = load("variants")
+    for c in variants["cases"]:
+        c["tests_full"] = [{"name": f"{fn}{tuple(args)}", "function": fn, "args": args, "expected": exp, "criterion": "C2" if probe else "C1",
+                            "hidden": False, "probes": variants["probe"] if probe else []} for fn, args, exp, probe in c["tests"]]
+    return {"explanations": load("explanations")["cases"], "verifier": load("verifier")["cases"], "variants": variants["cases"],
+            "diagnosis": load("diagnosis")["cases"],
+            "provenance": "Hand-written after reader-v2, rules-v1, the verifier and the diagnosis rules were frozen; committed before any run "
+                          "(git log -- backend/evals/datasets/final). This is the reported generalisation result."}
 
 
 # ------------------------------------------------------------------ metrics
@@ -172,24 +187,32 @@ def suite_code(cases: list[dict]) -> dict:
     }
 
 
-def _read(kind: str, provider, text: str):
+OBJECTIVES = [{"code": o["code"], "title": o["title"]} for o in content.OBJECTIVES]
+
+
+def _read(kind: str, provider, text: str, code: str = "(not shown)", test_summary: str = "(not shown)", prompt: str | None = None):
     if kind == "baseline":
         return rule_baseline.analyze(text, EXPL_CRITERIA)
-    return llm_expl.analyze(provider, explanation=text, criteria=EXPL_CRITERIA, misconceptions=MISC,
-                            assignment_prompt=content.ASSIGNMENT["prompt"], explanation_prompt=content.ASSIGNMENT["explanation_prompt"],
-                            code="(not shown)", test_summary="(not shown)")
+    return llm_expl.analyze(provider, explanation=text, criteria=EXPL_CRITERIA, misconceptions=MISC, objectives=OBJECTIVES,
+                            conditions="assessment check, unsupervised",
+                            assignment_prompt=prompt or content.ASSIGNMENT["prompt"], explanation_prompt=content.ASSIGNMENT["explanation_prompt"],
+                            code=code, test_summary=test_summary)
 
 
 def suite_explanations(cases: list[dict], kind: str, provider) -> dict:
-    preds, c3, errors, failures = {}, {}, 0, []
+    preds, c3, errors, failures, outputs, abstained = {}, {}, 0, [], [], 0
     for c in cases:
         try:
             a = _read(kind, provider, c["text"])
             preds[c["id"]] = {s.code for s in a.signals} & set(EXPL_CODES)
             c3[c["id"]] = a.criteria["C3"].judgment if "C3" in a.criteria else "missing"
+            abstained += bool(a.abstained)
+            outputs.append({"id": c["id"], "holds": sorted(preds[c["id"]]), "rejects": [r.code for r in a.rejected_ideas], "c3": c3[c["id"]],
+                            "abstained": a.abstained, "summary": a.summary, "validation_notes": a.rejected})
         except Exception as e:  # noqa: BLE001 - counted, never hidden
             errors += 1
             preds[c["id"]], c3[c["id"]] = set(), f"error: {e.__class__.__name__}"
+            outputs.append({"id": c["id"], "error": f"{e.__class__.__name__}: {e}"[:300]})
         if preds[c["id"]] != set(c["misconceptions"]) or c3[c["id"]] != c["c3"]:
             failures.append({"id": c["id"], "text": c["text"][:110], "expected": sorted(c["misconceptions"]), "found": sorted(preds[c["id"]]),
                              "c3_expected": c["c3"], "c3_got": c3[c["id"]]})
@@ -202,6 +225,14 @@ def suite_explanations(cases: list[dict], kind: str, provider) -> dict:
         "c3_accuracy": _r(sum(c3[c["id"]] == c["c3"] for c in cases) / len(cases)),
         "abstains_when_evidence_is_insufficient": _r(sum(c3[c["id"]] == "unclear" for c in unclear) / len(unclear)) if unclear else None,
         "wrongly_abstains_when_decidable": _r(sum(c3[c["id"]] == "unclear" for c in decided) / len(decided)) if decided else None,
+        "c3_correct": sum(c3[c["id"]] == c["c3"] for c in cases),
+        "c3_confusion": [{"expected": e, "got": g, "count": n} for (e, g), n in sorted(Counter((c["c3"], c3[c["id"]]) for c in cases).items())],
+        "abstention_rate": _r(abstained / len(cases)) if kind == "llm" else None,
+        "unclear_rate": _r(sum(c3[c["id"]] == "unclear" for c in cases) / len(cases)),
+        "by_category": {cat: {"n": len(cc), "fully_correct": sum(1 for c in cc if preds[c["id"]] == set(c["misconceptions"]) and c3[c["id"]] == c["c3"])}
+                        for cat in sorted({c.get("category", "all") for c in cases})
+                        for cc in [[c for c in cases if c.get("category", "all") == cat]]},
+        "outputs": outputs,
         "trivial_baseline_always_met_no_misconception": {
             "c3_accuracy": _r(sum(c["c3"] == "met" for c in cases) / len(cases)),
             "micro_f1": multilabel(cases, majority, EXPL_CODES)["micro"]["f1"]},
@@ -210,18 +241,19 @@ def suite_explanations(cases: list[dict], kind: str, provider) -> dict:
 
 
 def suite_verifier(cases: list[dict], kind: str, provider) -> dict:
-    item = next(i for i in content.ITEM_BANK if i["key"] == "repeat_text")
-    tests = item["tests"]
-    specs = [TestSpec(i, t["function"], t["args"], t["expected"]) for i, t in enumerate(tests)]
     conf, hits, failures = Counter(), 0, []
     for c in cases:
+        item = next(i for i in content.ITEM_BANK if i["key"] == c.get("item", "repeat_text"))
+        tests = item["tests"]
+        specs = [TestSpec(i, t["function"], t["args"], t["expected"]) for i, t in enumerate(tests)]
         rep = run_tests(c["code"], specs)
         load_failed = rep.load_error is not None or any(o.error_type == "Crash" for o in rep.outcomes)
         obs = [TestObservation(tests[o.id]["name"], o.status, o.error_type, tests[o.id]["probes"]) for o in rep.outcomes]
         judgment, signals = None, []
         if c["explanation"].strip():
             try:
-                a = _read(kind, provider, c["explanation"])
+                a = _read(kind, provider, c["explanation"], code=c["code"], prompt=item["prompt"],
+                          test_summary="\n".join(f"- {tests[o.id]['name']}: {o.status} {o.error_type}" for o in rep.outcomes))
                 judgment = a.criteria["C3"].judgment if "C3" in a.criteria else None
                 signals = [s.code for s in a.signals]
             except Exception:  # noqa: BLE001
@@ -231,7 +263,47 @@ def suite_verifier(cases: list[dict], kind: str, provider) -> dict:
         hits += res.outcome == c["expected"]
         if res.outcome != c["expected"]:
             failures.append({"id": c["id"], "expected": c["expected"], "got": res.outcome, "reasons": res.reasons[:1]})
-    return {"n": len(cases), "reader": kind, "accuracy": _r(hits / len(cases)),
+    return {"n": len(cases), "reader": kind, "accuracy": _r(hits / len(cases)), "correct": hits,
+            "confusion": [{"expected": e, "got": g, "count": n} for (e, g), n in sorted(conf.items())], "failures": failures}
+
+
+def suite_diagnosis(cases: list[dict], kind: str, provider) -> dict:
+    """Planning end to end: sandbox → probes → reading → diagnosis rules. kind='none' is the no-reader ablation."""
+    from athar.interventions.planning import diagnose_submission
+
+    specs = [TestSpec(t.id, t.function, t.args, t.expected) for t in A3_TESTS]
+    crit = [SimpleNamespace(id=i + 1, code=c["code"], method=c["method"]) for i, c in enumerate(content.CRITERIA)]
+    c3 = next(c for c in crit if c.code == "C3")
+    conf, hits, failures = Counter(), 0, []
+    for c in cases:
+        rep = run_tests(c["code"], specs)
+        load_failed = rep.load_error is not None
+        results = [SimpleNamespace(status=o.status, error_type=o.error_type, error_message=o.error_message, actual=o.actual) for o in rep.outcomes]
+        mevs = [SimpleNamespace(source="tests", misconception_code=code, detail=f"{A3_TESTS[o.id].name}: {o.error_type or o.actual}", quote="")
+                for o in rep.outcomes for code in probe_hits(A3_TESTS[o.id], o.status, o.error_type, load_failed)]
+        evidence, reading = [], None
+        if kind != "none" and c["explanation"].strip():
+            try:
+                a = _read(kind, provider, c["explanation"], code=c["code"],
+                          test_summary="\n".join(f"- {A3_TESTS[o.id].name}: {o.status} {o.error_type}" for o in rep.outcomes))
+                mevs += [SimpleNamespace(source="ai" if kind == "llm" else "baseline", misconception_code=s.code, detail=s.reasoning, quote=s.quote)
+                         for s in a.signals]
+                j = a.criteria.get("C3")
+                if j:
+                    evidence.append(SimpleNamespace(id=1, criterion_id=c3.id, source="ai" if kind == "llm" else "baseline", judgment=j.judgment,
+                                                    created_at=0))
+                reading = SimpleNamespace(abstained=a.abstained, code_issue=a.code_issue)
+            except Exception:  # noqa: BLE001 - treated as unread
+                pass
+        elif not c["explanation"].strip():
+            evidence.append(SimpleNamespace(id=1, criterion_id=c3.id, source="rules", judgment="not_met", created_at=0))
+        sub = SimpleNamespace(id=0, student_id=0, explanation=c["explanation"], evidence=evidence)
+        got = diagnose_submission(sub, results, mevs, reading, crit).category
+        conf[(c["expected"], got)] += 1
+        hits += got == c["expected"]
+        if got != c["expected"]:
+            failures.append({"id": c["id"], "expected": c["expected"], "got": got})
+    return {"n": len(cases), "reader": kind, "accuracy": _r(hits / len(cases)), "correct": hits,
             "confusion": [{"expected": e, "got": g, "count": n} for (e, g), n in sorted(conf.items())], "failures": failures}
 
 
@@ -239,11 +311,11 @@ def suite_variants(cases: list[dict]) -> dict:
     hits, failures = 0, []
     for c in cases:
         v = validate_item(tests=c["tests_full"], reference_solution=c["reference"], misconception_solution=c["misconception"],
-                          misconception_code="MC-BASE-SMALLEST")
+                          misconception_code=c.get("misconception_code", "MC-BASE-SMALLEST"))
         hits += v["valid"] == c["label_valid"]
         if v["valid"] != c["label_valid"]:
             failures.append({"id": c["id"], "expected_valid": c["label_valid"], "validator": v["valid"], "problems": v["problems"], "note": c.get("note", "")})
-    return {"n": len(cases), "accuracy": _r(hits / len(cases)), "failures": failures}
+    return {"n": len(cases), "accuracy": _r(hits / len(cases)), "correct": hits, "failures": failures}
 
 
 def suite_system() -> dict:
@@ -259,11 +331,18 @@ def suite_system() -> dict:
 
 def run_split(name: str, sets: dict, provider) -> dict:
     readers = ["baseline"] + (["llm"] if provider else [])
-    res = {"split": name, "provenance": sets["provenance"], "code": suite_code(sets["code"]), "variants": suite_variants(sets["variants"]),
+    res = {"split": name, "provenance": sets["provenance"], "variants": suite_variants(sets["variants"]),
            "explanations": {k: suite_explanations(sets["explanations"], k, provider) for k in readers},
            "verifier": {k: suite_verifier(sets["verifier"], k, provider) for k in readers}}
+    if "code" in sets:
+        res["code"] = suite_code(sets["code"])
+    if "diagnosis" in sets:
+        res["diagnosis"] = {k: suite_diagnosis(sets["diagnosis"], k, provider) for k in ["none", *readers]}
     if not provider:
-        res["explanations"]["llm"] = res["verifier"]["llm"] = {"not_run": "No model credentials configured. Nothing was simulated in its place."}
+        msg = {"not_run": "No model credentials configured. Nothing was simulated or replayed in its place."}
+        res["explanations"]["llm"] = res["verifier"]["llm"] = msg
+        if "diagnosis" in res:
+            res["diagnosis"]["llm"] = msg
     return res
 
 
@@ -276,14 +355,16 @@ def git_rev() -> str:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--split", choices=["dev", "heldout", "both"], default="both")
+    ap.add_argument("--split", choices=["dev", "heldout", "final", "all"], default="all")
     ap.add_argument("--no-system", action="store_true")
     args = ap.parse_args()
     provider = get_provider()
+    from athar.interventions.verifier import RULE_VERSION
     meta = {"commit": git_rev(), "ran_at": time.strftime("%Y-%m-%d %H:%M:%S %z"), "llm": provider_status(),
-            "baseline_version": rule_baseline.VERSION}
-    splits = {"dev": dev_sets, "heldout": heldout_sets}
-    names = ["dev", "heldout"] if args.split == "both" else [args.split]
+            "baseline_version": rule_baseline.VERSION, "reader_prompt_version": llm_expl.PROMPT_VERSION, "verifier_version": RULE_VERSION,
+            "python": sys.version.split()[0]}
+    splits = {"dev": dev_sets, "heldout": heldout_sets, "final": final_sets}
+    names = ["dev", "heldout", "final"] if args.split == "all" else [args.split]
     out_dir = ROOT / "results"
     out_dir.mkdir(exist_ok=True)
     results = {}

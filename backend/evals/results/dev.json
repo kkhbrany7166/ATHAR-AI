@@ -1,63 +1,26 @@
 {
   "meta": {
-    "commit": "3735e33",
-    "ran_at": "2026-10-31 08:45:58 +0300",
+    "commit": "88bbc0a",
+    "ran_at": "2026-10-31 09:04:42 +0300",
     "llm": {
       "provider": "none",
       "model": "",
-      "configured": false
+      "configured": false,
+      "analyzer": "auto",
+      "timeout_seconds": 45.0,
+      "max_calls": 400
     },
-    "baseline_version": "rules-v1"
+    "baseline_version": "rules-v1",
+    "reader_prompt_version": "reader-v2",
+    "verifier_version": "verify-v1",
+    "python": "3.12.2"
   },
   "split": "dev",
   "provenance": "Generated from athar/seed/synthetic.py (seed 201) and the authored item bank. The rule baseline was written from these templates.",
-  "code": {
-    "n": 113,
-    "misconceptions": {
-      "MC-BASE-SMALLEST": {
-        "precision": 1.0,
-        "recall": 1.0,
-        "f1": 1.0,
-        "tp": 15,
-        "fp": 0,
-        "fn": 0
-      },
-      "MC-BASE-VALUE": {
-        "precision": 1.0,
-        "recall": 1.0,
-        "f1": 1.0,
-        "tp": 6,
-        "fp": 0,
-        "fn": 0
-      },
-      "MC-NO-PROGRESS": {
-        "precision": 1.0,
-        "recall": 1.0,
-        "f1": 1.0,
-        "tp": 3,
-        "fp": 0,
-        "fn": 0
-      },
-      "micro": {
-        "precision": 1.0,
-        "recall": 1.0,
-        "f1": 1.0,
-        "tp": 24,
-        "fp": 0,
-        "fn": 0
-      }
-    },
-    "exact_set_accuracy": 1.0,
-    "c2_judgment_accuracy": 1.0,
-    "stopping_condition_flag_accuracy": {
-      "probes": 1.0,
-      "baseline_any_failing_test": 0.956
-    },
-    "failures": []
-  },
   "variants": {
-    "n": 9,
+    "n": 15,
     "accuracy": 1.0,
+    "correct": 15,
     "failures": []
   },
   "explanations": {
@@ -94,6 +57,1153 @@
       "c3_accuracy": 0.93,
       "abstains_when_evidence_is_insufficient": 0.385,
       "wrongly_abstains_when_decidable": 0.0,
+      "c3_correct": 106,
+      "c3_confusion": [
+        {
+          "expected": "met",
+          "got": "met",
+          "count": 65
+        },
+        {
+          "expected": "not_met",
+          "got": "not_met",
+          "count": 36
+        },
+        {
+          "expected": "unclear",
+          "got": "not_met",
+          "count": 8
+        },
+        {
+          "expected": "unclear",
+          "got": "unclear",
+          "count": 5
+        }
+      ],
+      "abstention_rate": null,
+      "unclear_rate": 0.044,
+      "by_category": {
+        "all": {
+          "n": 114,
+          "fully_correct": 106
+        }
+      },
+      "outputs": [
+        {
+          "id": "dx000",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx001",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx002",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx003",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx004",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx005",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx006",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx007",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx008",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx009",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx010",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx011",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx012",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx013",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx014",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx015",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx016",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx017",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx018",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx019",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx020",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx021",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx022",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx023",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx024",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx025",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx027",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx028",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx029",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx030",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx032",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx033",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx034",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx035",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx036",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx037",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx038",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx039",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx040",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx041",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx042",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx043",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx044",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx045",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx046",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx047",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx048",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx049",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx050",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx051",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx052",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx053",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx054",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx055",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx056",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx057",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx058",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx059",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx060",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx062",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx063",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx064",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx065",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx066",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx067",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx068",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx069",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx070",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx071",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx072",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx073",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx074",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx075",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx076",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx077",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx078",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx079",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx081",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx082",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx083",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx084",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx085",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx086",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx087",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx089",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx090",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx091",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx092",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx093",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx094",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx095",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx096",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx097",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx098",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx099",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx100",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx101",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx102",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx103",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx104",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx105",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx106",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx107",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx108",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx109",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx110",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx111",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx112",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx113",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx115",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx116",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx117",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx118",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "dx-sara",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        }
+      ],
       "trivial_baseline_always_met_no_misconception": {
         "c3_accuracy": 0.57,
         "micro_f1": 0.0
@@ -182,7 +1292,7 @@
       ]
     },
     "llm": {
-      "not_run": "No model credentials configured. Nothing was simulated in its place."
+      "not_run": "No model credentials configured. Nothing was simulated or replayed in its place."
     }
   },
   "verifier": {
@@ -190,6 +1300,7 @@
       "n": 11,
       "reader": "baseline",
       "accuracy": 1.0,
+      "correct": 11,
       "confusion": [
         {
           "expected": "demonstrated",
@@ -210,7 +1321,51 @@
       "failures": []
     },
     "llm": {
-      "not_run": "No model credentials configured. Nothing was simulated in its place."
+      "not_run": "No model credentials configured. Nothing was simulated or replayed in its place."
     }
+  },
+  "code": {
+    "n": 113,
+    "misconceptions": {
+      "MC-BASE-SMALLEST": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 15,
+        "fp": 0,
+        "fn": 0
+      },
+      "MC-BASE-VALUE": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 6,
+        "fp": 0,
+        "fn": 0
+      },
+      "MC-NO-PROGRESS": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 3,
+        "fp": 0,
+        "fn": 0
+      },
+      "micro": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 24,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    "exact_set_accuracy": 1.0,
+    "c2_judgment_accuracy": 1.0,
+    "stopping_condition_flag_accuracy": {
+      "probes": 1.0,
+      "baseline_any_failing_test": 0.956
+    },
+    "failures": []
   }
 }

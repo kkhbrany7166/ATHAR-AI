@@ -1,83 +1,26 @@
 {
   "meta": {
-    "commit": "3735e33",
-    "ran_at": "2026-10-31 08:45:58 +0300",
+    "commit": "88bbc0a",
+    "ran_at": "2026-10-31 09:04:42 +0300",
     "llm": {
       "provider": "none",
       "model": "",
-      "configured": false
+      "configured": false,
+      "analyzer": "auto",
+      "timeout_seconds": 45.0,
+      "max_calls": 400
     },
-    "baseline_version": "rules-v1"
+    "baseline_version": "rules-v1",
+    "reader_prompt_version": "reader-v2",
+    "verifier_version": "verify-v1",
+    "python": "3.12.2"
   },
   "split": "heldout",
-  "provenance": "Hand-written in evals/datasets/heldout/ after the components were frozen.",
-  "code": {
-    "n": 20,
-    "misconceptions": {
-      "MC-BASE-SMALLEST": {
-        "precision": 0.667,
-        "recall": 0.667,
-        "f1": 0.667,
-        "tp": 2,
-        "fp": 1,
-        "fn": 1
-      },
-      "MC-BASE-VALUE": {
-        "precision": 1.0,
-        "recall": 1.0,
-        "f1": 1.0,
-        "tp": 4,
-        "fp": 0,
-        "fn": 0
-      },
-      "MC-NO-PROGRESS": {
-        "precision": 0.5,
-        "recall": 1.0,
-        "f1": 0.667,
-        "tp": 1,
-        "fp": 1,
-        "fn": 0
-      },
-      "micro": {
-        "precision": 0.778,
-        "recall": 0.875,
-        "f1": 0.824,
-        "tp": 7,
-        "fp": 2,
-        "fn": 1
-      }
-    },
-    "exact_set_accuracy": 0.9,
-    "c2_judgment_accuracy": 1.0,
-    "stopping_condition_flag_accuracy": {
-      "probes": 0.9,
-      "baseline_any_failing_test": 0.8
-    },
-    "failures": [
-      {
-        "id": "hc09",
-        "expected": [
-          "MC-BASE-SMALLEST"
-        ],
-        "found": [],
-        "c2_expected": "partial",
-        "c2_got": "partial"
-      },
-      {
-        "id": "hc11",
-        "expected": [],
-        "found": [
-          "MC-BASE-SMALLEST",
-          "MC-NO-PROGRESS"
-        ],
-        "c2_expected": "partial",
-        "c2_got": "partial"
-      }
-    ]
-  },
+  "provenance": "Hand-written after rules-v1 and the probes/verifier were frozen. Still unseen for those. NOT unseen for the LLM reader: its failures were inspected while designing reader-v2, so LLM numbers here are development numbers.",
   "variants": {
     "n": 8,
     "accuracy": 1.0,
+    "correct": 8,
     "failures": []
   },
   "explanations": {
@@ -114,6 +57,356 @@
       "c3_accuracy": 0.5,
       "abstains_when_evidence_is_insufficient": 1.0,
       "wrongly_abstains_when_decidable": 0.464,
+      "c3_correct": 16,
+      "c3_confusion": [
+        {
+          "expected": "met",
+          "got": "met",
+          "count": 7
+        },
+        {
+          "expected": "met",
+          "got": "not_met",
+          "count": 2
+        },
+        {
+          "expected": "met",
+          "got": "unclear",
+          "count": 5
+        },
+        {
+          "expected": "not_met",
+          "got": "met",
+          "count": 1
+        },
+        {
+          "expected": "not_met",
+          "got": "not_met",
+          "count": 5
+        },
+        {
+          "expected": "not_met",
+          "got": "unclear",
+          "count": 8
+        },
+        {
+          "expected": "unclear",
+          "got": "unclear",
+          "count": 4
+        }
+      ],
+      "abstention_rate": null,
+      "unclear_rate": 0.531,
+      "by_category": {
+        "all": {
+          "n": 32,
+          "fully_correct": 16
+        }
+      },
+      "outputs": [
+        {
+          "id": "hx01",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "hx02",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "hx03",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "hx04",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "hx05",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "hx06",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "hx07",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "hx08",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "hx09",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "hx10",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "hx11",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "hx12",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "hx13",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "hx14",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "hx15",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "hx16",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "hx17",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "hx18",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "hx19",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "hx20",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "hx21",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "hx22",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "hx23",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "hx24",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "hx25",
+          "holds": [
+            "MC-BASE-SMALLEST"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "hx26",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "hx27",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "hx28",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "hx29",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "hx30",
+          "holds": [],
+          "rejects": [],
+          "c3": "unclear",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "hx31",
+          "holds": [
+            "MC-STOP-IMPLICIT"
+          ],
+          "rejects": [],
+          "c3": "not_met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        },
+        {
+          "id": "hx32",
+          "holds": [],
+          "rejects": [],
+          "c3": "met",
+          "abstained": false,
+          "summary": "",
+          "validation_notes": []
+        }
+      ],
       "trivial_baseline_always_met_no_misconception": {
         "c3_accuracy": 0.438,
         "micro_f1": 0.0
@@ -272,7 +565,7 @@
       ]
     },
     "llm": {
-      "not_run": "No model credentials configured. Nothing was simulated in its place."
+      "not_run": "No model credentials configured. Nothing was simulated or replayed in its place."
     }
   },
   "verifier": {
@@ -280,6 +573,7 @@
       "n": 12,
       "reader": "baseline",
       "accuracy": 0.917,
+      "correct": 11,
       "confusion": [
         {
           "expected": "demonstrated",
@@ -314,7 +608,71 @@
       ]
     },
     "llm": {
-      "not_run": "No model credentials configured. Nothing was simulated in its place."
+      "not_run": "No model credentials configured. Nothing was simulated or replayed in its place."
     }
+  },
+  "code": {
+    "n": 20,
+    "misconceptions": {
+      "MC-BASE-SMALLEST": {
+        "precision": 0.667,
+        "recall": 0.667,
+        "f1": 0.667,
+        "tp": 2,
+        "fp": 1,
+        "fn": 1
+      },
+      "MC-BASE-VALUE": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 4,
+        "fp": 0,
+        "fn": 0
+      },
+      "MC-NO-PROGRESS": {
+        "precision": 0.5,
+        "recall": 1.0,
+        "f1": 0.667,
+        "tp": 1,
+        "fp": 1,
+        "fn": 0
+      },
+      "micro": {
+        "precision": 0.778,
+        "recall": 0.875,
+        "f1": 0.824,
+        "tp": 7,
+        "fp": 2,
+        "fn": 1
+      }
+    },
+    "exact_set_accuracy": 0.9,
+    "c2_judgment_accuracy": 1.0,
+    "stopping_condition_flag_accuracy": {
+      "probes": 0.9,
+      "baseline_any_failing_test": 0.8
+    },
+    "failures": [
+      {
+        "id": "hc09",
+        "expected": [
+          "MC-BASE-SMALLEST"
+        ],
+        "found": [],
+        "c2_expected": "partial",
+        "c2_got": "partial"
+      },
+      {
+        "id": "hc11",
+        "expected": [],
+        "found": [
+          "MC-BASE-SMALLEST",
+          "MC-NO-PROGRESS"
+        ],
+        "c2_expected": "partial",
+        "c2_got": "partial"
+      }
+    ]
   }
 }

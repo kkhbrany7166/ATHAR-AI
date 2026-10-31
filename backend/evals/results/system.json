@@ -1,16 +1,22 @@
 {
   "meta": {
-    "commit": "3735e33",
-    "ran_at": "2026-10-31 08:45:58 +0300",
+    "commit": "88bbc0a",
+    "ran_at": "2026-10-31 09:04:42 +0300",
     "llm": {
       "provider": "none",
       "model": "",
-      "configured": false
+      "configured": false,
+      "analyzer": "auto",
+      "timeout_seconds": 45.0,
+      "max_calls": 400
     },
-    "baseline_version": "rules-v1"
+    "baseline_version": "rules-v1",
+    "reader_prompt_version": "reader-v2",
+    "verifier_version": "verify-v1",
+    "python": "3.12.2"
   },
   "command": "pytest -q tests/test_interventions.py tests/test_api_gates.py tests/test_pipeline_and_insights.py",
-  "summary": "24 passed in 24.74s",
+  "summary": "24 passed in 28.52s",
   "ok": true,
   "failed": []
 }
